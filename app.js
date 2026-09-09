@@ -1,5 +1,16 @@
 const currentDate = document.querySelector('.current-date');
 const daysTag = document.querySelector('.days');
+const todayLessonList = document.querySelector('#today-lesson-list');
+const todayCount = document.querySelector('#today-count');
+const weekdays = [
+  '일요일',
+  '월요일',
+  '화요일',
+  '수요일',
+  '목요일',
+  '금요일',
+  '토요일',
+];
 
 const prevButton = document.querySelector('#prev');
 const nextButton = document.querySelector('#next');
@@ -309,6 +320,7 @@ async function renderCalendar() {
   });
 
   let liTag = '';
+  let todayScheduleData = [];
 
   // ======================================
   // 이전 달 날짜
@@ -419,6 +431,9 @@ async function renderCalendar() {
     // ======================================
 
     daySchedule.sort((a, b) => a.time.localeCompare(b.time));
+    if (isToday) {
+      todayScheduleData = daySchedule;
+    }
 
     // ======================================
     // 수업 HTML 만들기
@@ -453,6 +468,7 @@ async function renderCalendar() {
               ${item.type}
               ${isCompleted ? 'completed' : ''}
             "
+            data-lesson-key="${lessonKey}"
           >
 
             <span
@@ -468,22 +484,9 @@ async function renderCalendar() {
 
 
             <div class="schedule-text">
-
               <span class="schedule-time">
                 ${item.time}
               </span>
-
-
-              ${
-                item.title
-                  ? `
-                    <span class="schedule-title">
-                      ${item.title}
-                    </span>
-                  `
-                  : ''
-              }
-
             </div>
 
           </div>
@@ -548,6 +551,83 @@ async function renderCalendar() {
   currentDate.innerText = `${currYear}년 ${months[currMonth]}`;
 
   daysTag.innerHTML = liTag;
+  renderTodayLessons(todayScheduleData);
+}
+
+function renderTodayLessons(schedule) {
+  const todayDate = document.querySelector('#today-date');
+
+  todayDate.textContent = `${today.getMonth() + 1}월 ${today.getDate()}일 ${
+    weekdays[today.getDay()]
+  }`;
+
+  todayCount.textContent = `${schedule.length}건`;
+
+  if (schedule.length === 0) {
+    todayLessonList.innerHTML = `
+      <p class="today-empty">
+        오늘 예정된 수업이 없습니다.
+      </p>
+    `;
+    return;
+  }
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  const dateKey = `${year}-${month}-${day}`;
+
+  todayLessonList.innerHTML = schedule
+    .map((item) => {
+      const lessonKey =
+        item.type === 'personal'
+          ? `${dateKey}_personal_${item.id}_${item.time}`
+          : `${dateKey}_group_${item.time}`;
+
+      const isCompleted = completedLessons[lessonKey] === true;
+
+      const name = item.type === 'personal' ? item.title : '단체수업';
+
+      const typeName = item.type === 'personal' ? '개인' : '단체';
+
+      return `
+        <div
+          class="
+            today-lesson-item
+            ${item.type}
+            ${isCompleted ? 'completed' : ''}
+          "
+          data-lesson-key="${lessonKey}"
+        >
+
+          <span
+            class="today-lesson-check"
+            onclick="toggleComplete(
+              event,
+              '${lessonKey}',
+              this
+            )"
+          >
+            ✓
+          </span>
+
+          <span class="today-lesson-time">
+            ${item.time}
+          </span>
+
+          <span class="today-lesson-name">
+            ${name}
+          </span>
+
+          <span class="today-lesson-type ${item.type}">
+            ${typeName}
+          </span>
+
+        </div>
+      `;
+    })
+    .join('');
 }
 
 // ======================================
@@ -557,13 +637,19 @@ async function renderCalendar() {
 function toggleComplete(event, lessonKey, checkElement) {
   event.stopPropagation();
 
-  const scheduleItem = checkElement.closest('.schedule-item');
+  const newState = !completedLessons[lessonKey];
 
-  const isCompleted = scheduleItem.classList.toggle('completed');
-
-  completedLessons[lessonKey] = isCompleted;
+  completedLessons[lessonKey] = newState;
 
   localStorage.setItem('completedLessons', JSON.stringify(completedLessons));
+
+  const lessonItems = document.querySelectorAll(
+    `[data-lesson-key="${lessonKey}"]`
+  );
+
+  lessonItems.forEach((item) => {
+    item.classList.toggle('completed', newState);
+  });
 }
 
 // ======================================

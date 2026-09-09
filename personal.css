@@ -9,70 +9,72 @@
 
 body {
   min-height: 100vh;
-  background: #f3f6fa;
+  background: #eef3f8;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
-  padding: 24px 8px;
+  padding: 32px 12px;
+  color: #1f2937;
 }
 
-/* ================================
-   전체 달력 박스
-================================ */
-
+/* 전체 카드 */
 .wrapper {
   width: 100%;
-  max-width: 500px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  max-width: 560px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid #e4ebf3;
+  box-shadow: 0 12px 32px rgba(38, 66, 104, 0.1);
 }
 
-/* ================================
-   상단 월 이동 영역
-================================ */
-
+/* 월 이동 */
 header {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 22px;
 }
 
 .current-date {
-  font-size: 22px;
-  font-weight: 700;
+  min-width: 140px;
+  text-align: center;
+  font-size: 21px;
+  font-weight: 800;
+  color: #18243a;
 }
 
 .nav button {
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 8px;
-  background: #ececec;
-  font-size: 28px;
-  color: #666;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #dce5ef;
+  background: #ffffff;
+  color: #44658c;
+  font-size: 24px;
   cursor: pointer;
+  transition: 0.2s;
 }
 
 .nav button:hover {
-  background: #e2e2e2;
+  background: #eef5ff;
+  border-color: #bfd2eb;
 }
 
-/* ================================
-   달력 공통
-================================ */
+/* 달력 */
+.calendar {
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid #dfe7ef;
+}
 
 .calendar ul {
   display: grid;
-
-  /* 긴 이름이 있어도 각 칸이 동일한 크기를 유지 */
   grid-template-columns: repeat(7, minmax(0, 1fr));
-
   list-style: none;
 }
 
@@ -80,182 +82,182 @@ header {
   min-width: 0;
 }
 
-/* ================================
-   요일
-================================ */
-
+/* 요일 */
 .calendar .weeks {
-  background: #f5f5f5;
-  border-top: 1px solid #ddd;
-  border-left: 1px solid #ddd;
+  background: #f5f8fb;
 }
 
 .calendar .weeks li {
   padding: 11px 0;
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+  color: #6a778a;
+  border-right: 1px solid #e7edf3;
+  border-bottom: 1px solid #dfe7ef;
+}
 
-  border-right: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
+.calendar .weeks li:last-child {
+  border-right: none;
 }
 
 .calendar .weeks li:first-child {
-  color: #e53935;
+  color: #e25864;
 }
 
-/* ================================
-   날짜 영역
-================================ */
-
+/* 날짜 */
 .calendar .days {
   margin: 0;
-  border-left: 1px solid #ddd;
 }
 
 .calendar .days li {
   position: relative;
+  min-height: 88px;
+  padding: 6px 5px;
+  background: #ffffff;
 
-  min-height: 72px;
+  border-right: 1px solid #edf1f5;
+  border-bottom: 1px solid #edf1f5;
 
-  padding: 5px 3px;
-
-  border-right: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
-
-  text-align: left;
-
-  /* 이름 때문에 칸이 늘어나는 것 방지 */
-  min-width: 0;
   overflow: hidden;
+  transition: background 0.15s;
 }
 
-/* ================================
-   날짜 숫자
-================================ */
+.calendar .days li:nth-child(7n) {
+  border-right: none;
+}
 
+.calendar .days li:hover {
+  background: #fafcff;
+}
+
+/* 날짜 숫자 */
 .day-number {
-  display: block;
-  font-size: 12px;
-  font-weight: 500;
+  display: inline-flex;
+  width: 23px;
+  height: 23px;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  font-size: 11px;
+  font-weight: 700;
+  color: #4d5b6d;
 }
 
-/* ================================
-   이전/다음 달 날짜
-================================ */
-
+/* 이전 / 다음 달 */
 .days li.inactive {
-  color: #bbb;
-  background: #fafafa;
+  background: #fafbfd;
 }
 
-/* ================================
-   일요일
-================================ */
-
-.calendar .days li.sunday {
-  color: #e53935;
+.days li.inactive .day-number {
+  color: #c1c9d2;
 }
 
-/* ================================
-   오늘
-================================ */
+/* 일요일 */
+.calendar .days li.sunday .day-number {
+  color: #e25864;
+}
 
+/* 오늘 */
 .days li.active {
-  color: #008aff;
-  font-weight: 600;
-  background: #f5faff;
-
-  box-shadow: inset 0 0 0 2px #008aff;
+  background: #f3f8ff;
+  box-shadow: inset 0 0 0 2px #4c8df6;
 }
 
-/* ================================
-   공휴일
-================================ */
+.days li.active .day-number {
+  background: #4c8df6;
+  color: #ffffff;
+}
 
+/* 공휴일 */
 .calendar .days li.holiday {
-  color: #e53935;
-  background: #fff5f5;
+  background: #fff7f7;
+}
+
+.calendar .days li.holiday .day-number {
+  color: #e25864;
+}
+
+.calendar .days li.active.holiday .day-number {
+  background: #e25864;
+  color: #ffffff;
 }
 
 .holiday-name {
   display: block;
+  margin-top: 2px;
+  padding-left: 2px;
 
-  margin-top: 3px;
-
-  font-size: 9px;
-  font-weight: 500;
-
-  color: #e53935;
+  font-size: 8px;
+  font-weight: 600;
+  color: #e25864;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.calendar .days li.active.holiday {
-  color: #e53935;
-}
-
-/* ================================
-   수업 목록
-================================ */
-
+/* 수업 목록 */
 .schedule-list {
   margin-top: 5px;
-
   min-width: 0;
 }
 
-/* ================================
-   수업 한 개
-================================ */
-
+/* 수업 한 건 */
 .schedule-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 4px;
 
-  gap: 3px;
+  margin-bottom: 4px;
+  padding: 4px 5px;
 
-  margin-bottom: 3px;
-  padding: 3px;
+  border-radius: 6px;
 
-  border-radius: 5px;
-
-  font-size: 9px;
-  line-height: 1.2;
-
+  line-height: 1.15;
   min-width: 0;
   overflow: hidden;
 
   cursor: pointer;
+  transition: 0.15s;
 }
 
-/* ================================
-   개인레슨
-================================ */
+.schedule-item:hover {
+  transform: translateY(-1px);
+}
 
+/* 개인레슨 */
 .schedule-item.personal {
-  background: #dcecff;
+  background: #e8f1ff;
+  border-left: 3px solid #4c8df6;
 }
 
-/* ================================
-   단체강습
-================================ */
-
+/* 단체강습 */
 .schedule-item.group {
-  background: #dff5e6;
+  background: #e8f7ee;
+  border-left: 3px solid #2fb47c;
 }
 
-/* ================================
-   완료 체크 원
-================================ */
+/* 보강 */
+.schedule-item.makeup {
+  background: #fff4d8;
+  border-left: 3px solid #f2b84b;
+}
 
+/* 취소 */
+.schedule-item.cancelled {
+  background: #ffe8e8;
+  border-left: 3px solid #e76b6b;
+}
+
+/* 완료 체크 원 */
 .check-circle {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
 
-  border: 1.5px solid #aaa;
+  border: 1.5px solid #98a5b4;
   border-radius: 50%;
 
   display: flex;
@@ -264,116 +266,102 @@ header {
 
   flex-shrink: 0;
 
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
-
   color: transparent;
-
-  margin-top: 1px;
 }
 
 .schedule-item.completed .check-circle {
-  background: #008aff;
-  border-color: #008aff;
-  color: #fff;
+  background: #4c8df6;
+  border-color: #4c8df6;
+  color: #ffffff;
 }
 
-/* ================================
-   수업 글자 영역
-================================ */
+.schedule-item.completed {
+  opacity: 0.72;
+}
 
+/* 텍스트 영역 */
 .schedule-text {
   min-width: 0;
   flex: 1;
   overflow: hidden;
 }
 
-/* ================================
-   시간
-================================ */
-
 .schedule-time {
   display: block;
-
   font-size: 9px;
   font-weight: 700;
-
-  color: #222;
-
+  color: #26364d;
   white-space: nowrap;
 }
 
-/* ================================
-   개인레슨 회원 이름
-================================ */
-
 .schedule-title {
   display: block;
-
   margin-top: 1px;
 
   font-size: 8px;
-  color: #333;
+  color: #66768b;
 
-  /* 무조건 한 줄 */
   white-space: nowrap;
-
-  /* 칸 크기는 늘리지 않음 */
   overflow: hidden;
-
-  /* 길면 ... 처리 */
   text-overflow: ellipsis;
 
   letter-spacing: -0.3px;
 }
 
-/* ================================
-   모바일
-================================ */
-
+/* 모바일 */
 @media (max-width: 430px) {
   body {
-    padding: 12px 4px;
+    padding: 12px 5px;
   }
 
   .wrapper {
-    padding: 8px;
-    border-radius: 12px;
+    padding: 10px;
+    border-radius: 15px;
+  }
+
+  .nav {
+    gap: 14px;
   }
 
   .current-date {
-    font-size: 20px;
+    min-width: 120px;
+    font-size: 18px;
   }
 
   .nav button {
-    width: 38px;
-    height: 38px;
-    font-size: 24px;
+    width: 34px;
+    height: 34px;
+    font-size: 21px;
   }
 
   .calendar .weeks li {
     padding: 9px 0;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .calendar .days li {
-    min-height: 68px;
-    padding: 4px 2px;
+    min-height: 76px;
+    padding: 4px 3px;
   }
 
   .day-number {
-    font-size: 11px;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
   }
 
   .schedule-item {
     gap: 2px;
-    padding: 2px;
+    padding: 3px;
+    margin-bottom: 3px;
   }
 
   .check-circle {
-    width: 12px;
-    height: 12px;
-    font-size: 7px;
+    width: 10px;
+    height: 10px;
+    font-size: 6px;
   }
 
   .schedule-time {
@@ -382,6 +370,386 @@ header {
 
   .schedule-title {
     font-size: 7px;
-    letter-spacing: -0.4px;
   }
+}
+
+/* ================================
+   전체 관리자 화면
+================================ */
+
+.dashboard {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 560px minmax(420px, 1fr) 360px;
+  gap: 18px;
+
+  align-items: start;
+}
+
+/* 기존 달력 카드 */
+.schedule-panel {
+  min-width: 0;
+}
+
+.schedule-panel .wrapper {
+  max-width: none;
+  width: 100%;
+}
+
+/* 앞으로 사용할 영역 */
+.member-panel,
+.summary-panel {
+  min-height: 800px;
+}
+
+/* ================================
+   오늘 수업
+================================ */
+
+.today-lessons {
+  margin-top: 20px;
+  padding-top: 18px;
+
+  border-top: 1px solid #e8edf3;
+}
+
+.today-lessons-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  margin-bottom: 13px;
+}
+
+.today-label {
+  display: block;
+
+  margin-bottom: 3px;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+
+  color: #4c8df6;
+}
+
+.today-lessons-header h2 {
+  font-size: 17px;
+  font-weight: 800;
+
+  color: #18243a;
+}
+
+.today-count {
+  padding: 5px 9px;
+
+  border-radius: 20px;
+
+  background: #eef5ff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  color: #4c7ec3;
+}
+
+.today-lesson-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.today-lesson-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-height: 48px;
+
+  padding: 9px 11px;
+
+  border: 1px solid #e5ebf2;
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.today-lesson-item.personal {
+  border-left: 4px solid #4c8df6;
+}
+
+.today-lesson-item.group {
+  border-left: 4px solid #2fb47c;
+}
+
+.today-lesson-check {
+  width: 19px;
+  height: 19px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 1.5px solid #a6b1bf;
+  border-radius: 50%;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  color: transparent;
+}
+
+.today-lesson-item.completed .today-lesson-check {
+  background: #4c8df6;
+  border-color: #4c8df6;
+
+  color: #fff;
+}
+
+.today-lesson-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.today-lesson-time {
+  font-size: 13px;
+  font-weight: 800;
+
+  color: #26364d;
+}
+
+.today-lesson-name {
+  margin-top: 2px;
+
+  font-size: 11px;
+
+  color: #718096;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.today-lesson-type {
+  padding: 4px 8px;
+
+  border-radius: 20px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+/* .today-lesson-type.personal {
+  background: #e8f1ff;
+  color: #3976d1;
+}
+
+.today-lesson-type.group {
+  background: #e8f7ee;
+  color: #219664;
+} */
+
+.today-empty {
+  padding: 22px 12px;
+
+  text-align: center;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  font-size: 12px;
+
+  color: #9aa5b3;
+}
+
+/* ================================
+   화면 크기에 따른 배치
+================================ */
+
+@media (max-width: 1200px) {
+  .dashboard {
+    grid-template-columns: 540px 1fr;
+  }
+
+  .summary-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 850px) {
+  .dashboard {
+    display: block;
+  }
+
+  .member-panel,
+  .summary-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .today-lessons {
+    margin-top: 15px;
+    padding-top: 14px;
+  }
+
+  .today-lesson-item {
+    min-height: 44px;
+    padding: 8px;
+  }
+}
+
+/* 오늘 수업 */
+.today-lessons {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5ebf2;
+}
+
+.today-lessons-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.today-lessons-header h2 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #18243a;
+}
+
+#today-count {
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: #edf4ff;
+  color: #4c7fca;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#today-lesson-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.today-lesson-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+
+  border: 1px solid #e5ebf2;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.today-lesson-item.personal {
+  border-left: 4px solid #4c8df6;
+}
+
+.today-lesson-item.group {
+  border-left: 4px solid #2fb47c;
+}
+
+.today-lesson-time {
+  width: 48px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #26364d;
+}
+
+.today-lesson-name {
+  flex: 1;
+  font-size: 12px;
+  color: #65758a;
+}
+
+.today-lesson-type {
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.today-lesson-type.personal {
+  background: #e8f1ff;
+  color: #3976d1;
+}
+
+.today-lesson-type.group {
+  background: #e8f7ee;
+  color: #219664;
+}
+
+.today-empty {
+  padding: 20px;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #9aa5b3;
+}
+
+@media (max-width: 700px) {
+  body {
+    justify-content: center;
+  }
+}
+
+/* 수업 색상 안내 */
+.schedule-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  margin-top: 12px;
+  padding: 8px 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 10px;
+  font-weight: 600;
+  color: #68778a;
+}
+
+.legend-color {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* 개인레슨 */
+.legend-color.personal {
+  background: #4c8df6;
+}
+
+/* 단체강습 */
+.legend-color.group {
+  background: #2fb47c;
+}
+
+/* 보강 */
+.legend-color.makeup {
+  background: #f2b84b;
+}
+
+/* 취소 */
+.legend-color.cancelled {
+  background: #e76b6b;
 }

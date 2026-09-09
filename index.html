@@ -7,31 +7,83 @@
   </head>
 
   <body>
-    <div class="wrapper">
-      <header>
-        <div class="nav">
-          <button id="prev">‹</button>
-          <p class="current-date"></p>
-          <button id="next">›</button>
+    <main class="dashboard">
+      <section class="schedule-panel">
+        <div class="wrapper">
+          <header>
+            <div class="nav">
+              <button id="prev">‹</button>
+              <p class="current-date"></p>
+              <button id="next">›</button>
+            </div>
+          </header>
+
+          <div class="calendar">
+            <ul class="weeks">
+              <li>일</li>
+              <li>월</li>
+              <li>화</li>
+              <li>수</li>
+              <li>목</li>
+              <li>금</li>
+              <li>토</li>
+            </ul>
+
+            <ul class="days"></ul>
+          </div>
+
+          <div class="schedule-legend">
+            <div class="legend-item">
+              <span class="legend-color personal"></span>
+              <span>개인레슨</span>
+            </div>
+
+            <div class="legend-item">
+              <span class="legend-color group"></span>
+              <span>단체강습</span>
+            </div>
+
+            <div class="legend-item">
+              <span class="legend-color makeup"></span>
+              <span>보강</span>
+            </div>
+
+            <div class="legend-item">
+              <span class="legend-color cancelled"></span>
+              <span>취소</span>
+            </div>
+          </div>
+          <div class="today-lessons">
+            <div class="today-lessons-header">
+              <div class="today-title-area">
+                <h2>오늘 수업</h2>
+                <span id="today-date"></span>
+                <span id="today-count">0건</span>
+              </div>
+            
+              <button class="add-lesson-btn" id="add-lesson-btn">
+                <span>＋</span>
+                수업 추가
+              </button>
+            </div>
+            </div>
+
+            <div class="today-lesson-list" id="today-lesson-list">
+              <p class="today-empty">오늘 예정된 수업이 없습니다.</p>
+            </div>
+          </div>
         </div>
-      </header>
+      </section>
 
-      <div class="calendar">
-        <ul class="weeks">
-          <li>일</li>
-          <li>월</li>
-          <li>화</li>
-          <li>수</li>
-          <li>목</li>
-          <li>금</li>
-          <li>토</li>
-        </ul>
+      <section class="member-panel">
+        <!-- 다음에 회원 정보를 넣을 자리 -->
+      </section>
 
-        <ul class="days"></ul>
-      </div>
-    </div>
+      <section class="summary-panel">
+        <!-- 다음에 운영 요약을 넣을 자리 -->
+      </section>
+    </main>
 
-    <!-- JavaScript 연결 -->
     <script src="app.js"></script>
   </body>
 </html>
