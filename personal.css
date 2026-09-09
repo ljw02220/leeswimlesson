@@ -1,0 +1,387 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Pretendard', sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  background: #f3f6fa;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 8px;
+}
+
+/* ================================
+   전체 달력 박스
+================================ */
+
+.wrapper {
+  width: 100%;
+  max-width: 500px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ================================
+   상단 월 이동 영역
+================================ */
+
+header {
+  margin-bottom: 14px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.current-date {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.nav button {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #ececec;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+}
+
+.nav button:hover {
+  background: #e2e2e2;
+}
+
+/* ================================
+   달력 공통
+================================ */
+
+.calendar ul {
+  display: grid;
+
+  /* 긴 이름이 있어도 각 칸이 동일한 크기를 유지 */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+
+  list-style: none;
+}
+
+.calendar li {
+  min-width: 0;
+}
+
+/* ================================
+   요일
+================================ */
+
+.calendar .weeks {
+  background: #f5f5f5;
+  border-top: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+}
+
+.calendar .weeks li {
+  padding: 11px 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+
+.calendar .weeks li:first-child {
+  color: #e53935;
+}
+
+/* ================================
+   날짜 영역
+================================ */
+
+.calendar .days {
+  margin: 0;
+  border-left: 1px solid #ddd;
+}
+
+.calendar .days li {
+  position: relative;
+
+  min-height: 72px;
+
+  padding: 5px 3px;
+
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+
+  text-align: left;
+
+  /* 이름 때문에 칸이 늘어나는 것 방지 */
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ================================
+   날짜 숫자
+================================ */
+
+.day-number {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ================================
+   이전/다음 달 날짜
+================================ */
+
+.days li.inactive {
+  color: #bbb;
+  background: #fafafa;
+}
+
+/* ================================
+   일요일
+================================ */
+
+.calendar .days li.sunday {
+  color: #e53935;
+}
+
+/* ================================
+   오늘
+================================ */
+
+.days li.active {
+  color: #008aff;
+  font-weight: 600;
+  background: #f5faff;
+
+  box-shadow: inset 0 0 0 2px #008aff;
+}
+
+/* ================================
+   공휴일
+================================ */
+
+.calendar .days li.holiday {
+  color: #e53935;
+  background: #fff5f5;
+}
+
+.holiday-name {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 9px;
+  font-weight: 500;
+
+  color: #e53935;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar .days li.active.holiday {
+  color: #e53935;
+}
+
+/* ================================
+   수업 목록
+================================ */
+
+.schedule-list {
+  margin-top: 5px;
+
+  min-width: 0;
+}
+
+/* ================================
+   수업 한 개
+================================ */
+
+.schedule-item {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 3px;
+
+  margin-bottom: 3px;
+  padding: 3px;
+
+  border-radius: 5px;
+
+  font-size: 9px;
+  line-height: 1.2;
+
+  min-width: 0;
+  overflow: hidden;
+
+  cursor: pointer;
+}
+
+/* ================================
+   개인레슨
+================================ */
+
+.schedule-item.personal {
+  background: #dcecff;
+}
+
+/* ================================
+   단체강습
+================================ */
+
+.schedule-item.group {
+  background: #dff5e6;
+}
+
+/* ================================
+   완료 체크 원
+================================ */
+
+.check-circle {
+  width: 13px;
+  height: 13px;
+
+  border: 1.5px solid #aaa;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  color: transparent;
+
+  margin-top: 1px;
+}
+
+.schedule-item.completed .check-circle {
+  background: #008aff;
+  border-color: #008aff;
+  color: #fff;
+}
+
+/* ================================
+   수업 글자 영역
+================================ */
+
+.schedule-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ================================
+   시간
+================================ */
+
+.schedule-time {
+  display: block;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  color: #222;
+
+  white-space: nowrap;
+}
+
+/* ================================
+   개인레슨 회원 이름
+================================ */
+
+.schedule-title {
+  display: block;
+
+  margin-top: 1px;
+
+  font-size: 8px;
+  color: #333;
+
+  /* 무조건 한 줄 */
+  white-space: nowrap;
+
+  /* 칸 크기는 늘리지 않음 */
+  overflow: hidden;
+
+  /* 길면 ... 처리 */
+  text-overflow: ellipsis;
+
+  letter-spacing: -0.3px;
+}
+
+/* ================================
+   모바일
+================================ */
+
+@media (max-width: 430px) {
+  body {
+    padding: 12px 4px;
+  }
+
+  .wrapper {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .current-date {
+    font-size: 20px;
+  }
+
+  .nav button {
+    width: 38px;
+    height: 38px;
+    font-size: 24px;
+  }
+
+  .calendar .weeks li {
+    padding: 9px 0;
+    font-size: 12px;
+  }
+
+  .calendar .days li {
+    min-height: 68px;
+    padding: 4px 2px;
+  }
+
+  .day-number {
+    font-size: 11px;
+  }
+
+  .schedule-item {
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .check-circle {
+    width: 12px;
+    height: 12px;
+    font-size: 7px;
+  }
+
+  .schedule-time {
+    font-size: 8px;
+  }
+
+  .schedule-title {
+    font-size: 7px;
+    letter-spacing: -0.4px;
+  }
+}
