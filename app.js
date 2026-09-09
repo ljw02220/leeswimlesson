@@ -24,6 +24,28 @@ const lessonTitle = document.querySelector('#lesson-title');
 
 const saveLessonBtn = document.querySelector('#save-lesson-btn');
 
+// 수업 상세
+const lessonDetailModal = document.querySelector('#lesson-detail-modal');
+
+const closeDetailModal = document.querySelector('#close-detail-modal');
+
+const detailDate = document.querySelector('#detail-date');
+
+const detailTime = document.querySelector('#detail-time');
+
+const detailType = document.querySelector('#detail-type');
+
+const detailTitle = document.querySelector('#detail-title');
+
+const detailStatus = document.querySelector('#detail-status');
+
+const confirmDetailBtn = document.querySelector('#confirm-detail-btn');
+
+const deleteLessonBtn = document.querySelector('#delete-lesson-btn');
+
+// 현재 상세보기 중인 수업
+let selectedLesson = null;
+
 // ======================================
 // 날짜
 // ======================================
@@ -130,6 +152,9 @@ const recurringSchedule = [
 
 let completedLessons =
   JSON.parse(localStorage.getItem('completedLessons')) || {};
+
+let cancelledLessons =
+  JSON.parse(localStorage.getItem('cancelledLessons')) || {};
 
 let addedLessons = JSON.parse(localStorage.getItem('addedLessons')) || [];
 
@@ -477,14 +502,19 @@ async function renderCalendar() {
 
       const isCompleted = completedLessons[lessonKey] === true;
 
+      const isCancelled = cancelledLessons[lessonKey] === true;
+
+      const displayType = isCancelled ? 'cancelled' : item.type;
+
       scheduleHtml += `
         <div
           class="
             schedule-item
-            ${item.type}
+            ${displayType}
             ${isCompleted ? 'completed' : ''}
           "
           data-lesson-key="${lessonKey}"
+          onclick="openLessonDetail('${dateKey}', '${lessonKey}')"
         >
 
           <span
@@ -500,9 +530,9 @@ async function renderCalendar() {
           </span>
 
           <div class="schedule-text">
-            <span class="schedule-time">
-              ${item.time}
-            </span>
+          <span class="schedule-time">
+          ${item.time}
+        </span>
           </div>
 
         </div>
@@ -607,15 +637,19 @@ function renderTodayLessons(schedule) {
 
       const isCompleted = completedLessons[lessonKey] === true;
 
+      const isCancelled = cancelledLessons[lessonKey] === true;
+
+      const displayType = isCancelled ? 'cancelled' : item.type;
+
       const name = getLessonName(item);
 
-      const typeName = getLessonTypeName(item.type);
+      const typeName = getLessonTypeName(displayType);
 
       return `
           <div
             class="
               today-lesson-item
-              ${item.type}
+              ${displayType}
               ${isCompleted ? 'completed' : ''}
             "
             data-lesson-key="${lessonKey}"
@@ -655,6 +689,222 @@ function renderTodayLessons(schedule) {
     })
     .join('');
 }
+
+// ======================================
+// 수업 상세보기
+// ======================================
+
+function openLessonDetail(dateKey, lessonKey) {
+  let lesson = null;
+
+  // --------------------------------------
+  // 1. 직접 추가한 수업 찾기
+  // --------------------------------------
+
+  lesson = addedLessons.find(
+    (item) => getLessonKey(dateKey, item) === lessonKey
+  );
+
+  // --------------------------------------
+  // 2. 기본 개인레슨 찾기
+  // --------------------------------------
+
+  if (!lesson && lessonKey.includes('_personal_')) {
+    const personalLesson = personalSchedule.find((item) => {
+      const key = `${dateKey}_personal_` + `${item.id}_${item.time}`;
+
+      return key === lessonKey;
+    });
+
+    if (personalLesson) {
+      lesson = {
+        id: personalLesson.id,
+        date: dateKey,
+        time: personalLesson.time,
+        title: personalLesson.name,
+        type: 'personal',
+        source: 'personal',
+      };
+    }
+  }
+
+  // --------------------------------------
+  // 3. 반복 단체강습 찾기
+  // --------------------------------------
+
+  if (!lesson && lessonKey.includes('_group_')) {
+    const groupLesson = recurringSchedule.find((item) => {
+      const key = `${dateKey}_group_${item.time}`;
+
+      return key === lessonKey;
+    });
+
+    if (groupLesson) {
+      lesson = {
+        date: dateKey,
+        time: groupLesson.time,
+        title: '단체수업',
+        type: 'group',
+        source: 'recurring',
+      };
+    }
+  }
+
+  // 수업을 못 찾은 경우
+  if (!lesson) {
+    console.error('수업 정보를 찾지 못했습니다.');
+    return;
+  }
+
+  // 현재 선택한 수업 저장
+  selectedLesson = {
+    ...lesson,
+    lessonKey,
+  };
+
+  // --------------------------------------
+  // 상세 팝업 내용 표시
+  // --------------------------------------
+
+  const dateObject = new Date(`${dateKey}T00:00:00`);
+
+  detailDate.textContent =
+    `${dateObject.getFullYear()}년 ` +
+    `${dateObject.getMonth() + 1}월 ` +
+    `${dateObject.getDate()}일 ` +
+    `${weekdays[dateObject.getDay()]}`;
+
+  detailTime.textContent = lesson.time;
+
+  detailType.textContent = getLessonTypeName(lesson.type);
+
+  detailTitle.textContent = getLessonName(lesson);
+
+  if (cancelledLessons[lessonKey]) {
+    detailStatus.value = 'cancelled';
+  } else if (completedLessons[lessonKey]) {
+    detailStatus.value = 'completed';
+  } else {
+    detailStatus.value = 'scheduled';
+  }
+
+  // --------------------------------------
+  // 직접 추가한 수업만 삭제 가능
+  // --------------------------------------
+
+  if (lesson.source === 'added') {
+    deleteLessonBtn.style.display = 'block';
+  } else {
+    deleteLessonBtn.style.display = 'none';
+  }
+
+  // 팝업 열기
+  lessonDetailModal.classList.add('open');
+}
+
+// ======================================
+// 수업 상세 팝업 닫기
+// ======================================
+
+closeDetailModal.addEventListener('click', () => {
+  lessonDetailModal.classList.remove('open');
+});
+
+// ======================================
+// 수업 상태 저장
+// ======================================
+
+confirmDetailBtn.addEventListener('click', () => {
+  if (!selectedLesson) {
+    return;
+  }
+
+  const lessonKey = selectedLesson.lessonKey;
+  const status = detailStatus.value;
+
+  /// 예정
+  if (status === 'scheduled') {
+    delete completedLessons[lessonKey];
+    delete cancelledLessons[lessonKey];
+  }
+
+  // 완료
+  if (status === 'completed') {
+    completedLessons[lessonKey] = true;
+    delete cancelledLessons[lessonKey];
+  }
+
+  // 취소
+  if (status === 'cancelled') {
+    cancelledLessons[lessonKey] = true;
+    delete completedLessons[lessonKey];
+  }
+
+  localStorage.setItem('completedLessons', JSON.stringify(completedLessons));
+
+  localStorage.setItem('cancelledLessons', JSON.stringify(cancelledLessons));
+
+  // 상태 변경 후 선택값 초기화
+  selectedLesson = null;
+
+  // 상세 팝업 닫기
+  lessonDetailModal.classList.remove('open');
+
+  // 달력 다시 그리기
+  renderCalendar();
+});
+
+// 팝업 바깥을 누르면 닫기
+lessonDetailModal.addEventListener('click', (event) => {
+  if (event.target === lessonDetailModal) {
+    lessonDetailModal.classList.remove('open');
+  }
+});
+
+// ======================================
+// 직접 추가한 수업 삭제
+// ======================================
+
+deleteLessonBtn.addEventListener('click', () => {
+  // 선택된 수업이 없으면 종료
+  if (!selectedLesson) {
+    return;
+  }
+
+  // 직접 추가한 수업이 아니면 삭제 금지
+  if (selectedLesson.source !== 'added') {
+    return;
+  }
+
+  const shouldDelete = confirm('이 수업을 삭제할까요?');
+
+  if (!shouldDelete) {
+    return;
+  }
+
+  // addedLessons에서 삭제
+  addedLessons = addedLessons.filter((item) => item.id !== selectedLesson.id);
+
+  // localStorage 저장
+  localStorage.setItem('addedLessons', JSON.stringify(addedLessons));
+
+  // 완료 / 취소 상태가 있었다면 같이 삭제
+  delete completedLessons[selectedLesson.lessonKey];
+  delete cancelledLessons[selectedLesson.lessonKey];
+
+  localStorage.setItem('completedLessons', JSON.stringify(completedLessons));
+
+  localStorage.setItem('cancelledLessons', JSON.stringify(cancelledLessons));
+
+  // 선택 상태 초기화
+  selectedLesson = null;
+
+  // 팝업 닫기
+  lessonDetailModal.classList.remove('open');
+
+  // 달력 다시 그리기
+  renderCalendar();
+});
 
 // ======================================
 // 완료 체크
