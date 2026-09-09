@@ -60,11 +60,54 @@
                 <span id="today-date"></span>
                 <span id="today-count">0건</span>
               </div>
+
             
               <button class="add-lesson-btn" id="add-lesson-btn">
                 <span>＋</span>
                 수업 추가
               </button>
+            </div>
+            <div class="lesson-modal" id="lesson-modal">
+              <div class="lesson-modal-box">
+                <div class="lesson-modal-header">
+                  <h3>수업 추가</h3>
+                  <button type="button" id="close-lesson-modal">×</button>
+                </div>
+            
+                <div class="lesson-form">
+                  <label>
+                    수업 종류
+                    <select id="lesson-type">
+                      <option value="personal">개인레슨</option>
+                      <option value="group">단체강습</option>
+                      <option value="makeup">보강</option>
+                    </select>
+                  </label>
+            
+                  <label>
+                    날짜
+                    <input type="date" id="lesson-date" />
+                  </label>
+            
+                  <label>
+                    시간
+                    <input type="time" id="lesson-time" />
+                  </label>
+            
+                  <label>
+                    회원명 / 수업명
+                    <input
+                      type="text"
+                      id="lesson-title"
+                      placeholder="예: 김혜민 또는 초급반"
+                    />
+                  </label>
+            
+                  <button type="button" id="save-lesson-btn">
+                    수업 저장
+                  </button>
+                </div>
+              </div>
             </div>
             </div>
 

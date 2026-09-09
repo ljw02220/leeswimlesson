@@ -1,19 +1,32 @@
+// ======================================
+// DOM
+// ======================================
+
 const currentDate = document.querySelector('.current-date');
 const daysTag = document.querySelector('.days');
-const todayLessonList = document.querySelector('#today-lesson-list');
-const todayCount = document.querySelector('#today-count');
-const weekdays = [
-  '일요일',
-  '월요일',
-  '화요일',
-  '수요일',
-  '목요일',
-  '금요일',
-  '토요일',
-];
 
 const prevButton = document.querySelector('#prev');
 const nextButton = document.querySelector('#next');
+
+const todayLessonList = document.querySelector('#today-lesson-list');
+const todayCount = document.querySelector('#today-count');
+const todayDate = document.querySelector('#today-date');
+
+// 수업 추가
+const addLessonBtn = document.querySelector('#add-lesson-btn');
+const lessonModal = document.querySelector('#lesson-modal');
+const closeLessonModal = document.querySelector('#close-lesson-modal');
+
+const lessonType = document.querySelector('#lesson-type');
+const lessonDate = document.querySelector('#lesson-date');
+const lessonTime = document.querySelector('#lesson-time');
+const lessonTitle = document.querySelector('#lesson-title');
+
+const saveLessonBtn = document.querySelector('#save-lesson-btn');
+
+// ======================================
+// 날짜
+// ======================================
 
 const today = new Date();
 
@@ -35,6 +48,16 @@ const months = [
   '12월',
 ];
 
+const weekdays = [
+  '일요일',
+  '월요일',
+  '화요일',
+  '수요일',
+  '목요일',
+  '금요일',
+  '토요일',
+];
+
 // ======================================
 // 공공데이터 API
 // ======================================
@@ -42,20 +65,10 @@ const months = [
 const API_URL =
   'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
 
-const SERVICE_KEY =
-  'ZScN%2FL8QzX1fL1Q6srrL4ThrDGCUSI4yQG2bAlnNdhOs4e0R2TIsSZoLxkoZRkpuQ9iSHn87EmjjnAdkeOmgmA%3D%3D';
+const SERVICE_KEY = '기존_API_KEY_붙여넣기';
 
 // ======================================
 // 개인레슨
-//
-// day
-// 0 = 일요일
-// 1 = 월요일
-// 2 = 화요일
-// 3 = 수요일
-// 4 = 목요일
-// 5 = 금요일
-// 6 = 토요일
 // ======================================
 
 const personalSchedule = [
@@ -93,66 +106,50 @@ const personalSchedule = [
 
 const recurringSchedule = [
   // 화요일
-  {
-    day: 2,
-    time: '19:00',
-  },
-  {
-    day: 2,
-    time: '20:00',
-  },
-  {
-    day: 2,
-    time: '21:00',
-  },
+  { day: 2, time: '19:00' },
+  { day: 2, time: '20:00' },
+  { day: 2, time: '21:00' },
 
   // 수요일
-  {
-    day: 3,
-    time: '20:00',
-  },
-  {
-    day: 3,
-    time: '21:00',
-  },
+  { day: 3, time: '20:00' },
+  { day: 3, time: '21:00' },
 
   // 목요일
-  {
-    day: 4,
-    time: '19:00',
-  },
-  {
-    day: 4,
-    time: '20:00',
-  },
-  {
-    day: 4,
-    time: '21:00',
-  },
+  { day: 4, time: '19:00' },
+  { day: 4, time: '20:00' },
+  { day: 4, time: '21:00' },
 
   // 금요일
-  {
-    day: 5,
-    time: '20:00',
-  },
-  {
-    day: 5,
-    time: '21:00',
-  },
+  { day: 5, time: '20:00' },
+  { day: 5, time: '21:00' },
 ];
 
 // ======================================
-// 완료한 수업 불러오기
+// localStorage
 // ======================================
 
 let completedLessons =
   JSON.parse(localStorage.getItem('completedLessons')) || {};
+
+let addedLessons = JSON.parse(localStorage.getItem('addedLessons')) || [];
+
+// ======================================
+// 공휴일 캐시
+// ======================================
+
+const holidayCache = {};
 
 // ======================================
 // 공휴일 가져오기
 // ======================================
 
 async function getHolidays(year, month) {
+  const cacheKey = `${year}-${month}`;
+
+  if (holidayCache[cacheKey]) {
+    return holidayCache[cacheKey];
+  }
+
   const formattedMonth = String(month + 1).padStart(2, '0');
 
   const url =
@@ -164,11 +161,9 @@ async function getHolidays(year, month) {
 
   try {
     const response = await fetch(url);
-
     const text = await response.text();
 
     const parser = new DOMParser();
-
     const xml = parser.parseFromString(text, 'text/xml');
 
     const items = xml.querySelectorAll('item');
@@ -182,10 +177,11 @@ async function getHolidays(year, month) {
 
       if (date) {
         const day = Number(date.slice(-2));
-
         holidays[day] = name;
       }
     });
+
+    holidayCache[cacheKey] = holidays;
 
     return holidays;
   } catch (error) {
@@ -196,23 +192,53 @@ async function getHolidays(year, month) {
 }
 
 // ======================================
+// 공휴일 범위 만들기
+// ======================================
+
+async function getHolidayMap(year, month) {
+  const holidaysByDate = {};
+
+  // 현재 달 기준 앞뒤 6개월
+  for (let offset = -6; offset <= 6; offset++) {
+    const targetDate = new Date(year, month + offset, 1);
+
+    const targetYear = targetDate.getFullYear();
+
+    const targetMonth = targetDate.getMonth();
+
+    const holidayData = await getHolidays(targetYear, targetMonth);
+
+    Object.entries(holidayData).forEach(([day, name]) => {
+      const monthNumber = String(targetMonth + 1).padStart(2, '0');
+
+      const dayNumber = String(day).padStart(2, '0');
+
+      const dateKey = `${targetYear}-${monthNumber}-${dayNumber}`;
+
+      holidaysByDate[dateKey] = name;
+    });
+  }
+
+  return holidaysByDate;
+}
+
+// ======================================
 // 개인레슨 날짜 계산
 // ======================================
 
 function getPersonalLessonDates(lesson, holidaysByDate) {
   const lessonDates = [];
 
-  const startDate = new Date(lesson.startDate + 'T00:00:00');
+  const startDate = new Date(`${lesson.startDate}T00:00:00`);
 
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
 
-  // 시작일이 해당 수업 요일이 아니라면
-  // 가장 가까운 해당 요일까지 이동
+  // 지정된 요일까지 이동
   while (currentDate.getDay() !== lesson.day) {
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  // 총 수업 횟수만큼 생성
+  // 수업 횟수만큼 생성
   while (lessonDates.length < lesson.totalCount) {
     const year = currentDate.getFullYear();
 
@@ -222,16 +248,123 @@ function getPersonalLessonDates(lesson, holidaysByDate) {
 
     const dateKey = `${year}-${month}-${day}`;
 
-    // 공휴일이 아니면 수업 추가
+    // 공휴일이면 건너뜀
     if (!holidaysByDate[dateKey]) {
       lessonDates.push(dateKey);
     }
 
-    // 다음 주로 이동
     currentDate.setDate(currentDate.getDate() + 7);
   }
 
   return lessonDates;
+}
+
+// ======================================
+// 수업 고유 키
+// ======================================
+
+function getLessonKey(dateKey, item) {
+  // 직접 추가한 수업
+  if (item.source === 'added') {
+    return `${dateKey}_${item.type}_` + `${item.id}_${item.time}`;
+  }
+
+  // 개인레슨
+  if (item.type === 'personal') {
+    return `${dateKey}_personal_` + `${item.id}_${item.time}`;
+  }
+
+  // 반복 단체수업
+  return `${dateKey}_group_${item.time}`;
+}
+
+// ======================================
+// 수업 종류 이름
+// ======================================
+
+function getLessonTypeName(type) {
+  if (type === 'personal') {
+    return '개인';
+  }
+
+  if (type === 'group') {
+    return '단체';
+  }
+
+  if (type === 'makeup') {
+    return '보강';
+  }
+
+  if (type === 'cancelled') {
+    return '취소';
+  }
+
+  return '';
+}
+
+// ======================================
+// 수업 이름
+// ======================================
+
+function getLessonName(item) {
+  if (item.title) {
+    return item.title;
+  }
+
+  if (item.type === 'personal') {
+    return '개인레슨';
+  }
+
+  if (item.type === 'group') {
+    return '단체수업';
+  }
+
+  if (item.type === 'makeup') {
+    return '보강';
+  }
+
+  return '';
+}
+
+// ======================================
+// 날짜별 수업 만들기
+// ======================================
+
+function getDaySchedule(date, dateKey, holidayName, personalLessonsByDate) {
+  const daySchedule = [];
+
+  // 공휴일에는 수업 없음
+  if (holidayName) {
+    return daySchedule;
+  }
+
+  // 개인레슨
+  if (personalLessonsByDate[dateKey]) {
+    daySchedule.push(...personalLessonsByDate[dateKey]);
+  }
+
+  // 반복 단체강습
+  recurringSchedule.forEach((item) => {
+    if (date.getDay() === item.day) {
+      daySchedule.push({
+        ...item,
+        type: 'group',
+        source: 'recurring',
+      });
+    }
+  });
+
+  // 직접 추가한 수업
+  addedLessons.forEach((item) => {
+    if (item.date === dateKey) {
+      daySchedule.push(item);
+    }
+  });
+
+  // 시간순 정렬
+  daySchedule.sort((a, b) => a.time.localeCompare(b.time));
+
+  return daySchedule;
 }
 
 // ======================================
@@ -245,61 +378,10 @@ async function renderCalendar() {
 
   const previousLastDate = new Date(currYear, currMonth, 0).getDate();
 
-  // ======================================
-  // 공휴일 정보
-  //
-  // 현재 달부터 앞으로 4개월까지 불러오기
-  // 개인레슨 4회가 다음 달로 넘어갈 수 있기 때문
-  // ======================================
+  // 공휴일
+  const holidaysByDate = await getHolidayMap(currYear, currMonth);
 
-  const holidaysByDate = {};
-
-  // 현재 달의 이전 6개월부터
-  // 이후 6개월까지 공휴일을 가져옴
-  for (let offset = -6; offset <= 6; offset++) {
-    const targetDate = new Date(currYear, currMonth + offset, 1);
-
-    const year = targetDate.getFullYear();
-
-    const month = targetDate.getMonth();
-
-    const holidayData = await getHolidays(year, month);
-
-    Object.entries(holidayData).forEach(([day, name]) => {
-      const monthNumber = String(month + 1).padStart(2, '0');
-
-      const dayNumber = String(day).padStart(2, '0');
-
-      const dateKey = `${year}-${monthNumber}-${dayNumber}`;
-
-      holidaysByDate[dateKey] = name;
-    });
-  }
-
-  for (let offset = 0; offset < 4; offset++) {
-    const targetDate = new Date(currYear, currMonth + offset, 1);
-
-    const year = targetDate.getFullYear();
-
-    const month = targetDate.getMonth();
-
-    const holidayData = await getHolidays(year, month);
-
-    Object.entries(holidayData).forEach(([day, name]) => {
-      const monthNumber = String(month + 1).padStart(2, '0');
-
-      const dayNumber = String(day).padStart(2, '0');
-
-      const dateKey = `${year}-${monthNumber}-${dayNumber}`;
-
-      holidaysByDate[dateKey] = name;
-    });
-  }
-
-  // ======================================
-  // 개인레슨 날짜 계산
-  // ======================================
-
+  // 개인레슨 날짜별 정리
   const personalLessonsByDate = {};
 
   personalSchedule.forEach((lesson) => {
@@ -315,6 +397,7 @@ async function renderCalendar() {
         time: lesson.time,
         title: lesson.name,
         type: 'personal',
+        source: 'personal',
       });
     });
   });
@@ -323,7 +406,7 @@ async function renderCalendar() {
   let todayScheduleData = [];
 
   // ======================================
-  // 이전 달 날짜
+  // 이전 달
   // ======================================
 
   for (let i = firstDayOfMonth; i > 0; i--) {
@@ -331,25 +414,19 @@ async function renderCalendar() {
 
     liTag += `
       <li class="inactive">
-
         <span class="day-number">
           ${previousDate}
         </span>
-
       </li>
     `;
   }
 
   // ======================================
-  // 현재 달 날짜
+  // 현재 달
   // ======================================
 
   for (let i = 1; i <= lastDateOfMonth; i++) {
     const date = new Date(currYear, currMonth, i);
-
-    // --------------------------------------
-    // 날짜 키 만들기
-    // --------------------------------------
 
     const monthNumber = String(currMonth + 1).padStart(2, '0');
 
@@ -357,30 +434,14 @@ async function renderCalendar() {
 
     const dateKey = `${currYear}-${monthNumber}-${dayNumber}`;
 
-    // --------------------------------------
-    // 오늘인지 확인
-    // --------------------------------------
-
     const isToday =
       i === today.getDate() &&
       currMonth === today.getMonth() &&
       currYear === today.getFullYear();
 
-    // --------------------------------------
-    // 일요일
-    // --------------------------------------
-
     const isSunday = date.getDay() === 0;
 
-    // --------------------------------------
-    // 공휴일
-    // --------------------------------------
-
     const holidayName = holidaysByDate[dateKey];
-
-    // --------------------------------------
-    // CSS 클래스
-    // --------------------------------------
 
     const classes = [];
 
@@ -396,106 +457,57 @@ async function renderCalendar() {
       classes.push('holiday');
     }
 
-    // ======================================
-    // 오늘의 수업
-    // ======================================
+    // 날짜별 수업
+    const daySchedule = getDaySchedule(
+      date,
+      dateKey,
+      holidayName,
+      personalLessonsByDate
+    );
 
-    let daySchedule = [];
-
-    // 공휴일에는 모든 수업 없음
-    if (!holidayName) {
-      // --------------------------------------
-      // 개인레슨
-      // --------------------------------------
-
-      if (personalLessonsByDate[dateKey]) {
-        daySchedule.push(...personalLessonsByDate[dateKey]);
-      }
-
-      // --------------------------------------
-      // 반복 단체강습
-      // --------------------------------------
-
-      recurringSchedule.forEach((item) => {
-        if (date.getDay() === item.day) {
-          daySchedule.push({
-            ...item,
-            type: 'group',
-          });
-        }
-      });
-    }
-
-    // ======================================
-    // 시간순 정렬
-    // ======================================
-
-    daySchedule.sort((a, b) => a.time.localeCompare(b.time));
     if (isToday) {
       todayScheduleData = daySchedule;
     }
 
-    // ======================================
-    // 수업 HTML 만들기
-    // ======================================
-
+    // 수업 HTML
     let scheduleHtml = '';
 
     daySchedule.forEach((item) => {
-      // --------------------------------------
-      // 수업 고유키
-      // --------------------------------------
-
-      const lessonKey =
-        item.type === 'personal'
-          ? `${dateKey}_personal_${item.id}_${item.time}`
-          : `${dateKey}_group_${item.time}`;
-
-      // --------------------------------------
-      // 완료 여부
-      // --------------------------------------
+      const lessonKey = getLessonKey(dateKey, item);
 
       const isCompleted = completedLessons[lessonKey] === true;
 
-      // --------------------------------------
-      // HTML 생성
-      // --------------------------------------
-
       scheduleHtml += `
-          <div
-            class="
-              schedule-item
-              ${item.type}
-              ${isCompleted ? 'completed' : ''}
-            "
-            data-lesson-key="${lessonKey}"
-          >
+        <div
+          class="
+            schedule-item
+            ${item.type}
+            ${isCompleted ? 'completed' : ''}
+          "
+          data-lesson-key="${lessonKey}"
+        >
 
-            <span
-              class="check-circle"
-              onclick="toggleComplete(
+          <span
+            class="check-circle"
+            onclick="
+              toggleComplete(
                 event,
-                '${lessonKey}',
-                this
-              )"
-            >
-              ✓
+                '${lessonKey}'
+              )
+            "
+          >
+            ✓
+          </span>
+
+          <div class="schedule-text">
+            <span class="schedule-time">
+              ${item.time}
             </span>
-
-
-            <div class="schedule-text">
-              <span class="schedule-time">
-                ${item.time}
-              </span>
-            </div>
-
           </div>
-        `;
-    });
 
-    // ======================================
-    // 날짜 칸 만들기
-    // ======================================
+        </div>
+      `;
+    });
 
     liTag += `
       <li class="${classes.join(' ')}">
@@ -503,7 +515,6 @@ async function renderCalendar() {
         <span class="day-number">
           ${i}
         </span>
-
 
         ${
           holidayName
@@ -515,7 +526,6 @@ async function renderCalendar() {
             : ''
         }
 
-
         <div class="schedule-list">
           ${scheduleHtml}
         </div>
@@ -525,7 +535,7 @@ async function renderCalendar() {
   }
 
   // ======================================
-  // 다음 달 날짜
+  // 다음 달
   // ======================================
 
   const totalCells = firstDayOfMonth + lastDateOfMonth;
@@ -535,33 +545,43 @@ async function renderCalendar() {
   for (let i = 1; i <= remainingCells; i++) {
     liTag += `
       <li class="inactive">
-
         <span class="day-number">
           ${i}
         </span>
-
       </li>
     `;
   }
 
   // ======================================
-  // 달력 출력
+  // 출력
   // ======================================
 
-  currentDate.innerText = `${currYear}년 ${months[currMonth]}`;
+  currentDate.textContent = `${currYear}년 ${months[currMonth]}`;
 
   daysTag.innerHTML = liTag;
+
   renderTodayLessons(todayScheduleData);
 }
 
+// ======================================
+// 오늘 수업
+// ======================================
+
 function renderTodayLessons(schedule) {
-  const todayDate = document.querySelector('#today-date');
+  if (todayDate) {
+    todayDate.textContent =
+      `${today.getMonth() + 1}월 ` +
+      `${today.getDate()}일 ` +
+      `${weekdays[today.getDay()]}`;
+  }
 
-  todayDate.textContent = `${today.getMonth() + 1}월 ${today.getDate()}일 ${
-    weekdays[today.getDay()]
-  }`;
+  if (todayCount) {
+    todayCount.textContent = `${schedule.length}건`;
+  }
 
-  todayCount.textContent = `${schedule.length}건`;
+  if (!todayLessonList) {
+    return;
+  }
 
   if (schedule.length === 0) {
     todayLessonList.innerHTML = `
@@ -569,63 +589,69 @@ function renderTodayLessons(schedule) {
         오늘 예정된 수업이 없습니다.
       </p>
     `;
+
     return;
   }
 
   const year = today.getFullYear();
+
   const month = String(today.getMonth() + 1).padStart(2, '0');
+
   const day = String(today.getDate()).padStart(2, '0');
 
   const dateKey = `${year}-${month}-${day}`;
 
   todayLessonList.innerHTML = schedule
     .map((item) => {
-      const lessonKey =
-        item.type === 'personal'
-          ? `${dateKey}_personal_${item.id}_${item.time}`
-          : `${dateKey}_group_${item.time}`;
+      const lessonKey = getLessonKey(dateKey, item);
 
       const isCompleted = completedLessons[lessonKey] === true;
 
-      const name = item.type === 'personal' ? item.title : '단체수업';
+      const name = getLessonName(item);
 
-      const typeName = item.type === 'personal' ? '개인' : '단체';
+      const typeName = getLessonTypeName(item.type);
 
       return `
-        <div
-          class="
-            today-lesson-item
-            ${item.type}
-            ${isCompleted ? 'completed' : ''}
-          "
-          data-lesson-key="${lessonKey}"
-        >
-
-          <span
-            class="today-lesson-check"
-            onclick="toggleComplete(
-              event,
-              '${lessonKey}',
-              this
-            )"
+          <div
+            class="
+              today-lesson-item
+              ${item.type}
+              ${isCompleted ? 'completed' : ''}
+            "
+            data-lesson-key="${lessonKey}"
           >
-            ✓
-          </span>
 
-          <span class="today-lesson-time">
-            ${item.time}
-          </span>
+            <span
+              class="today-lesson-check"
+              onclick="
+                toggleComplete(
+                  event,
+                  '${lessonKey}'
+                )
+              "
+            >
+              ✓
+            </span>
 
-          <span class="today-lesson-name">
-            ${name}
-          </span>
+            <span class="today-lesson-time">
+              ${item.time}
+            </span>
 
-          <span class="today-lesson-type ${item.type}">
-            ${typeName}
-          </span>
+            <span class="today-lesson-name">
+              ${name}
+            </span>
 
-        </div>
-      `;
+            <span
+              class="
+                today-lesson-type
+                ${item.type}
+              "
+            >
+              ${typeName}
+            </span>
+
+          </div>
+        `;
     })
     .join('');
 }
@@ -634,7 +660,7 @@ function renderTodayLessons(schedule) {
 // 완료 체크
 // ======================================
 
-function toggleComplete(event, lessonKey, checkElement) {
+function toggleComplete(event, lessonKey) {
   event.stopPropagation();
 
   const newState = !completedLessons[lessonKey];
@@ -681,6 +707,84 @@ nextButton.addEventListener('click', () => {
 
   renderCalendar();
 });
+
+// ======================================
+// 수업 추가 팝업
+// ======================================
+
+if (
+  addLessonBtn &&
+  lessonModal &&
+  closeLessonModal &&
+  lessonType &&
+  lessonDate &&
+  lessonTime &&
+  lessonTitle &&
+  saveLessonBtn
+) {
+  // 열기
+  addLessonBtn.addEventListener('click', () => {
+    const year = today.getFullYear();
+
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+
+    const day = String(today.getDate()).padStart(2, '0');
+
+    lessonDate.value = `${year}-${month}-${day}`;
+
+    lessonType.value = 'personal';
+
+    lessonTime.value = '';
+    lessonTitle.value = '';
+
+    lessonModal.classList.add('open');
+  });
+
+  // X 버튼
+  closeLessonModal.addEventListener('click', () => {
+    lessonModal.classList.remove('open');
+  });
+
+  // 바깥 영역 클릭
+  lessonModal.addEventListener('click', (event) => {
+    if (event.target === lessonModal) {
+      lessonModal.classList.remove('open');
+    }
+  });
+
+  // 저장
+  saveLessonBtn.addEventListener('click', () => {
+    const type = lessonType.value;
+
+    const date = lessonDate.value;
+
+    const time = lessonTime.value;
+
+    const title = lessonTitle.value.trim();
+
+    if (!date || !time) {
+      alert('날짜와 시간을 입력해주세요.');
+      return;
+    }
+
+    const newLesson = {
+      id: Date.now(),
+      date,
+      time,
+      title,
+      type,
+      source: 'added',
+    };
+
+    addedLessons.push(newLesson);
+
+    localStorage.setItem('addedLessons', JSON.stringify(addedLessons));
+
+    lessonModal.classList.remove('open');
+
+    renderCalendar();
+  });
+}
 
 // ======================================
 // 처음 실행

@@ -1,3 +1,8 @@
+/* ==================================================
+   1. 기본 설정
+   - 전체 페이지의 기본 여백, 폰트, 배경색
+================================================== */
+
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 * {
@@ -9,26 +14,76 @@
 
 body {
   min-height: 100vh;
-  background: #eef3f8;
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
+
   padding: 32px 12px;
+
+  background: #eef3f8;
   color: #1f2937;
 }
 
-/* 전체 카드 */
+/* ==================================================
+   2. 전체 관리자 화면
+   - 왼쪽: 수업 스케줄
+   - 가운데: 회원 관리 예정
+   - 오른쪽: 요약/관리 예정
+================================================== */
+
+.dashboard {
+  width: 100%;
+  max-width: 1500px;
+
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 560px minmax(420px, 1fr) 360px;
+
+  gap: 18px;
+
+  align-items: start;
+}
+
+/* 왼쪽 수업 스케줄 영역 */
+.schedule-panel {
+  min-width: 0;
+}
+
+/* 가운데 / 오른쪽 영역
+   나중에 회원관리 기능 추가 예정 */
+.member-panel,
+.summary-panel {
+  min-height: 800px;
+}
+
+/* ==================================================
+   3. 달력 전체 카드
+================================================== */
+
 .wrapper {
   width: 100%;
   max-width: 560px;
-  background: #ffffff;
-  border-radius: 20px;
+
   padding: 18px;
+
+  background: #ffffff;
+
   border: 1px solid #e4ebf3;
+  border-radius: 20px;
+
   box-shadow: 0 12px 32px rgba(38, 66, 104, 0.1);
 }
 
-/* 월 이동 */
+/* dashboard 안에서는
+   왼쪽 영역 너비에 맞춤 */
+.schedule-panel .wrapper {
+  width: 100%;
+  max-width: none;
+}
+
+/* ==================================================
+   4. 달력 상단 월 이동
+   - <  2026년 9월  >
+================================================== */
+
 header {
   margin-bottom: 16px;
 }
@@ -37,26 +92,37 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+
   gap: 22px;
 }
 
+/* 현재 연도 / 월 */
 .current-date {
   min-width: 140px;
+
   text-align: center;
+
   font-size: 21px;
   font-weight: 800;
+
   color: #18243a;
 }
 
+/* 이전 / 다음 달 버튼 */
 .nav button {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+
   border: 1px solid #dce5ef;
+  border-radius: 50%;
+
   background: #ffffff;
   color: #44658c;
+
   font-size: 24px;
+
   cursor: pointer;
+
   transition: 0.2s;
 }
 
@@ -65,16 +131,22 @@ header {
   border-color: #bfd2eb;
 }
 
-/* 달력 */
+/* ==================================================
+   5. 달력 기본 구조
+================================================== */
+
 .calendar {
   overflow: hidden;
-  border-radius: 14px;
+
   border: 1px solid #dfe7ef;
+  border-radius: 14px;
 }
 
+/* 일~토 7칸 */
 .calendar ul {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+
   list-style: none;
 }
 
@@ -82,17 +154,24 @@ header {
   min-width: 0;
 }
 
-/* 요일 */
+/* ==================================================
+   6. 요일
+================================================== */
+
 .calendar .weeks {
   background: #f5f8fb;
 }
 
 .calendar .weeks li {
   padding: 11px 0;
+
   text-align: center;
+
   font-size: 12px;
   font-weight: 700;
+
   color: #6a778a;
+
   border-right: 1px solid #e7edf3;
   border-bottom: 1px solid #dfe7ef;
 }
@@ -101,28 +180,37 @@ header {
   border-right: none;
 }
 
+/* 일요일 빨간색 */
 .calendar .weeks li:first-child {
   color: #e25864;
 }
 
-/* 날짜 */
+/* ==================================================
+   7. 날짜 칸
+================================================== */
+
 .calendar .days {
   margin: 0;
 }
 
 .calendar .days li {
   position: relative;
+
   min-height: 88px;
+
   padding: 6px 5px;
+
   background: #ffffff;
 
   border-right: 1px solid #edf1f5;
   border-bottom: 1px solid #edf1f5;
 
   overflow: hidden;
+
   transition: background 0.15s;
 }
 
+/* 토요일 오른쪽 선 제거 */
 .calendar .days li:nth-child(7n) {
   border-right: none;
 }
@@ -134,8 +222,10 @@ header {
 /* 날짜 숫자 */
 .day-number {
   display: inline-flex;
+
   width: 23px;
   height: 23px;
+
   align-items: center;
   justify-content: center;
 
@@ -143,10 +233,15 @@ header {
 
   font-size: 11px;
   font-weight: 700;
+
   color: #4d5b6d;
 }
 
-/* 이전 / 다음 달 */
+/* ==================================================
+   8. 날짜 상태
+================================================== */
+
+/* 이전 달 / 다음 달 날짜 */
 .days li.inactive {
   background: #fafbfd;
 }
@@ -160,9 +255,10 @@ header {
   color: #e25864;
 }
 
-/* 오늘 */
+/* 오늘 날짜 */
 .days li.active {
   background: #f3f8ff;
+
   box-shadow: inset 0 0 0 2px #4c8df6;
 }
 
@@ -180,18 +276,22 @@ header {
   color: #e25864;
 }
 
+/* 오늘이면서 공휴일 */
 .calendar .days li.active.holiday .day-number {
   background: #e25864;
   color: #ffffff;
 }
 
+/* 추석, 설날 등 공휴일 이름 */
 .holiday-name {
   display: block;
+
   margin-top: 2px;
   padding-left: 2px;
 
   font-size: 8px;
   font-weight: 600;
+
   color: #e25864;
 
   white-space: nowrap;
@@ -199,9 +299,15 @@ header {
   text-overflow: ellipsis;
 }
 
-/* 수업 목록 */
+/* ==================================================
+   9. 달력 안 수업
+   - 체크 원 + 시간
+================================================== */
+
+/* 날짜 안의 수업 목록 */
 .schedule-list {
   margin-top: 5px;
+
   min-width: 0;
 }
 
@@ -209,7 +315,10 @@ header {
 .schedule-item {
   display: flex;
   align-items: center;
+
   gap: 4px;
+
+  min-width: 0;
 
   margin-bottom: 4px;
   padding: 4px 5px;
@@ -217,10 +326,11 @@ header {
   border-radius: 6px;
 
   line-height: 1.15;
-  min-width: 0;
+
   overflow: hidden;
 
   cursor: pointer;
+
   transition: 0.15s;
 }
 
@@ -228,37 +338,38 @@ header {
   transform: translateY(-1px);
 }
 
-/* 개인레슨 */
+/* 개인레슨 - 하늘색 */
 .schedule-item.personal {
   background: #e8f1ff;
   border-left: 3px solid #4c8df6;
 }
 
-/* 단체강습 */
+/* 단체강습 - 연두색 */
 .schedule-item.group {
   background: #e8f7ee;
   border-left: 3px solid #2fb47c;
 }
 
-/* 보강 */
+/* 보강 - 노란색 */
 .schedule-item.makeup {
   background: #fff4d8;
   border-left: 3px solid #f2b84b;
 }
 
-/* 취소 */
+/* 취소 - 빨간색 */
 .schedule-item.cancelled {
   background: #ffe8e8;
   border-left: 3px solid #e76b6b;
 }
 
-/* 완료 체크 원 */
+/* ==================================================
+   10. 달력 수업 완료 체크
+================================================== */
+
+/* 체크 전 동그라미 */
 .check-circle {
   width: 12px;
   height: 12px;
-
-  border: 1.5px solid #98a5b4;
-  border-radius: 50%;
 
   display: flex;
   align-items: center;
@@ -266,14 +377,20 @@ header {
 
   flex-shrink: 0;
 
+  border: 1.5px solid #98a5b4;
+  border-radius: 50%;
+
   font-size: 7px;
   font-weight: 700;
+
   color: transparent;
 }
 
+/* 완료된 수업 */
 .schedule-item.completed .check-circle {
   background: #4c8df6;
   border-color: #4c8df6;
+
   color: #ffffff;
 }
 
@@ -281,190 +398,202 @@ header {
   opacity: 0.72;
 }
 
-/* 텍스트 영역 */
+/* 수업 시간 영역 */
 .schedule-text {
   min-width: 0;
+
   flex: 1;
+
   overflow: hidden;
 }
 
 .schedule-time {
   display: block;
+
   font-size: 9px;
   font-weight: 700;
+
   color: #26364d;
-  white-space: nowrap;
-}
-
-.schedule-title {
-  display: block;
-  margin-top: 1px;
-
-  font-size: 8px;
-  color: #66768b;
 
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  letter-spacing: -0.3px;
 }
 
-/* 모바일 */
-@media (max-width: 430px) {
-  body {
-    padding: 12px 5px;
-  }
+/* ==================================================
+   11. 달력 아래 색상 안내
+   - 개인 / 단체 / 보강 / 취소
+================================================== */
 
-  .wrapper {
-    padding: 10px;
-    border-radius: 15px;
-  }
+.schedule-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  .nav {
-    gap: 14px;
-  }
+  gap: 14px;
 
-  .current-date {
-    min-width: 120px;
-    font-size: 18px;
-  }
-
-  .nav button {
-    width: 34px;
-    height: 34px;
-    font-size: 21px;
-  }
-
-  .calendar .weeks li {
-    padding: 9px 0;
-    font-size: 11px;
-  }
-
-  .calendar .days li {
-    min-height: 76px;
-    padding: 4px 3px;
-  }
-
-  .day-number {
-    width: 20px;
-    height: 20px;
-    font-size: 10px;
-  }
-
-  .schedule-item {
-    gap: 2px;
-    padding: 3px;
-    margin-bottom: 3px;
-  }
-
-  .check-circle {
-    width: 10px;
-    height: 10px;
-    font-size: 6px;
-  }
-
-  .schedule-time {
-    font-size: 8px;
-  }
-
-  .schedule-title {
-    font-size: 7px;
-  }
+  margin-top: 12px;
+  padding: 8px 6px;
 }
 
-/* ================================
-   전체 관리자 화면
-================================ */
+.legend-item {
+  display: flex;
+  align-items: center;
 
-.dashboard {
-  width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
+  gap: 5px;
 
-  display: grid;
-  grid-template-columns: 560px minmax(420px, 1fr) 360px;
-  gap: 18px;
+  font-size: 10px;
+  font-weight: 600;
 
-  align-items: start;
+  color: #68778a;
 }
 
-/* 기존 달력 카드 */
-.schedule-panel {
+/* 색상 네모 */
+.legend-color {
+  width: 9px;
+  height: 9px;
+
+  flex-shrink: 0;
+
+  border-radius: 3px;
+}
+
+.legend-color.personal {
+  background: #4c8df6;
+}
+
+.legend-color.group {
+  background: #2fb47c;
+}
+
+.legend-color.makeup {
+  background: #f2b84b;
+}
+
+.legend-color.cancelled {
+  background: #e76b6b;
+}
+
+/* ==================================================
+   12. 오늘 수업 영역
+================================================== */
+
+.today-lessons {
+  margin-top: 18px;
+  padding-top: 16px;
+
+  border-top: 1px solid #e5ebf2;
+}
+
+/* 오늘 수업 제목 줄 */
+.today-lessons-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 12px;
+}
+
+/* 제목 + 날짜 + 수업 건수 */
+.today-title-area {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
   min-width: 0;
 }
 
-.schedule-panel .wrapper {
-  max-width: none;
-  width: 100%;
-}
-
-/* 앞으로 사용할 영역 */
-.member-panel,
-.summary-panel {
-  min-height: 800px;
-}
-
-/* ================================
-   오늘 수업
-================================ */
-
-.today-lessons {
-  margin-top: 20px;
-  padding-top: 18px;
-
-  border-top: 1px solid #e8edf3;
-}
-
-.today-lessons-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-
-  margin-bottom: 13px;
-}
-
-.today-label {
-  display: block;
-
-  margin-bottom: 3px;
-
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 1.2px;
-
-  color: #4c8df6;
-}
-
 .today-lessons-header h2 {
+  flex-shrink: 0;
+
   font-size: 17px;
   font-weight: 800;
 
   color: #18243a;
 }
 
-.today-count {
-  padding: 5px 9px;
+/* 오늘 날짜
+   예: 9월 9일 수요일 */
+#today-date {
+  font-size: 11px;
+  font-weight: 600;
+
+  color: #7b899b;
+
+  white-space: nowrap;
+}
+
+/* 오늘 수업 개수
+   예: 2건 */
+#today-count {
+  flex-shrink: 0;
+
+  padding: 4px 8px;
 
   border-radius: 20px;
 
-  background: #eef5ff;
+  background: #edf4ff;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  color: #4c7fca;
+}
+
+/* ==================================================
+   13. 수업 추가 버튼
+================================================== */
+
+.add-lesson-btn {
+  display: flex;
+  align-items: center;
+
+  gap: 3px;
+
+  flex-shrink: 0;
+
+  padding: 7px 11px;
+
+  border: 1px solid #d8e2ee;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #4c8df6;
 
   font-size: 11px;
   font-weight: 700;
 
-  color: #4c7ec3;
+  cursor: pointer;
+
+  transition: 0.15s;
 }
 
-.today-lesson-list {
+.add-lesson-btn span {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.add-lesson-btn:hover {
+  background: #f3f7ff;
+  border-color: #b9cff0;
+}
+
+/* ==================================================
+   14. 오늘 수업 목록
+================================================== */
+
+#today-lesson-list {
   display: flex;
   flex-direction: column;
+
   gap: 7px;
 }
 
+/* 오늘 수업 한 건 */
 .today-lesson-item {
   display: flex;
   align-items: center;
+
   gap: 10px;
 
   min-height: 48px;
@@ -477,13 +606,29 @@ header {
   background: #ffffff;
 }
 
+/* 개인레슨 */
 .today-lesson-item.personal {
   border-left: 4px solid #4c8df6;
 }
 
+/* 단체강습 */
 .today-lesson-item.group {
   border-left: 4px solid #2fb47c;
 }
+
+/* 보강 */
+.today-lesson-item.makeup {
+  border-left: 4px solid #f2b84b;
+}
+
+/* 취소 */
+.today-lesson-item.cancelled {
+  border-left: 4px solid #e76b6b;
+}
+
+/* ==================================================
+   15. 오늘 수업 완료 체크
+================================================== */
 
 .today-lesson-check {
   width: 19px;
@@ -502,77 +647,251 @@ header {
   font-weight: 800;
 
   color: transparent;
+
+  cursor: pointer;
 }
 
+/* 완료 체크 */
 .today-lesson-item.completed .today-lesson-check {
   background: #4c8df6;
   border-color: #4c8df6;
 
-  color: #fff;
+  color: #ffffff;
 }
 
-.today-lesson-info {
-  min-width: 0;
-  flex: 1;
+/* 완료된 수업 전체를 살짝 흐리게 */
+.today-lesson-item.completed {
+  opacity: 0.72;
 }
 
+/* ==================================================
+   16. 오늘 수업 정보
+================================================== */
+
+/* 시간 */
 .today-lesson-time {
+  width: 48px;
+
+  flex-shrink: 0;
+
   font-size: 13px;
   font-weight: 800;
 
   color: #26364d;
 }
 
+/* 회원명 또는 수업명 */
 .today-lesson-name {
-  margin-top: 2px;
+  min-width: 0;
 
-  font-size: 11px;
+  flex: 1;
 
-  color: #718096;
+  font-size: 12px;
+
+  color: #65758a;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* 개인 / 단체 / 보강 표시 */
 .today-lesson-type {
+  flex-shrink: 0;
+
   padding: 4px 8px;
 
   border-radius: 20px;
 
   font-size: 10px;
   font-weight: 700;
-
-  flex-shrink: 0;
 }
 
-/* .today-lesson-type.personal {
+/* 개인 */
+.today-lesson-type.personal {
   background: #e8f1ff;
   color: #3976d1;
 }
 
+/* 단체 */
 .today-lesson-type.group {
   background: #e8f7ee;
   color: #219664;
-} */
+}
 
+/* 보강 */
+.today-lesson-type.makeup {
+  background: #fff4d8;
+  color: #b77b13;
+}
+
+/* 취소 */
+.today-lesson-type.cancelled {
+  background: #ffe8e8;
+  color: #d95858;
+}
+
+/* 오늘 수업이 없을 때 */
 .today-empty {
-  padding: 22px 12px;
+  padding: 20px;
 
   text-align: center;
 
-  border-radius: 10px;
-
   background: #f8fafc;
+
+  border-radius: 10px;
 
   font-size: 12px;
 
   color: #9aa5b3;
 }
 
-/* ================================
-   화면 크기에 따른 배치
-================================ */
+/* ==================================================
+   17. 수업 추가 팝업 배경
+================================================== */
+
+.lesson-modal {
+  position: fixed;
+  inset: 0;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(20, 30, 45, 0.35);
+
+  z-index: 1000;
+}
+
+/* JS에서 open 클래스가 붙으면 팝업 표시 */
+.lesson-modal.open {
+  display: flex;
+}
+
+/* ==================================================
+   18. 수업 추가 팝업 카드
+================================================== */
+
+.lesson-modal-box {
+  width: 100%;
+  max-width: 360px;
+
+  padding: 20px;
+
+  background: #ffffff;
+
+  border-radius: 16px;
+
+  box-shadow: 0 20px 50px rgba(30, 50, 80, 0.18);
+}
+
+/* 팝업 제목 + X 버튼 */
+.lesson-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 18px;
+}
+
+.lesson-modal-header h3 {
+  font-size: 18px;
+  font-weight: 800;
+
+  color: #18243a;
+}
+
+/* 팝업 닫기 X */
+#close-lesson-modal {
+  width: 30px;
+  height: 30px;
+
+  border: none;
+
+  background: transparent;
+
+  font-size: 24px;
+
+  color: #77869a;
+
+  cursor: pointer;
+}
+
+/* ==================================================
+   19. 수업 추가 입력폼
+================================================== */
+
+.lesson-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 13px;
+}
+
+/* 입력 항목 제목 */
+.lesson-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  color: #506176;
+}
+
+/* 날짜 / 시간 / 종류 / 이름 입력 */
+.lesson-form input,
+.lesson-form select {
+  width: 100%;
+  height: 42px;
+
+  padding: 0 11px;
+
+  border: 1px solid #dbe4ee;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  font-size: 13px;
+
+  color: #26364d;
+
+  outline: none;
+}
+
+/* 입력 중인 칸 */
+.lesson-form input:focus,
+.lesson-form select:focus {
+  border-color: #4c8df6;
+}
+
+/* 수업 저장 버튼 */
+#save-lesson-btn {
+  height: 44px;
+
+  margin-top: 5px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: #4c8df6;
+
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+/* ==================================================
+   20. 태블릿
+   - 오른쪽 요약 영역 숨김
+================================================== */
 
 @media (max-width: 1200px) {
   .dashboard {
@@ -584,6 +903,11 @@ header {
   }
 }
 
+/* ==================================================
+   21. 작은 태블릿
+   - 달력만 표시
+================================================== */
+
 @media (max-width: 850px) {
   .dashboard {
     display: block;
@@ -593,163 +917,169 @@ header {
   .summary-panel {
     display: none;
   }
+
+  body {
+    display: flex;
+    justify-content: center;
+  }
 }
 
+/* ==================================================
+   22. 모바일
+================================================== */
+
 @media (max-width: 430px) {
+  body {
+    padding: 12px 5px;
+  }
+
+  /* 전체 카드 */
+  .wrapper {
+    padding: 10px;
+
+    border-radius: 15px;
+  }
+
+  /* 월 이동 */
+  .nav {
+    gap: 14px;
+  }
+
+  .current-date {
+    min-width: 120px;
+
+    font-size: 18px;
+  }
+
+  .nav button {
+    width: 34px;
+    height: 34px;
+
+    font-size: 21px;
+  }
+
+  /* 요일 */
+  .calendar .weeks li {
+    padding: 9px 0;
+
+    font-size: 11px;
+  }
+
+  /* 날짜 칸 */
+  .calendar .days li {
+    min-height: 76px;
+
+    padding: 4px 3px;
+  }
+
+  .day-number {
+    width: 20px;
+    height: 20px;
+
+    font-size: 10px;
+  }
+
+  /* 달력 안 수업 */
+  .schedule-item {
+    gap: 2px;
+
+    margin-bottom: 3px;
+    padding: 3px;
+  }
+
+  .check-circle {
+    width: 10px;
+    height: 10px;
+
+    font-size: 6px;
+  }
+
+  .schedule-time {
+    font-size: 8px;
+  }
+
+  /* 범례 */
+  .schedule-legend {
+    gap: 8px;
+
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .legend-item {
+    gap: 3px;
+
+    font-size: 9px;
+  }
+
+  .legend-color {
+    width: 8px;
+    height: 8px;
+  }
+
+  /* 오늘 수업 */
   .today-lessons {
     margin-top: 15px;
     padding-top: 14px;
   }
 
+  .today-title-area {
+    gap: 5px;
+  }
+
+  .today-lessons-header h2 {
+    font-size: 15px;
+  }
+
+  #today-date {
+    font-size: 9px;
+  }
+
+  #today-count {
+    padding: 3px 6px;
+
+    font-size: 9px;
+  }
+
+  /* 수업 추가 버튼 */
+  .add-lesson-btn {
+    padding: 6px 8px;
+
+    font-size: 10px;
+  }
+
+  /* 오늘 수업 한 건 */
   .today-lesson-item {
     min-height: 44px;
+
+    gap: 7px;
+
     padding: 8px;
   }
-}
 
-/* 오늘 수업 */
-.today-lessons {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid #e5ebf2;
-}
-
-.today-lessons-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.today-lessons-header h2 {
-  font-size: 17px;
-  font-weight: 800;
-  color: #18243a;
-}
-
-#today-count {
-  padding: 4px 9px;
-  border-radius: 20px;
-  background: #edf4ff;
-  color: #4c7fca;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-#today-lesson-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.today-lesson-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-
-  border: 1px solid #e5ebf2;
-  border-radius: 10px;
-  background: #fff;
-}
-
-.today-lesson-item.personal {
-  border-left: 4px solid #4c8df6;
-}
-
-.today-lesson-item.group {
-  border-left: 4px solid #2fb47c;
-}
-
-.today-lesson-time {
-  width: 48px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #26364d;
-}
-
-.today-lesson-name {
-  flex: 1;
-  font-size: 12px;
-  color: #65758a;
-}
-
-.today-lesson-type {
-  padding: 4px 8px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.today-lesson-type.personal {
-  background: #e8f1ff;
-  color: #3976d1;
-}
-
-.today-lesson-type.group {
-  background: #e8f7ee;
-  color: #219664;
-}
-
-.today-empty {
-  padding: 20px;
-  text-align: center;
-  background: #f8fafc;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #9aa5b3;
-}
-
-@media (max-width: 700px) {
-  body {
-    justify-content: center;
+  .today-lesson-check {
+    width: 17px;
+    height: 17px;
   }
-}
 
-/* 수업 색상 안내 */
-.schedule-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
+  .today-lesson-time {
+    width: 42px;
 
-  margin-top: 12px;
-  padding: 8px 6px;
-}
+    font-size: 11px;
+  }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  .today-lesson-name {
+    font-size: 10px;
+  }
 
-  font-size: 10px;
-  font-weight: 600;
-  color: #68778a;
-}
+  .today-lesson-type {
+    padding: 3px 6px;
 
-.legend-color {
-  width: 9px;
-  height: 9px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
+    font-size: 9px;
+  }
 
-/* 개인레슨 */
-.legend-color.personal {
-  background: #4c8df6;
-}
-
-/* 단체강습 */
-.legend-color.group {
-  background: #2fb47c;
-}
-
-/* 보강 */
-.legend-color.makeup {
-  background: #f2b84b;
-}
-
-/* 취소 */
-.legend-color.cancelled {
-  background: #e76b6b;
+  /* 수업 추가 팝업 */
+  .lesson-modal-box {
+    padding: 17px;
+  }
 }
