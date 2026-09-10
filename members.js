@@ -7,6 +7,7 @@ const STORAGE_KEY = 'personalLessonMembers';
 let members = [];
 let currentFilter = '전체';
 let editingMemberId = null;
+let memberLoadError = '';
 
 // ======================================================
 // 데이터 불러오기 / 저장
@@ -32,6 +33,27 @@ function loadLocalMembers() {
 
 function saveLocalMembers() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(members));
+}
+
+function showMemberLoadError(message) {
+  memberLoadError = message;
+
+  const tbody = document.getElementById('memberTableBody');
+
+  if (!tbody) {
+    return;
+  }
+
+  tbody.innerHTML = `
+    <tr>
+      <td
+        colspan="6"
+        class="empty-member-row"
+      >
+        ${escapeHTML(message)}
+      </td>
+    </tr>
+  `;
 }
 
 function hasSupabaseConnection() {
@@ -96,8 +118,12 @@ async function loadMembers() {
 
     members = loadLocalMembers();
 
+    showMemberLoadError('Supabase 회원 데이터를 불러오지 못했습니다.');
+
     return;
   }
+
+  memberLoadError = '';
 
   members = data.map(mapMemberFromDatabase);
 
@@ -272,6 +298,12 @@ function renderMembers() {
 
   if (!tbody) {
     console.error('memberTableBody를 찾을 수 없습니다.');
+
+    return;
+  }
+
+  if (memberLoadError) {
+    showMemberLoadError(memberLoadError);
 
     return;
   }
