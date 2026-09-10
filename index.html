@@ -1,313 +1,73 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
-    <!-- ======================================
-         기본 설정
-    ======================================= -->
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="stylesheet" href="personal.css" />
+    <link rel="stylesheet" href="login.css" />
 
-    <title>수업 스케줄</title>
+    <title>로그인</title>
   </head>
+
   <body>
-    <nav class="top-nav">
-      <a href="index.html" class="nav-link active">달력</a>
-      <a href="members.html" class="nav-link">회원관리</a>
-      <a href="finance.html" class="nav-link">재무</a>
-    </nav>
+    <main class="login-page">
+      <section class="login-card">
+        <div class="login-heading">
+          <span class="login-kicker">LEE Swimming Management</span>
 
-    <!-- ======================================
-         전체 관리자 화면
-         - 왼쪽: 수업 스케줄
-         - 가운데: 회원 관리 예정
-         - 오른쪽: 운영 요약 예정
-    ======================================= -->
+          <h1>로그인</h1>
 
-    <main class="dashboard">
-      <!-- ======================================
-           1. 수업 스케줄 영역
-      ======================================= -->
-
-      <section class="schedule-panel">
-        <div class="wrapper">
-          <!-- ======================================
-               달력 상단
-               - 이전 달
-               - 현재 연도 / 월
-               - 다음 달
-          ======================================= -->
-
-          <header>
-            <div class="nav">
-              <button type="button" id="prev" aria-label="이전 달">‹</button>
-
-              <p class="current-date"></p>
-
-              <button type="button" id="next" aria-label="다음 달">›</button>
-            </div>
-          </header>
-
-          <!-- ======================================
-               달력
-          ======================================= -->
-
-          <div class="calendar">
-            <!-- 요일 -->
-            <ul class="weeks">
-              <li>일</li>
-              <li>월</li>
-              <li>화</li>
-              <li>수</li>
-              <li>목</li>
-              <li>금</li>
-              <li>토</li>
-            </ul>
-
-            <!-- 날짜
-                 app.js에서 자동 생성 -->
-            <ul class="days"></ul>
-          </div>
-
-          <!-- ======================================
-               수업 종류 색상 안내
-          ======================================= -->
-
-          <div class="schedule-legend">
-            <!-- 개인레슨 -->
-            <div class="legend-item">
-              <span class="legend-color personal"></span>
-
-              <span>개인레슨</span>
-            </div>
-
-            <!-- 단체강습 -->
-            <div class="legend-item">
-              <span class="legend-color group"></span>
-
-              <span>단체강습</span>
-            </div>
-
-            <!-- 보강 -->
-            <div class="legend-item">
-              <span class="legend-color makeup"></span>
-
-              <span>보강</span>
-            </div>
-
-            <!-- 취소 -->
-            <div class="legend-item">
-              <span class="legend-color cancelled"></span>
-
-              <span>취소</span>
-            </div>
-          </div>
-
-          <!-- ======================================
-               오늘 수업
-          ======================================= -->
-
-          <div class="today-lessons">
-            <!-- 오늘 수업 상단 -->
-            <div class="today-lessons-header">
-              <!-- 제목 / 날짜 / 수업 개수 -->
-              <div class="today-title-area">
-                <h2>오늘 수업</h2>
-
-                <span id="today-date"></span>
-
-                <span id="today-count"> 0건 </span>
-              </div>
-
-              <!-- 수업 직접 추가 -->
-              <button type="button" class="add-lesson-btn" id="add-lesson-btn">
-                <span>＋</span>
-                수업 추가
-              </button>
-            </div>
-
-            <!-- 오늘 수업 목록
-                 app.js에서 자동 생성 -->
-            <div class="today-lesson-list" id="today-lesson-list">
-              <p class="today-empty">오늘 예정된 수업이 없습니다.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ======================================
-           2. 회원 관리 영역
-           - 나중에 회원 목록 / 회원 상세 추가
-      ======================================= -->
-
-      <section class="member-panel">
-        <!-- 추후 구현 -->
-      </section>
-
-      <!-- ======================================
-           3. 운영 요약 영역
-           - 나중에 수업 통계 / 결제 현황 등 추가
-      ======================================= -->
-
-      <section class="summary-panel">
-        <!-- 추후 구현 -->
-      </section>
-    </main>
-
-    <!-- ======================================
-         수업 추가 팝업
-    ======================================= -->
-
-    <div class="lesson-modal" id="lesson-modal">
-      <div class="lesson-modal-box">
-        <!-- 팝업 상단 -->
-        <div class="lesson-modal-header">
-          <h3>수업 추가</h3>
-
-          <button
-            type="button"
-            id="close-lesson-modal"
-            aria-label="수업 추가 팝업 닫기"
-          >
-            ×
-          </button>
+          <p>수업과 회원 정보를 관리하려면 로그인해주세요.</p>
         </div>
 
-        <!-- 수업 추가 입력폼 -->
-        <div class="lesson-form">
-          <!-- 수업 종류 -->
-          <label>
-            수업 종류
-
-            <select id="lesson-type">
-              <option value="personal">개인레슨</option>
-
-              <option value="group">단체강습</option>
-
-              <option value="makeup">보강</option>
-            </select>
-          </label>
-
-          <!-- 날짜 -->
-          <label>
-            날짜
-
-            <input type="date" id="lesson-date" />
-          </label>
-
-          <!-- 시간 -->
-          <label>
-            시간
-
-            <input type="time" id="lesson-time" />
-          </label>
-
-          <!-- 회원명 / 수업명 -->
-          <label>
-            회원명 / 수업명
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginId">아이디</label>
 
             <input
               type="text"
-              id="lesson-title"
-              placeholder="예: 김혜민 또는 초급반"
+              id="loginId"
+              autocomplete="username"
+              placeholder="아이디를 입력하세요"
+              required
             />
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">비밀번호</label>
+
+            <div class="password-field">
+              <input
+                type="password"
+                id="loginPassword"
+                autocomplete="current-password"
+                placeholder="비밀번호를 입력하세요"
+                required
+              />
+
+              <button
+                type="button"
+                id="togglePassword"
+                class="password-toggle"
+                aria-label="비밀번호 보기"
+              >
+                보기
+              </button>
+            </div>
+          </div>
+
+          <label class="remember-row">
+            <input type="checkbox" id="rememberLogin" />
+            <span>로그인 유지</span>
           </label>
 
-          <!-- 저장 -->
-          <button type="button" id="save-lesson-btn">수업 저장</button>
-        </div>
-      </div>
-    </div>
+          <p id="loginError" class="login-error" aria-live="polite"></p>
 
-    <!-- ======================================
-         수업 상세 팝업
-    ======================================= -->
+          <button type="submit" class="login-button">로그인</button>
+        </form>
+      </section>
+    </main>
 
-    <div class="lesson-modal" id="lesson-detail-modal">
-      <div class="lesson-modal-box">
-        <!-- 팝업 상단 -->
-        <div class="lesson-modal-header">
-          <h3>수업 상세</h3>
-
-          <button
-            type="button"
-            id="close-detail-modal"
-            aria-label="수업 상세 팝업 닫기"
-          >
-            ×
-          </button>
-        </div>
-
-        <!-- 수업 상세 정보 -->
-        <div class="lesson-detail">
-          <!-- 날짜 -->
-          <div class="detail-row">
-            <span class="detail-label"> 날짜 </span>
-
-            <strong id="detail-date"></strong>
-          </div>
-
-          <!-- 시간 -->
-          <div class="detail-row">
-            <span class="detail-label"> 시간 </span>
-
-            <strong id="detail-time"></strong>
-          </div>
-
-          <!-- 수업 종류 -->
-          <div class="detail-row">
-            <span class="detail-label"> 수업 종류 </span>
-
-            <strong id="detail-type"></strong>
-          </div>
-
-          <!-- 회원 / 수업명 -->
-          <div class="detail-row">
-            <span class="detail-label"> 회원 / 수업명 </span>
-
-            <strong id="detail-title"></strong>
-          </div>
-
-          <!-- 진행 상태 -->
-          <div class="detail-row">
-            <span class="detail-label"> 진행 상태 </span>
-
-            <select id="detail-status">
-              <option value="scheduled">예정</option>
-              <option value="completed">완료</option>
-              <option value="cancelled">취소</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="detail-actions">
-          <button
-            type="button"
-            id="confirm-detail-btn"
-            class="confirm-detail-btn"
-          >
-            확인
-          </button>
-
-          <button
-            type="button"
-            id="delete-lesson-btn"
-            class="delete-lesson-btn"
-            style="display: none"
-          >
-            수업 삭제
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======================================
-         JavaScript
-         - HTML을 모두 읽은 뒤 실행
-    ======================================= -->
-
-    <script src="app.js"></script>
+    <script src="login.js"></script>
   </body>
 </html>

@@ -1,6 +1,5 @@
 /* ==================================================
-   1. 기본 설정
-   - 전체 페이지의 기본 여백, 폰트, 배경색
+  1. 기본 설정
 ================================================== */
 
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -14,23 +13,23 @@
 
 body {
   min-height: 100vh;
-
   padding: 32px 12px;
-
   background: #eef3f8;
   color: #1f2937;
 }
 
+/* ==================================================
+   2. 상단 네비게이션
+================================================== */
+
 .top-nav {
   width: min(100%, 1500px);
-
   margin: 0 auto 18px;
 
   display: flex;
   align-items: center;
 
   gap: 6px;
-
   padding: 6px;
 
   background: #ffffff;
@@ -42,9 +41,10 @@ body {
 }
 
 .nav-link {
-  min-width: 92px;
+  flex: 1 1 0;
+  min-width: 0;
 
-  padding: 10px 15px;
+  padding: 10px 12px;
 
   border-radius: 8px;
 
@@ -69,11 +69,34 @@ body {
   color: #ffffff;
 }
 
+.logout-button {
+  flex: 0 0 auto;
+
+  height: 38px;
+  padding: 0 14px;
+
+  border: 1px solid #f3b6b6;
+  border-radius: 8px;
+
+  background: #fff1f1;
+  color: #d84f4f;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition: 0.15s;
+}
+
+.logout-button:hover {
+  background: #ffe3e3;
+  border-color: #e98a8a;
+  color: #c83f3f;
+}
+
 /* ==================================================
-   2. 전체 관리자 화면
-   - 왼쪽: 수업 스케줄
-   - 가운데: 회원 관리 예정
-   - 오른쪽: 요약/관리 예정
+  3. 전체 관리자 화면
 ================================================== */
 
 .dashboard {
@@ -90,20 +113,17 @@ body {
   align-items: start;
 }
 
-/* 왼쪽 수업 스케줄 영역 */
 .schedule-panel {
   min-width: 0;
 }
 
-/* 가운데 / 오른쪽 영역
-   나중에 회원관리 기능 추가 예정 */
 .member-panel,
 .summary-panel {
   min-height: 800px;
 }
 
 /* ==================================================
-   3. 달력 전체 카드
+  4. 달력 전체 카드
 ================================================== */
 
 .wrapper {
@@ -120,16 +140,13 @@ body {
   box-shadow: 0 12px 32px rgba(38, 66, 104, 0.1);
 }
 
-/* dashboard 안에서는
-   왼쪽 영역 너비에 맞춤 */
 .schedule-panel .wrapper {
   width: 100%;
   max-width: none;
 }
 
 /* ==================================================
-   4. 달력 상단 월 이동
-   - <  2026년 9월  >
+  5. 달력 상단 월 이동
 ================================================== */
 
 header {
@@ -144,7 +161,6 @@ header {
   gap: 22px;
 }
 
-/* 현재 연도 / 월 */
 .current-date {
   min-width: 140px;
 
@@ -156,7 +172,6 @@ header {
   color: #18243a;
 }
 
-/* 이전 / 다음 달 버튼 */
 .nav button {
   width: 38px;
   height: 38px;
@@ -180,7 +195,7 @@ header {
 }
 
 /* ==================================================
-   5. 달력 기본 구조
+  6. 달력 기본 구조
 ================================================== */
 
 .calendar {
@@ -190,7 +205,6 @@ header {
   border-radius: 14px;
 }
 
-/* 일~토 7칸 */
 .calendar ul {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -203,7 +217,7 @@ header {
 }
 
 /* ==================================================
-   6. 요일
+  7. 요일
 ================================================== */
 
 .calendar .weeks {
@@ -228,13 +242,12 @@ header {
   border-right: none;
 }
 
-/* 일요일 빨간색 */
 .calendar .weeks li:first-child {
   color: #e25864;
 }
 
 /* ==================================================
-   7. 날짜 칸
+  8. 날짜 칸
 ================================================== */
 
 .calendar .days {
@@ -258,7 +271,6 @@ header {
   transition: background 0.15s;
 }
 
-/* 토요일 오른쪽 선 제거 */
 .calendar .days li:nth-child(7n) {
   border-right: none;
 }
@@ -267,7 +279,6 @@ header {
   background: #fafcff;
 }
 
-/* 날짜 숫자 */
 .day-number {
   display: inline-flex;
 
@@ -286,10 +297,9 @@ header {
 }
 
 /* ==================================================
-   8. 날짜 상태
+  9. 날짜 상태
 ================================================== */
 
-/* 이전 달 / 다음 달 날짜 */
 .days li.inactive {
   background: #fafbfd;
 }
@@ -298,15 +308,12 @@ header {
   color: #c1c9d2;
 }
 
-/* 일요일 */
 .calendar .days li.sunday .day-number {
   color: #e25864;
 }
 
-/* 오늘 날짜 */
 .days li.active {
   background: #f3f8ff;
-
   box-shadow: inset 0 0 0 2px #4c8df6;
 }
 
@@ -315,7 +322,6 @@ header {
   color: #ffffff;
 }
 
-/* 공휴일 */
 .calendar .days li.holiday {
   background: #fff7f7;
 }
@@ -324,13 +330,11 @@ header {
   color: #e25864;
 }
 
-/* 오늘이면서 공휴일 */
 .calendar .days li.active.holiday .day-number {
   background: #e25864;
   color: #ffffff;
 }
 
-/* 추석, 설날 등 공휴일 이름 */
 .holiday-name {
   display: block;
 
@@ -348,18 +352,14 @@ header {
 }
 
 /* ==================================================
-   9. 달력 안 수업
-   - 체크 원 + 시간
+  10. 달력 안 수업
 ================================================== */
 
-/* 날짜 안의 수업 목록 */
 .schedule-list {
   margin-top: 5px;
-
   min-width: 0;
 }
 
-/* 수업 한 건 */
 .schedule-item {
   display: flex;
   align-items: center;
@@ -386,35 +386,30 @@ header {
   transform: translateY(-1px);
 }
 
-/* 개인레슨 - 하늘색 */
 .schedule-item.personal {
   background: #e8f1ff;
   border-left: 3px solid #4c8df6;
 }
 
-/* 단체강습 - 연두색 */
 .schedule-item.group {
   background: #e8f7ee;
   border-left: 3px solid #2fb47c;
 }
 
-/* 보강 - 노란색 */
 .schedule-item.makeup {
   background: #fff4d8;
   border-left: 3px solid #f2b84b;
 }
 
-/* 취소 - 빨간색 */
 .schedule-item.cancelled {
   background: #ffe8e8;
   border-left: 3px solid #e76b6b;
 }
 
 /* ==================================================
-   10. 달력 수업 완료 체크
+  11. 달력 수업 완료 체크
 ================================================== */
 
-/* 체크 전 동그라미 */
 .check-circle {
   width: 12px;
   height: 12px;
@@ -434,7 +429,6 @@ header {
   color: transparent;
 }
 
-/* 완료된 수업 */
 .schedule-item.completed .check-circle {
   background: #4c8df6;
   border-color: #4c8df6;
@@ -446,7 +440,6 @@ header {
   opacity: 0.72;
 }
 
-/* 수업 시간 영역 */
 .schedule-text {
   min-width: 0;
 
@@ -467,8 +460,7 @@ header {
 }
 
 /* ==================================================
-   11. 달력 아래 색상 안내
-   - 개인 / 단체 / 보강 / 취소
+  12. 달력 아래 색상 안내
 ================================================== */
 
 .schedule-legend {
@@ -494,7 +486,6 @@ header {
   color: #68778a;
 }
 
-/* 색상 네모 */
 .legend-color {
   width: 13px;
   height: 13px;
@@ -521,7 +512,7 @@ header {
 }
 
 /* ==================================================
-   12. 오늘 수업 영역
+  13. 오늘 수업 영역
 ================================================== */
 
 .today-lessons {
@@ -531,7 +522,6 @@ header {
   border-top: 1px solid #e5ebf2;
 }
 
-/* 오늘 수업 제목 줄 */
 .today-lessons-header {
   display: flex;
   align-items: center;
@@ -540,7 +530,6 @@ header {
   margin-bottom: 12px;
 }
 
-/* 제목 + 날짜 + 수업 건수 */
 .today-title-area {
   display: flex;
   align-items: center;
@@ -559,8 +548,6 @@ header {
   color: #18243a;
 }
 
-/* 오늘 날짜
-   예: 9월 9일 수요일 */
 #today-date {
   font-size: 11px;
   font-weight: 600;
@@ -570,8 +557,6 @@ header {
   white-space: nowrap;
 }
 
-/* 오늘 수업 개수
-   예: 2건 */
 #today-count {
   flex-shrink: 0;
 
@@ -588,7 +573,7 @@ header {
 }
 
 /* ==================================================
-   13. 수업 추가 버튼
+  14. 수업 추가 버튼
 ================================================== */
 
 .add-lesson-btn {
@@ -627,7 +612,7 @@ header {
 }
 
 /* ==================================================
-   14. 오늘 수업 목록
+  15. 오늘 수업 목록
 ================================================== */
 
 #today-lesson-list {
@@ -637,7 +622,6 @@ header {
   gap: 7px;
 }
 
-/* 오늘 수업 한 건 */
 .today-lesson-item {
   display: flex;
   align-items: center;
@@ -654,28 +638,24 @@ header {
   background: #ffffff;
 }
 
-/* 개인레슨 */
 .today-lesson-item.personal {
   border-left: 4px solid #4c8df6;
 }
 
-/* 단체강습 */
 .today-lesson-item.group {
   border-left: 4px solid #2fb47c;
 }
 
-/* 보강 */
 .today-lesson-item.makeup {
   border-left: 4px solid #f2b84b;
 }
 
-/* 취소 */
 .today-lesson-item.cancelled {
   border-left: 4px solid #e76b6b;
 }
 
 /* ==================================================
-   15. 오늘 수업 완료 체크
+  16. 오늘 수업 완료 체크
 ================================================== */
 
 .today-lesson-check {
@@ -699,7 +679,6 @@ header {
   cursor: pointer;
 }
 
-/* 완료 체크 */
 .today-lesson-item.completed .today-lesson-check {
   background: #4c8df6;
   border-color: #4c8df6;
@@ -707,16 +686,14 @@ header {
   color: #ffffff;
 }
 
-/* 완료된 수업 전체를 살짝 흐리게 */
 .today-lesson-item.completed {
   opacity: 0.72;
 }
 
 /* ==================================================
-   16. 오늘 수업 정보
+  17. 오늘 수업 정보
 ================================================== */
 
-/* 시간 */
 .today-lesson-time {
   width: 48px;
 
@@ -728,7 +705,6 @@ header {
   color: #26364d;
 }
 
-/* 회원명 또는 수업명 */
 .today-lesson-name {
   min-width: 0;
 
@@ -743,7 +719,6 @@ header {
   text-overflow: ellipsis;
 }
 
-/* 개인 / 단체 / 보강 표시 */
 .today-lesson-type {
   flex-shrink: 0;
 
@@ -755,31 +730,26 @@ header {
   font-weight: 700;
 }
 
-/* 개인 */
 .today-lesson-type.personal {
   background: #e8f1ff;
   color: #3976d1;
 }
 
-/* 단체 */
 .today-lesson-type.group {
   background: #e8f7ee;
   color: #219664;
 }
 
-/* 보강 */
 .today-lesson-type.makeup {
   background: #fff4d8;
   color: #b77b13;
 }
 
-/* 취소 */
 .today-lesson-type.cancelled {
   background: #ffe8e8;
   color: #d95858;
 }
 
-/* 오늘 수업이 없을 때 */
 .today-empty {
   padding: 20px;
 
@@ -795,7 +765,7 @@ header {
 }
 
 /* ==================================================
-   17. 수업 추가 팝업 배경
+  18. 수업 추가 팝업 배경
 ================================================== */
 
 .lesson-modal {
@@ -813,13 +783,12 @@ header {
   z-index: 1000;
 }
 
-/* JS에서 open 클래스가 붙으면 팝업 표시 */
 .lesson-modal.open {
   display: flex;
 }
 
 /* ==================================================
-   18. 수업 추가 팝업 카드
+  19. 수업 추가 팝업 카드
 ================================================== */
 
 .lesson-modal-box {
@@ -835,7 +804,6 @@ header {
   box-shadow: 0 20px 50px rgba(30, 50, 80, 0.18);
 }
 
-/* 팝업 제목 + X 버튼 */
 .lesson-modal-header {
   display: flex;
   align-items: center;
@@ -851,7 +819,6 @@ header {
   color: #18243a;
 }
 
-/* 팝업 닫기 X */
 #close-lesson-modal {
   width: 30px;
   height: 30px;
@@ -868,7 +835,7 @@ header {
 }
 
 /* ==================================================
-   19. 수업 추가 입력폼
+  20. 수업 추가 입력폼
 ================================================== */
 
 .lesson-form {
@@ -878,7 +845,6 @@ header {
   gap: 13px;
 }
 
-/* 입력 항목 제목 */
 .lesson-form label {
   display: flex;
   flex-direction: column;
@@ -891,7 +857,6 @@ header {
   color: #506176;
 }
 
-/* 날짜 / 시간 / 종류 / 이름 입력 */
 .lesson-form input,
 .lesson-form select {
   width: 100%;
@@ -911,13 +876,11 @@ header {
   outline: none;
 }
 
-/* 입력 중인 칸 */
 .lesson-form input:focus,
 .lesson-form select:focus {
   border-color: #4c8df6;
 }
 
-/* 수업 저장 버튼 */
 #save-lesson-btn {
   height: 44px;
 
@@ -937,7 +900,7 @@ header {
 }
 
 /* ==================================================
-   20. 수업 상세 팝업
+  21. 수업 상세 팝업
 ================================================== */
 
 .lesson-detail {
@@ -949,7 +912,6 @@ header {
   border-top: 1px solid #edf1f5;
 }
 
-/* 상세 정보 한 줄 */
 .detail-row {
   display: flex;
   align-items: center;
@@ -962,7 +924,6 @@ header {
   border-bottom: 1px solid #edf1f5;
 }
 
-/* 날짜, 시간, 수업 종류 등 왼쪽 제목 */
 .detail-label {
   flex-shrink: 0;
 
@@ -972,7 +933,6 @@ header {
   color: #8491a3;
 }
 
-/* 오른쪽 실제 정보 */
 .detail-row strong {
   min-width: 0;
 
@@ -986,7 +946,6 @@ header {
   word-break: keep-all;
 }
 
-/* 수업 삭제 버튼 */
 .delete-lesson-btn {
   width: 100%;
   height: 42px;
@@ -1008,32 +967,39 @@ header {
   background: #ffeaea;
 }
 
-/* 삭제할 수 없는 기본 수업에서는 숨김 */
 .delete-lesson-btn.hidden {
   display: none;
 }
 
 .detail-actions {
   display: flex;
+
   gap: 8px;
+
   margin-top: 18px;
 }
 
 .confirm-detail-btn,
 .delete-lesson-btn {
   flex: 1;
+
   height: 42px;
+
   margin: 0;
+
   border-radius: 9px;
+
   font-size: 12px;
   font-weight: 700;
+
   cursor: pointer;
 }
 
 .confirm-detail-btn {
   border: none;
+
   background: #4c8df6;
-  color: #fff;
+  color: #ffffff;
 }
 
 .confirm-detail-btn:hover {
@@ -1041,7 +1007,7 @@ header {
 }
 
 /* ==================================================
-   21. 회원관리 / 재무 공통 화면
+  22. 회원관리 / 재무 공통 화면
 ================================================== */
 
 .management-page {
@@ -1067,7 +1033,6 @@ header {
 
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0;
 
   color: #4c8df6;
 }
@@ -1224,7 +1189,9 @@ header {
 
 .filter-chip.active {
   background: #edf4ff;
+
   border-color: #b9cff0;
+
   color: #3976d1;
 }
 
@@ -1266,54 +1233,10 @@ header {
   color: #41506a;
 }
 
-.data-table td strong,
-.data-table td span {
-  display: block;
-}
-
-.data-table td strong {
-  margin-bottom: 4px;
-
-  color: #1f2937;
-}
-
-.data-table td span {
-  font-size: 11px;
-  font-weight: 600;
-
-  color: #8491a3;
-}
-
-.status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  min-width: 58px;
-
-  padding: 5px 8px;
-
-  border-radius: 20px;
-
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.status.paid,
-.status.active {
-  background: #e8f7ee;
-  color: #219664;
-}
-
-.status.pending {
-  background: #fff4d8;
-  color: #b77b13;
-}
-
-.status.overdue {
-  background: #ffe8e8;
-  color: #d95858;
-}
+/*
+  회원명/전화번호 스타일은 members.css에서 별도로 처리.
+  여기서 모든 td span을 강제로 block 처리하지 않음.
+*/
 
 .side-card {
   min-height: 320px;
@@ -1402,6 +1325,7 @@ header {
 
 .summary-total {
   margin-top: 8px;
+
   padding: 16px;
 
   border: none;
@@ -1416,8 +1340,7 @@ header {
 }
 
 /* ==================================================
-   20. 태블릿
-   - 오른쪽 요약 영역 숨김
+  23. 반응형 - 태블릿
 ================================================== */
 
 @media (max-width: 1200px) {
@@ -1431,17 +1354,22 @@ header {
 
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .content-grid,
   .finance-grid {
     grid-template-columns: 1fr;
   }
+
+  .management-page {
+    width: calc(100% - 32px);
+    margin: 0 auto;
+  }
 }
 
 /* ==================================================
-   21. 작은 태블릿
-   - 달력만 표시
+  24. 반응형 - 작은 태블릿
 ================================================== */
 
 @media (max-width: 850px) {
@@ -1457,25 +1385,61 @@ header {
   body {
     display: flex;
     flex-direction: column;
-    justify-content: center;
   }
 
   .top-nav {
     width: 100%;
   }
+
+  .management-page {
+    width: calc(100% - 24px);
+  }
+
+  .page-heading {
+    gap: 10px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .metric-card {
+    min-height: 82px;
+    padding: 12px;
+  }
+
+  .metric-card strong {
+    font-size: 20px;
+  }
+
+  .manager-card {
+    padding: 12px;
+  }
+
+  .card-header {
+    gap: 10px;
+  }
 }
 
 /* ==================================================
-   22. 모바일
+  25. 반응형 - 모바일
 ================================================== */
 
 @media (max-width: 430px) {
   body {
-    padding: 12px 5px;
+    padding: 8px;
   }
 
+  /* 상단 네비 */
   .top-nav {
-    margin-bottom: 12px;
+    width: 100%;
+
+    margin-bottom: 8px;
+
+    padding: 4px;
+
+    gap: 4px;
   }
 
   .nav-link {
@@ -1483,54 +1447,164 @@ header {
 
     flex: 1;
 
-    padding: 9px 8px;
+    padding: 7px 5px;
 
-    font-size: 12px;
+    font-size: 10px;
   }
 
-  .page-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .page-heading h1 {
-    font-size: 24px;
-  }
-
-  .primary-action {
+  /* 관리 페이지 */
+  .management-page {
     width: 100%;
   }
 
-  .metric-grid {
-    grid-template-columns: 1fr;
+  .page-heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 
-    gap: 10px;
+    gap: 8px;
+
+    margin-bottom: 12px;
+  }
+
+  .page-heading h1 {
+    font-size: 22px;
+  }
+
+  .page-kicker {
+    font-size: 11px;
+  }
+
+  .primary-action {
+    width: auto;
+    height: 36px;
+
+    padding: 0 12px;
+
+    font-size: 11px;
+
+    white-space: nowrap;
+  }
+
+  @media (max-width: 430px) {
+    .logout-button {
+      height: 32px;
+      padding: 0 8px;
+
+      font-size: 9px;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .top-nav {
+      gap: 4px;
+      padding: 4px;
+    }
+
+    .nav-link {
+      flex: 1;
+
+      padding: 7px 4px;
+
+      font-size: 10px;
+    }
+
+    .logout-button {
+      height: 32px;
+      padding: 0 8px;
+
+      font-size: 9px;
+    }
+  }
+
+  /* 통계 카드 */
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-bottom: 14px;
   }
 
   .metric-card {
-    min-height: 108px;
+    min-height: 84px;
+
+    padding: 12px;
+  }
+
+  .metric-card span {
+    font-size: 11px;
   }
 
   .metric-card strong {
     font-size: 22px;
   }
 
+  .metric-card small {
+    font-size: 10px;
+  }
+
+  /* 공통 카드 */
   .manager-card {
-    padding: 14px;
+    padding: 12px;
   }
 
   .card-header {
-    flex-direction: column;
+    gap: 8px;
   }
 
-  /* 전체 카드 */
+  .card-header h2 {
+    font-size: 17px;
+  }
+
+  .card-header p {
+    font-size: 11px;
+  }
+
+  /* 필터 */
+  .filter-group {
+    display: flex;
+
+    width: 100%;
+
+    flex-wrap: nowrap;
+
+    gap: 4px;
+  }
+
+  .filter-chip {
+    flex: 1;
+
+    min-width: 0;
+    height: 29px;
+
+    padding: 0 4px;
+
+    font-size: 9px;
+
+    white-space: nowrap;
+  }
+
+  /* 테이블 공통 */
+  .data-table {
+    font-size: 11px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 3px;
+  }
+
+  /* =========================
+    달력
+  ========================= */
+
   .wrapper {
     padding: 10px;
 
     border-radius: 15px;
   }
 
-  /* 월 이동 */
   .nav {
     gap: 14px;
   }
@@ -1548,14 +1622,12 @@ header {
     font-size: 21px;
   }
 
-  /* 요일 */
   .calendar .weeks li {
     padding: 9px 0;
 
     font-size: 11px;
   }
 
-  /* 날짜 칸 */
   .calendar .days li {
     min-height: 76px;
 
@@ -1569,7 +1641,6 @@ header {
     font-size: 10px;
   }
 
-  /* 달력 안 수업 */
   .schedule-item {
     gap: 2px;
 
@@ -1588,7 +1659,6 @@ header {
     font-size: 8px;
   }
 
-  /* 범례 */
   .schedule-legend {
     gap: 8px;
 
@@ -1607,7 +1677,10 @@ header {
     height: 8px;
   }
 
-  /* 오늘 수업 */
+  /* =========================
+    오늘 수업
+  ========================= */
+
   .today-lessons {
     margin-top: 15px;
     padding-top: 14px;
@@ -1631,14 +1704,12 @@ header {
     font-size: 9px;
   }
 
-  /* 수업 추가 버튼 */
   .add-lesson-btn {
     padding: 6px 8px;
 
     font-size: 10px;
   }
 
-  /* 오늘 수업 한 건 */
   .today-lesson-item {
     min-height: 44px;
 
@@ -1668,7 +1739,11 @@ header {
     font-size: 9px;
   }
 
-  /* 수업 추가 팝업 */
+  /* 달력 팝업 */
+  .lesson-modal {
+    padding: 12px;
+  }
+
   .lesson-modal-box {
     padding: 17px;
   }

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="personal.css" />
+    <link rel="stylesheet" href="home.css" />
+
+    <title>홈</title>
+  </head>
+
+  <body>
+    <nav class="top-nav">
+      <a href="home.html" class="nav-link active">홈</a>
+      <a href="lessons.html" class="nav-link">수업관리</a>
+      <a href="members.html" class="nav-link">회원관리</a>
+      <a href="finance.html" class="nav-link">재무관리</a>
+
+      <button id="logoutButton" class="logout-button" type="button">
+        로그아웃
+      </button>
+    </nav>
+
+    <main class="management-page">
+      <!-- 상단 제목 -->
+      <section class="page-heading">
+        <div>
+          <span class="page-kicker">Dashboard</span>
+          <h1>홈</h1>
+        </div>
+      </section>
+      <!--인사말-->
+      <span class="salutation">관리자님 안녕하세요!</span>
+      <!-- 요약 카드 -->
+      <section class="metric-grid home-metric-grid">
+        <article class="metric-card">
+          <span>오늘 수업</span>
+          <strong id="todayLessonCount">0건</strong>
+          <small>오늘 예정된 수업</small>
+        </article>
+
+        <article class="metric-card">
+          <span>전체 회원</span>
+          <strong id="totalMemberCount">0명</strong>
+          <small>등록된 개인레슨 회원</small>
+        </article>
+
+        <article class="metric-card">
+          <span>재등록 예정</span>
+          <strong id="renewalMemberCount">0명</strong>
+          <small>잔여 수업 1회 이하</small>
+        </article>
+
+        <article class="metric-card income">
+          <span>이번 달 수입</span>
+          <strong id="monthlyIncome">0원</strong>
+          <small>이번 달 등록된 수입</small>
+        </article>
+      </section>
+
+      <!-- 본문 -->
+      <section class="home-content-grid">
+        <!-- 오늘 수업 -->
+        <article class="manager-card">
+          <div class="card-header">
+            <div>
+              <h2>오늘 수업</h2>
+              <p>오늘 예정된 수업을 확인할 수 있습니다.</p>
+            </div>
+
+            <a href="lessons.html" class="home-more-link"> 수업관리 </a>
+          </div>
+
+          <div id="homeTodayLessons" class="home-list">
+            <div class="home-empty">오늘 예정된 수업이 없습니다.</div>
+          </div>
+        </article>
+
+        <!-- 관리 필요 -->
+        <article class="manager-card">
+          <div class="card-header">
+            <div>
+              <h2>관리 필요</h2>
+              <p>재등록 또는 결제 확인이 필요한 회원입니다.</p>
+            </div>
+
+            <a href="members.html" class="home-more-link"> 회원관리 </a>
+          </div>
+
+          <div id="homeManagementList" class="home-list">
+            <div class="home-empty">현재 관리가 필요한 회원이 없습니다.</div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="home.js"></script>
+  </body>
+</html>
