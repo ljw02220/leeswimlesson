@@ -11,20 +11,49 @@
   margin-bottom: 18px;
 }
 
+/* ==================================================
+  2. 인사말
+================================================== */
+
 .salutation {
   display: block;
 
   margin: -4px 0 18px;
 
+  color: #344054;
+
   font-size: 17px;
   font-weight: 800;
-
-  color: #344054;
 }
 
 /* ==================================================
-    2. 더보기 링크
-  ================================================== */
+  3. 요약 카드 링크
+================================================== */
+
+.metric-link,
+.metric-link:visited,
+.metric-link:hover,
+.metric-link:active {
+  color: inherit;
+
+  text-decoration: none;
+}
+
+.metric-link {
+  cursor: pointer;
+
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.metric-link:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 14px 34px rgba(38, 66, 104, 0.12);
+}
+
+/* ==================================================
+  4. 더보기 링크
+================================================== */
 
 .home-more-link {
   flex-shrink: 0;
@@ -40,6 +69,8 @@
 
   font-size: 11px;
   font-weight: 800;
+
+  transition: background 0.15s;
 }
 
 .home-more-link:hover {
@@ -47,8 +78,8 @@
 }
 
 /* ==================================================
-    3. 홈 목록
-  ================================================== */
+  5. 홈 목록
+================================================== */
 
 .home-list {
   display: flex;
@@ -57,16 +88,32 @@
   gap: 8px;
 }
 
-.home-list-item {
+.home-empty {
+  padding: 32px 16px;
+
+  border-radius: 9px;
+
+  background: #f8fafc;
+  color: #98a2b3;
+
+  text-align: center;
+
+  font-size: 12px;
+}
+
+/* ==================================================
+  6. 오늘 수업 항목
+================================================== */
+
+.home-lesson-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
 
-  gap: 12px;
+  gap: 10px;
 
-  min-height: 54px;
+  min-height: 48px;
 
-  padding: 11px 12px;
+  padding: 9px 11px;
 
   border: 1px solid #edf1f5;
   border-radius: 9px;
@@ -74,105 +121,132 @@
   background: #fbfdff;
 }
 
-.home-list-main {
-  min-width: 0;
-}
+.home-lesson-time {
+  flex-shrink: 0;
 
-.home-list-main strong {
-  display: block;
+  width: 48px;
 
-  margin-bottom: 4px;
+  color: #26364d;
 
   font-size: 13px;
   font-weight: 800;
-
-  color: #26364d;
 }
 
-.home-list-main span {
-  display: block;
+.home-lesson-name {
+  flex: 1;
 
-  font-size: 11px;
+  min-width: 0;
+
+  color: #65758a;
+
+  font-size: 12px;
   font-weight: 600;
 
-  color: #8491a3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.home-list-status {
+/* ==================================================
+  7. 수업 상태
+================================================== */
+
+.home-lesson-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   flex-shrink: 0;
 
-  padding: 5px 8px;
+  min-width: 44px;
+  height: 26px;
+
+  padding: 0 8px;
 
   border-radius: 20px;
-
-  background: #edf4ff;
-  color: #3976d1;
 
   font-size: 10px;
   font-weight: 800;
 }
 
-.home-empty {
-  padding: 32px 16px;
+.home-lesson-status.scheduled {
+  background: #edf4ff;
+  color: #3976d1;
+}
 
-  text-align: center;
+.home-lesson-status.completed {
+  background: #e8f7ee;
+  color: #219664;
+}
 
-  border-radius: 9px;
-
-  background: #f8fafc;
-  color: #98a2b3;
-
-  font-size: 12px;
+.home-lesson-status.cancelled {
+  background: #ffe8e8;
+  color: #d95858;
 }
 
 /* ==================================================
-    4. 태블릿
-  ================================================== */
+  8. 태블릿
+================================================== */
 
 @media (max-width: 850px) {
   .home-content-grid {
     grid-template-columns: 1fr;
   }
-
-  .home-shortcuts {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 /* ==================================================
-    5. 모바일
-  ================================================== */
-
-@media (max-width: 430px) {
-  .home-content-grid {
-    gap: 12px;
-
-    margin-bottom: 12px;
-  }
-
-  .home-shortcuts {
-    grid-template-columns: 1fr;
-
-    gap: 8px;
-  }
-
-  .home-shortcut {
-    min-height: 70px;
-
-    padding: 12px;
-  }
-
-  .home-list-item {
-    min-height: 48px;
-
-    padding: 9px 10px;
-  }
-}
+  9. 모바일
+================================================== */
 
 @media (max-width: 430px) {
   .salutation {
     margin: -2px 0 14px;
 
     font-size: 14px;
+  }
+
+  .home-content-grid {
+    gap: 12px;
+
+    margin-bottom: 12px;
+  }
+
+  .home-lesson-item {
+    gap: 8px;
+
+    min-height: 46px;
+
+    padding: 8px 9px;
+  }
+
+  .home-lesson-time {
+    width: 42px;
+
+    font-size: 11px;
+  }
+
+  .home-lesson-name {
+    font-size: 11px;
+  }
+
+  .home-lesson-status {
+    min-width: 40px;
+    height: 24px;
+
+    padding: 0 7px;
+
+    font-size: 9px;
+  }
+
+  .home-more-link {
+    padding: 6px 8px;
+
+    font-size: 10px;
+  }
+
+  .home-empty {
+    padding: 26px 12px;
+
+    font-size: 11px;
   }
 }

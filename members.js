@@ -812,14 +812,3 @@ document.addEventListener('DOMContentLoaded', () => {
   setupModalEvents();
   renderAll();
 });
-
-const logoutButton = document.getElementById('logoutButton');
-
-if (logoutButton) {
-  logoutButton.addEventListener('click', () => {
-    localStorage.removeItem('loginSession');
-    sessionStorage.removeItem('loginSession');
-
-    window.location.href = 'index.html';
-  });
-}

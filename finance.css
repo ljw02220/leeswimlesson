@@ -1,0 +1,55 @@
+/* ==================================================
+  1. 재무 요약
+================================================== */
+
+.finance-page .finance-summary {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.finance-page .summary-row,
+.finance-page .summary-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 13px 0;
+
+  border-bottom: 1px solid #edf1f5;
+}
+
+.finance-page .summary-row span,
+.finance-page .summary-total span {
+  font-size: 13px;
+  font-weight: 700;
+
+  color: #7b899b;
+}
+
+.finance-page .summary-row strong,
+.finance-page .summary-total strong {
+  font-size: 15px;
+  font-weight: 900;
+
+  color: #26364d;
+}
+
+.finance-page .summary-total {
+  margin-top: 8px;
+
+  padding: 16px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #edf4ff;
+}
+
+.finance-page .summary-total span,
+.finance-page .summary-total strong {
+  color: #2f67b8;
+}

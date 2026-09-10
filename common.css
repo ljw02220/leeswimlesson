@@ -96,7 +96,7 @@ body {
 }
 
 /* ==================================================
-  3. 전체 관리자 화면
+  3. 수업관리 화면
 ================================================== */
 
 .dashboard {
@@ -104,22 +104,13 @@ body {
   max-width: 1500px;
 
   margin: 0 auto;
-
-  display: grid;
-  grid-template-columns: 560px minmax(420px, 1fr) 360px;
-
-  gap: 18px;
-
-  align-items: start;
 }
 
 .schedule-panel {
-  min-width: 0;
-}
+  width: 100%;
+  max-width: 560px;
 
-.member-panel,
-.summary-panel {
-  min-height: 800px;
+  margin: 0;
 }
 
 /* ==================================================
@@ -128,7 +119,6 @@ body {
 
 .wrapper {
   width: 100%;
-  max-width: 560px;
 
   padding: 18px;
 
@@ -140,16 +130,11 @@ body {
   box-shadow: 0 12px 32px rgba(38, 66, 104, 0.1);
 }
 
-.schedule-panel .wrapper {
-  width: 100%;
-  max-width: none;
-}
-
 /* ==================================================
   5. 달력 상단 월 이동
 ================================================== */
 
-header {
+.calendar-header {
   margin-bottom: 16px;
 }
 
@@ -1287,73 +1272,14 @@ header {
   color: #7b899b;
 }
 
-.finance-summary {
-  display: flex;
-  flex-direction: column;
-
-  gap: 10px;
-}
-
-.summary-row,
-.summary-total {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  gap: 14px;
-
-  padding: 13px 0;
-
-  border-bottom: 1px solid #edf1f5;
-}
-
-.summary-row span,
-.summary-total span {
-  font-size: 13px;
-  font-weight: 700;
-
-  color: #7b899b;
-}
-
-.summary-row strong,
-.summary-total strong {
-  font-size: 15px;
-  font-weight: 900;
-
-  color: #26364d;
-}
-
-.summary-total {
-  margin-top: 8px;
-
-  padding: 16px;
-
-  border: none;
-  border-radius: 8px;
-
-  background: #edf4ff;
-}
-
-.summary-total span,
-.summary-total strong {
-  color: #2f67b8;
-}
-
 /* ==================================================
   23. 반응형 - 태블릿
 ================================================== */
 
 @media (max-width: 1200px) {
-  .dashboard {
-    grid-template-columns: 540px 1fr;
-  }
-
-  .summary-panel {
-    display: none;
-  }
-
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+
     gap: 12px;
   }
 
@@ -1364,6 +1290,7 @@ header {
 
   .management-page {
     width: calc(100% - 32px);
+
     margin: 0 auto;
   }
 }
@@ -1373,20 +1300,6 @@ header {
 ================================================== */
 
 @media (max-width: 850px) {
-  .dashboard {
-    display: block;
-  }
-
-  .member-panel,
-  .summary-panel {
-    display: none;
-  }
-
-  body {
-    display: flex;
-    flex-direction: column;
-  }
-
   .top-nav {
     width: 100%;
   }
@@ -1401,11 +1314,13 @@ header {
 
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+
     gap: 10px;
   }
 
   .metric-card {
     min-height: 82px;
+
     padding: 12px;
   }
 
@@ -1443,13 +1358,23 @@ header {
   }
 
   .nav-link {
+    flex: 1 1 0;
+
     min-width: 0;
 
-    flex: 1;
-
-    padding: 7px 5px;
+    padding: 7px 4px;
 
     font-size: 10px;
+  }
+
+  .logout-button {
+    flex: 0 0 auto;
+
+    height: 32px;
+
+    padding: 0 8px;
+
+    font-size: 9px;
   }
 
   /* 관리 페이지 */
@@ -1484,37 +1409,6 @@ header {
     font-size: 11px;
 
     white-space: nowrap;
-  }
-
-  @media (max-width: 430px) {
-    .logout-button {
-      height: 32px;
-      padding: 0 8px;
-
-      font-size: 9px;
-    }
-  }
-
-  @media (max-width: 430px) {
-    .top-nav {
-      gap: 4px;
-      padding: 4px;
-    }
-
-    .nav-link {
-      flex: 1;
-
-      padding: 7px 4px;
-
-      font-size: 10px;
-    }
-
-    .logout-button {
-      height: 32px;
-      padding: 0 8px;
-
-      font-size: 9px;
-    }
   }
 
   /* 통계 카드 */
