@@ -6,12 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const togglePassword = document.getElementById('togglePassword');
   const loginError = document.getElementById('loginError');
 
-  const adminConfig = {
-    id: window.SWIM_CONFIG?.ADMIN_ID || '',
-    password: window.SWIM_CONFIG?.ADMIN_PASSWORD || '',
-    role: 'admin',
-  };
-
   togglePassword.addEventListener('click', () => {
     const isPassword = loginPassword.type === 'password';
 
@@ -25,35 +19,46 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   });
 
-  loginForm.addEventListener('submit', (event) => {
+  loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const id = loginId.value.trim();
+    const email = loginId.value.trim();
     const password = loginPassword.value;
 
     loginError.textContent = '';
 
-    if (id === adminConfig.id && password === adminConfig.password) {
-      const loginData = {
-        role: adminConfig.role,
-        loginId: adminConfig.id,
-        loginAt: new Date().toISOString(),
-      };
-
-      localStorage.removeItem('loginSession');
-      sessionStorage.removeItem('loginSession');
-
-      if (rememberLogin.checked) {
-        localStorage.setItem('loginSession', JSON.stringify(loginData));
-      } else {
-        sessionStorage.setItem('loginSession', JSON.stringify(loginData));
-      }
-
-      window.location.href = 'home.html';
+    if (!window.swimDb?.client) {
+      loginError.textContent = 'Supabase 연결 설정을 확인해주세요.';
 
       return;
     }
 
-    loginError.textContent = '아이디 또는 비밀번호가 틀렸습니다.';
+    const { data, error } = await window.swimDb.client.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      loginError.textContent = '이메일 또는 비밀번호가 틀렸습니다.';
+
+      return;
+    }
+
+    const loginData = {
+      role: 'admin',
+      loginId: data.user.email,
+      loginAt: new Date().toISOString(),
+    };
+
+    localStorage.removeItem('loginSession');
+    sessionStorage.removeItem('loginSession');
+
+    if (rememberLogin.checked) {
+      localStorage.setItem('loginSession', JSON.stringify(loginData));
+    } else {
+      sessionStorage.setItem('loginSession', JSON.stringify(loginData));
+    }
+
+    window.location.href = 'home.html';
   });
 });

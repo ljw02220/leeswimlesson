@@ -1,3 +1,21 @@
+async function requireAuthSession() {
+  const path = window.location.pathname;
+  const isLoginPage = path.endsWith('/') || path.endsWith('/index.html');
+
+  if (isLoginPage || !window.swimDb?.client) {
+    return;
+  }
+
+  const { data } = await window.swimDb.client.auth.getSession();
+
+  if (!data.session) {
+    localStorage.removeItem('loginSession');
+    sessionStorage.removeItem('loginSession');
+
+    window.location.href = 'index.html';
+  }
+}
+
 function setupLogout() {
   const logoutButton = document.getElementById('logoutButton');
 
@@ -5,7 +23,11 @@ function setupLogout() {
     return;
   }
 
-  logoutButton.addEventListener('click', () => {
+  logoutButton.addEventListener('click', async () => {
+    if (window.swimDb?.client) {
+      await window.swimDb.client.auth.signOut();
+    }
+
     localStorage.removeItem('loginSession');
     sessionStorage.removeItem('loginSession');
 
@@ -13,4 +35,7 @@ function setupLogout() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', setupLogout);
+document.addEventListener('DOMContentLoaded', () => {
+  requireAuthSession();
+  setupLogout();
+});

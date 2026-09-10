@@ -22,14 +22,14 @@
 
         <form id="loginForm">
           <div class="form-group">
-            <label for="loginId"> 아이디 </label>
+            <label for="loginId"> 이메일 </label>
 
             <input
               type="text"
               id="loginId"
               name="loginId"
-              autocomplete="username"
-              placeholder="아이디를 입력하세요"
+              autocomplete="email"
+              placeholder="이메일을 입력하세요"
               required
             />
           </div>
@@ -71,7 +71,8 @@
       </section>
     </main>
 
-    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
     <script src="login.js"></script>
   </body>
 </html>

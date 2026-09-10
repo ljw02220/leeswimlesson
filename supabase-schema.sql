@@ -129,7 +129,7 @@ with check (true);
 
 -- =========================================
 -- 7. 개발 테스트용 익명 접근 허용
---    Supabase Auth를 붙인 뒤에는 이 정책을 삭제하세요.
+--    Supabase Auth 전환 후에는 아래 정책과 anon grant를 제거하세요.
 -- =========================================
 
 drop policy if exists "anon members access" on public.members;
