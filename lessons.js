@@ -1,3 +1,4 @@
+(() => {
 /* ==================================================
   1. DOM
 ================================================== */
@@ -95,7 +96,7 @@ const weekdays = [
 const API_URL =
   'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
 
-const SERVICE_KEY = '기존_API_KEY_붙여넣기';
+const SERVICE_KEY = window.SWIM_CONFIG?.HOLIDAY_API_KEY || '';
 
 /* ==================================================
   4. 기본 개인레슨
@@ -187,6 +188,10 @@ let addedLessons = getStorageData('addedLessons', []);
 const holidayCache = {};
 
 async function getHolidays(year, month) {
+  if (!SERVICE_KEY) {
+    return {};
+  }
+
   const cacheKey = `${year}-${month}`;
 
   if (holidayCache[cacheKey]) {
@@ -1103,4 +1108,8 @@ if (saveLessonBtn && lessonType && lessonDate && lessonTime && lessonTitle) {
   28. 처음 실행
 ================================================== */
 
+window.openLessonDetail = openLessonDetail;
+window.toggleComplete = toggleComplete;
+
 renderCalendar();
+})();

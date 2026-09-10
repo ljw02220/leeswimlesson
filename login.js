@@ -6,9 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const togglePassword = document.getElementById('togglePassword');
   const loginError = document.getElementById('loginError');
 
-  const TEMP_ADMIN = {
-    id: 'admin',
-    password: '1234',
+  const adminConfig = {
+    id: window.SWIM_CONFIG?.ADMIN_ID || '',
+    password: window.SWIM_CONFIG?.ADMIN_PASSWORD || '',
     role: 'admin',
   };
 
@@ -33,10 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loginError.textContent = '';
 
-    if (id === TEMP_ADMIN.id && password === TEMP_ADMIN.password) {
+    if (id === adminConfig.id && password === adminConfig.password) {
       const loginData = {
-        role: TEMP_ADMIN.role,
-        loginId: TEMP_ADMIN.id,
+        role: adminConfig.role,
+        loginId: adminConfig.id,
         loginAt: new Date().toISOString(),
       };
 

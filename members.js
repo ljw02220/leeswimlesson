@@ -4,7 +4,7 @@
 
 const STORAGE_KEY = 'personalLessonMembers';
 
-let members = loadMembers();
+let members = [];
 let currentFilter = '전체';
 let editingMemberId = null;
 
@@ -12,7 +12,7 @@ let editingMemberId = null;
 // 데이터 불러오기 / 저장
 // ======================================================
 
-function loadMembers() {
+function loadLocalMembers() {
   const savedData = localStorage.getItem(STORAGE_KEY);
 
   if (!savedData) {
@@ -30,8 +30,159 @@ function loadMembers() {
   }
 }
 
-function saveMembers() {
+function saveLocalMembers() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(members));
+}
+
+function hasSupabaseConnection() {
+  return Boolean(window.swimDb?.isConfigured() && window.swimDb?.client);
+}
+
+function normalizeDateValue(value) {
+  return value || null;
+}
+
+function mapMemberFromDatabase(row) {
+  return {
+    id: row.id,
+    name: row.name || '',
+    phone: row.phone || '',
+    lessonFormat: row.lesson_format || '1:1',
+    days: row.days || [],
+    time: row.lesson_time || '',
+    totalLessons: Number(row.total_lessons || 0),
+    usedLessons: Number(row.used_lessons || 0),
+    paymentAmount: Number(row.payment_amount || 0),
+    paymentDate: row.payment_date || '',
+    paymentStatus: row.payment_status || '확인필요',
+    lastLessonDate: row.last_lesson_date || '',
+    status: row.status || '수강중',
+    memo: row.memo || '',
+  };
+}
+
+function mapMemberToDatabase(member) {
+  return {
+    name: member.name,
+    phone: member.phone || null,
+    lesson_format: member.lessonFormat || '1:1',
+    days: member.days || [],
+    lesson_time: normalizeDateValue(member.time),
+    total_lessons: Number(member.totalLessons || 0),
+    used_lessons: Number(member.usedLessons || 0),
+    payment_amount: Number(member.paymentAmount || 0),
+    payment_date: normalizeDateValue(member.paymentDate),
+    payment_status: member.paymentStatus || '확인필요',
+    last_lesson_date: normalizeDateValue(member.lastLessonDate),
+    status: member.status || '수강중',
+    memo: member.memo || null,
+  };
+}
+
+async function loadMembers() {
+  if (!hasSupabaseConnection()) {
+    members = loadLocalMembers();
+
+    return;
+  }
+
+  const { data, error } = await window.swimDb.client
+    .from('members')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Supabase 회원 데이터를 불러오지 못했습니다.', error);
+
+    members = loadLocalMembers();
+
+    return;
+  }
+
+  members = data.map(mapMemberFromDatabase);
+
+  saveLocalMembers();
+}
+
+async function createMember(memberData) {
+  if (!hasSupabaseConnection()) {
+    const localMember = {
+      id: Date.now(),
+      ...memberData,
+    };
+
+    members.push(localMember);
+    saveLocalMembers();
+
+    return localMember;
+  }
+
+  const { data, error } = await window.swimDb.client
+    .from('members')
+    .insert(mapMemberToDatabase(memberData))
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapMemberFromDatabase(data);
+}
+
+async function saveMember(memberId, memberData) {
+  if (!hasSupabaseConnection()) {
+    const index = members.findIndex(
+      (member) => String(member.id) === String(memberId)
+    );
+
+    if (index === -1) {
+      throw new Error('수정할 회원을 찾을 수 없습니다.');
+    }
+
+    members[index] = {
+      ...members[index],
+      ...memberData,
+    };
+
+    saveLocalMembers();
+
+    return members[index];
+  }
+
+  const { data, error } = await window.swimDb.client
+    .from('members')
+    .update(mapMemberToDatabase(memberData))
+    .eq('id', memberId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapMemberFromDatabase(data);
+}
+
+async function removeMember(memberId) {
+  if (!hasSupabaseConnection()) {
+    members = members.filter(
+      (member) => String(member.id) !== String(memberId)
+    );
+
+    saveLocalMembers();
+
+    return;
+  }
+
+  const { error } = await window.swimDb.client
+    .from('members')
+    .delete()
+    .eq('id', memberId);
+
+  if (error) {
+    throw error;
+  }
 }
 
 // ======================================================
@@ -300,10 +451,8 @@ function setupFilters() {
 // 회원 추가
 // ======================================================
 
-function addMember(memberData) {
+async function addMember(memberData) {
   const newMember = {
-    id: Date.now(),
-
     name: memberData.name,
 
     phone: memberData.phone || '',
@@ -331,18 +480,24 @@ function addMember(memberData) {
     memo: memberData.memo || '',
   };
 
-  members.push(newMember);
+  try {
+    const savedMember = await createMember(newMember);
 
-  saveMembers();
+    members.push(savedMember);
 
-  renderAll();
+    renderAll();
+  } catch (error) {
+    console.error('회원을 저장하지 못했습니다.', error);
+
+    alert('회원 저장 중 오류가 발생했습니다.');
+  }
 }
 
 // ======================================================
 // 회원 수정
 // ======================================================
 
-function updateMember(memberId, updatedData) {
+async function updateMember(memberId, updatedData) {
   const index = members.findIndex(
     (member) => String(member.id) === String(memberId)
   );
@@ -353,21 +508,24 @@ function updateMember(memberId, updatedData) {
     return;
   }
 
-  members[index] = {
-    ...members[index],
-    ...updatedData,
-  };
+  try {
+    const savedMember = await saveMember(memberId, updatedData);
 
-  saveMembers();
+    members[index] = savedMember;
 
-  renderAll();
+    renderAll();
+  } catch (error) {
+    console.error('회원 정보를 수정하지 못했습니다.', error);
+
+    alert('회원 수정 중 오류가 발생했습니다.');
+  }
 }
 
 // ======================================================
 // 회원 삭제
 // ======================================================
 
-function deleteMember(memberId) {
+async function deleteMember(memberId) {
   const member = members.find(
     (member) => String(member.id) === String(memberId)
   );
@@ -384,13 +542,21 @@ function deleteMember(memberId) {
     return;
   }
 
-  members = members.filter((member) => String(member.id) !== String(memberId));
+  try {
+    await removeMember(memberId);
 
-  saveMembers();
+    members = members.filter(
+      (member) => String(member.id) !== String(memberId)
+    );
 
-  closeMemberModal();
+    closeMemberModal();
 
-  renderAll();
+    renderAll();
+  } catch (error) {
+    console.error('회원을 삭제하지 못했습니다.', error);
+
+    alert('회원 삭제 중 오류가 발생했습니다.');
+  }
 }
 
 // ======================================================
@@ -622,7 +788,7 @@ function closeMemberModal() {
 // 회원 폼 저장
 // ======================================================
 
-function handleMemberSubmit(event) {
+async function handleMemberSubmit(event) {
   event.preventDefault();
 
   const name = document.getElementById('memberName').value.trim();
@@ -677,9 +843,9 @@ function handleMemberSubmit(event) {
   };
 
   if (editingMemberId === null) {
-    addMember(memberData);
+    await addMember(memberData);
   } else {
-    updateMember(editingMemberId, memberData);
+    await updateMember(editingMemberId, memberData);
   }
 
   closeMemberModal();
@@ -810,5 +976,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFilters();
   setupAddButton();
   setupModalEvents();
-  renderAll();
+
+  loadMembers().then(renderAll);
 });
