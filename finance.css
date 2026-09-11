@@ -150,6 +150,98 @@
   color: #9aa5b3;
 }
 
+.report-summary-panel {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.report-summary-total {
+  padding: 15px;
+
+  border-radius: 8px;
+
+  background: #edf4ff;
+}
+
+.report-summary-total span,
+.report-summary-total small {
+  display: block;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  color: #64748b;
+}
+
+.report-summary-total strong {
+  display: block;
+
+  margin-top: 5px;
+
+  font-size: 23px;
+  font-weight: 900;
+
+  color: #2f67b8;
+}
+
+.report-summary-total small {
+  margin-top: 5px;
+}
+
+.report-summary-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.report-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+  padding: 11px 0;
+
+  border-bottom: 1px solid #edf1f5;
+}
+
+.report-summary-item:last-child {
+  border-bottom: none;
+}
+
+.report-summary-item strong,
+.report-summary-item span {
+  display: block;
+}
+
+.report-summary-item strong {
+  font-size: 13px;
+  font-weight: 900;
+
+  color: #26364d;
+}
+
+.report-summary-item span {
+  margin-top: 3px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  color: #8290a3;
+}
+
+.report-summary-item b {
+  flex: 0 0 auto;
+
+  font-size: 12px;
+  font-weight: 900;
+
+  color: #26364d;
+}
+
 /* ==================================================
   5. 모바일
 ================================================== */

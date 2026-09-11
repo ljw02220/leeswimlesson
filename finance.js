@@ -65,6 +65,7 @@ const summaryGroupIncome = document.getElementById('summaryGroupIncome');
 const summaryPersonalIncome = document.getElementById('summaryPersonalIncome');
 const summaryGrossIncome = document.getElementById('summaryGrossIncome');
 const summaryNetIncome = document.getElementById('summaryNetIncome');
+const personalReportSummary = document.getElementById('personalReportSummary');
 const monthlyReport = document.getElementById('monthlyReport');
 const copyReportButton = document.getElementById('copyReportButton');
 
@@ -716,6 +717,56 @@ function renderMonthlyReport(personalMembers) {
     .join('');
 }
 
+function renderPersonalReportSummary(personalMembers, result) {
+  if (!personalReportSummary) {
+    return;
+  }
+
+  if (personalMembers.length === 0) {
+    const { start, end } = getSalarySettlementRange(
+      currentYear,
+      currentMonth
+    );
+
+    personalReportSummary.innerHTML = `
+      <p class="report-empty">
+        ${formatDate(start)}부터 ${formatDate(end)} 전까지 보고 완료된 개인레슨이 없습니다.
+      </p>
+    `;
+
+    return;
+  }
+
+  personalReportSummary.innerHTML = `
+    <div class="report-summary-total">
+      <span>정산 ${personalMembers.length}건</span>
+      <strong>${formatCurrency(result.personalAmount)}</strong>
+      <small>수강료 ${formatCurrency(result.personalBaseAmount)} × 70%</small>
+    </div>
+
+    <div class="report-summary-list">
+      ${personalMembers
+        .map((member) => {
+          const reportDate = member.personal_reported_at
+            ? formatDate(member.personal_reported_at)
+            : '보고일 없음';
+
+          return `
+            <article class="report-summary-item">
+              <div>
+                <strong>${member.name || '이름 없음'}</strong>
+                <span>${reportDate}</span>
+              </div>
+
+              <b>${formatCurrency(Number(member.payment_amount) || 0)}</b>
+            </article>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
+}
+
 /* ==================================================
   12. 보고서 복사
 ================================================== */
@@ -845,6 +896,7 @@ async function loadFinance() {
     const result = calculateFinance(groupLessons, personalMembers, paidAmount);
 
     renderFinanceSummary(result);
+    renderPersonalReportSummary(personalMembers, result);
     renderMonthlyReport(personalMembers);
   } catch (error) {
     console.error('재무 정보를 불러오지 못했습니다.', error);
@@ -853,6 +905,14 @@ async function loadFinance() {
       monthlyReport.innerHTML = `
         <p class="report-empty">
           재무 정보를 불러오지 못했습니다.
+        </p>
+      `;
+    }
+
+    if (personalReportSummary) {
+      personalReportSummary.innerHTML = `
+        <p class="report-empty">
+          보고 완료 내역을 불러오지 못했습니다.
         </p>
       `;
     }

@@ -170,40 +170,18 @@
           </div>
         </div>
 
-        <!-- 월간 요약 -->
+        <!-- 개인레슨 보고 완료 -->
         <aside class="manager-card side-card">
           <div class="card-header compact">
             <div>
-              <h2>월간 요약</h2>
+              <h2>개인레슨 보고 완료</h2>
 
               <p id="summaryMonth">2026년 9월</p>
             </div>
           </div>
 
-          <div class="finance-summary">
-            <div class="summary-row">
-              <span> 단체강습 </span>
-
-              <strong id="summaryGroupCount"> 0회 </strong>
-            </div>
-
-            <div class="summary-row">
-              <span> 개인레슨 </span>
-
-              <strong id="summaryPersonalIncome"> 0원 </strong>
-            </div>
-
-            <div class="summary-row">
-              <span> 세전 합계 </span>
-
-              <strong id="summaryGrossIncome"> 0원 </strong>
-            </div>
-
-            <div class="summary-total">
-              <span> 예상 월급 </span>
-
-              <strong id="summaryNetIncome"> 0원 </strong>
-            </div>
+          <div id="personalReportSummary" class="report-summary-panel">
+            <p class="report-empty">보고 완료 내역을 불러오는 중입니다.</p>
           </div>
         </aside>
       </section>
@@ -234,6 +212,6 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260911"></script>
-    <script src="finance.js?v=20260912-report-history"></script>
+    <script src="finance.js?v=20260912-report-panel"></script>
   </body>
 </html>
