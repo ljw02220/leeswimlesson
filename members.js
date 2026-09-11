@@ -290,6 +290,14 @@ function isCurrentPaymentReported(member) {
   );
 }
 
+function getReportButtonLabel(member) {
+  if (!isCurrentPaymentReported(member)) {
+    return '보고 완료';
+  }
+
+  return `${formatShortDate(member.personalReportedAt)} 취소`;
+}
+
 // ======================================================
 // 회원 필터
 // ======================================================
@@ -414,9 +422,7 @@ function renderMembers() {
           data-report-member-id="${member.id}"
         >
           ${
-            isCurrentPaymentReported(member)
-              ? `${formatShortDate(member.personalReportedAt)} 보고`
-              : '보고 완료'
+            getReportButtonLabel(member)
           }
         </button>
       </td>
@@ -440,6 +446,12 @@ async function markMemberReported(memberId) {
   );
 
   if (!member) {
+    return;
+  }
+
+  if (isCurrentPaymentReported(member)) {
+    await cancelMemberReport(member);
+
     return;
   }
 
@@ -501,6 +513,53 @@ async function markMemberReported(memberId) {
     alert(
       '보고 완료 처리 중 오류가 발생했습니다. Supabase 컬럼을 먼저 추가했는지 확인해주세요.'
     );
+  }
+}
+
+async function cancelMemberReport(member) {
+  const confirmed = confirm(
+    `${member.name} 회원의 개인레슨 보고 완료를 취소할까요?`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    if (hasSupabaseConnection()) {
+      const { data, error } = await window.swimDb.client
+        .from('members')
+        .update({
+          personal_reported_at: null,
+          personal_reported_payment_date: null,
+        })
+        .eq('id', member.id)
+        .select('*')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const index = members.findIndex(
+        (item) => String(item.id) === String(member.id)
+      );
+
+      if (index !== -1) {
+        members[index] = mapMemberFromDatabase(data);
+      }
+    } else {
+      member.personalReportedAt = '';
+      member.personalReportedPaymentDate = '';
+
+      saveLocalMembers();
+    }
+
+    renderAll();
+  } catch (error) {
+    console.error('보고 완료 취소에 실패했습니다.', error);
+
+    alert('보고 완료 취소 중 오류가 발생했습니다.');
   }
 }
 

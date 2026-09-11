@@ -195,6 +195,12 @@
   color: #15935a;
 }
 
+.members-page .report-button.reported:hover {
+  background: #fff0f0;
+  border-color: #f3c2c2;
+  color: #cf3d3d;
+}
+
 /* ======================================================
      회원 모달 배경
   ====================================================== */
