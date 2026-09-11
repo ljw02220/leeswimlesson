@@ -3,6 +3,7 @@
 // ======================================================
 
 const STORAGE_KEY = 'personalLessonMembers';
+const REPORT_STORAGE_KEY = 'personalLessonReports';
 
 let members = [];
 let currentFilter = '전체';
@@ -33,6 +34,28 @@ function loadLocalMembers() {
 
 function saveLocalMembers() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(members));
+}
+
+function loadLocalReports() {
+  const savedData = localStorage.getItem(REPORT_STORAGE_KEY);
+
+  if (!savedData) {
+    return [];
+  }
+
+  try {
+    const parsedData = JSON.parse(savedData);
+
+    return Array.isArray(parsedData) ? parsedData : [];
+  } catch (error) {
+    console.error('개인레슨 보고 내역을 불러오지 못했습니다.', error);
+
+    return [];
+  }
+}
+
+function saveLocalReports(reports) {
+  localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(reports));
 }
 
 function showMemberLoadError(message) {
@@ -103,6 +126,22 @@ function mapMemberToDatabase(member) {
       : null,
     last_lesson_date: normalizeDateValue(member.lastLessonDate),
     status: member.status || '수강중',
+    memo: member.memo || null,
+  };
+}
+
+function mapMemberToReport(member, reportedAt) {
+  return {
+    member_id: member.id || null,
+    member_name: member.name,
+    phone: member.phone || null,
+    lesson_format: member.lessonFormat || '1:1',
+    days: member.days || [],
+    lesson_time: normalizeDateValue(member.time),
+    payment_amount: Number(member.paymentAmount || 0),
+    payment_date: normalizeDateValue(member.paymentDate),
+    payment_status: member.paymentStatus || '완납',
+    reported_at: normalizeDateValue(reportedAt),
     memo: member.memo || null,
   };
 }
@@ -211,6 +250,95 @@ async function removeMember(memberId) {
     .from('members')
     .delete()
     .eq('id', memberId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function createPersonalLessonReport(member, reportedAt) {
+  const report = mapMemberToReport(member, reportedAt);
+
+  if (
+    !report.member_name ||
+    !report.payment_amount ||
+    !report.payment_date ||
+    !report.reported_at
+  ) {
+    return;
+  }
+
+  if (!hasSupabaseConnection()) {
+    const reports = loadLocalReports();
+    const exists = reports.some(
+      (item) =>
+        String(item.member_id) === String(report.member_id) &&
+        item.payment_date === report.payment_date &&
+        item.reported_at === report.reported_at
+    );
+
+    if (!exists) {
+      reports.push({
+        id: Date.now(),
+        ...report,
+      });
+
+      saveLocalReports(reports);
+    }
+
+    return;
+  }
+
+  const existing = await window.swimDb.client
+    .from('personal_lesson_reports')
+    .select('id')
+    .eq('member_id', report.member_id)
+    .eq('payment_date', report.payment_date)
+    .eq('reported_at', report.reported_at);
+
+  if (existing.error) {
+    throw existing.error;
+  }
+
+  if (existing.data && existing.data.length > 0) {
+    return;
+  }
+
+  const { error } = await window.swimDb.client
+    .from('personal_lesson_reports')
+    .insert(report);
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function deletePersonalLessonReport(member) {
+  if (!member.personalReportedAt || !member.personalReportedPaymentDate) {
+    return;
+  }
+
+  if (!hasSupabaseConnection()) {
+    const reports = loadLocalReports().filter(
+      (item) =>
+        !(
+          String(item.member_id) === String(member.id) &&
+          item.payment_date === member.personalReportedPaymentDate &&
+          item.reported_at === member.personalReportedAt
+        )
+    );
+
+    saveLocalReports(reports);
+
+    return;
+  }
+
+  const { error } = await window.swimDb.client
+    .from('personal_lesson_reports')
+    .delete()
+    .eq('member_id', member.id)
+    .eq('payment_date', member.personalReportedPaymentDate)
+    .eq('reported_at', member.personalReportedAt);
 
   if (error) {
     throw error;
@@ -507,6 +635,8 @@ async function markMemberReported(memberId) {
   const reportedPaymentDate = member.paymentDate;
 
   try {
+    await createPersonalLessonReport(member, reportedAt);
+
     if (hasSupabaseConnection()) {
       const { data, error } = await window.swimDb.client
         .from('members')
@@ -556,6 +686,8 @@ async function cancelMemberReport(member) {
   }
 
   try {
+    await deletePersonalLessonReport(member);
+
     if (hasSupabaseConnection()) {
       const { data, error } = await window.swimDb.client
         .from('members')
@@ -749,6 +881,13 @@ async function addMember(memberData) {
   try {
     const savedMember = await createMember(newMember);
 
+    if (savedMember.personalReportedAt) {
+      await createPersonalLessonReport(
+        savedMember,
+        savedMember.personalReportedAt
+      );
+    }
+
     members.push(savedMember);
 
     renderAll();
@@ -775,7 +914,24 @@ async function updateMember(memberId, updatedData) {
   }
 
   try {
+    const previousMember = members[index];
     const savedMember = await saveMember(memberId, updatedData);
+    const shouldDeletePreviousReport =
+      isCurrentPaymentReported(previousMember) &&
+      (!savedMember.personalReportedAt ||
+        previousMember.personalReportedAt !== savedMember.personalReportedAt ||
+        previousMember.paymentDate !== savedMember.paymentDate);
+
+    if (shouldDeletePreviousReport) {
+      await deletePersonalLessonReport(previousMember);
+    }
+
+    if (savedMember.personalReportedAt) {
+      await createPersonalLessonReport(
+        savedMember,
+        savedMember.personalReportedAt
+      );
+    }
 
     members[index] = savedMember;
 

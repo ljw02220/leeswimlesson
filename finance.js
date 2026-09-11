@@ -388,9 +388,40 @@ function isPersonalSettlementMember(member) {
 }
 
 function getLocalPersonalMembers() {
-  const localMembers = getStorageData(MEMBER_STORAGE_KEY, []);
+  const localReports = getStorageData('personalLessonReports', []);
 
+  if (localReports.length > 0) {
+    const { start, end } = getSalarySettlementRange(
+      currentYear,
+      currentMonth
+    );
+
+    return localReports
+      .filter(
+        (report) => report.reported_at >= start && report.reported_at < end
+      )
+      .map(mapPersonalReport);
+  }
+
+  const localMembers = getStorageData(MEMBER_STORAGE_KEY, []);
   return localMembers.map(mapLocalMember).filter(isPersonalSettlementMember);
+}
+
+function mapPersonalReport(report) {
+  return {
+    id: report.id,
+    name: report.member_name || report.name || '',
+    phone: report.phone || '',
+    lesson_format: report.lesson_format || '1:1',
+    days: report.days || [],
+    lesson_time: report.lesson_time || '',
+    payment_amount: Number(report.payment_amount || 0),
+    payment_date: report.payment_date || '',
+    payment_status: report.payment_status || '완납',
+    personal_reported_at: report.reported_at || '',
+    personal_reported_payment_date: report.payment_date || '',
+    status: '보고완료',
+  };
 }
 
 async function getPersonalMembers() {
@@ -400,18 +431,36 @@ async function getPersonalMembers() {
     return getLocalPersonalMembers();
   }
 
+  const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
+
   const { data, error } = await client
-    .from('members')
+    .from('personal_lesson_reports')
     .select('*')
-    .order('created_at', { ascending: false });
+    .gte('reported_at', start)
+    .lt('reported_at', end)
+    .order('reported_at', { ascending: false });
 
   if (error) {
-    console.error('Supabase 회원 데이터를 불러오지 못했습니다.', error);
+    console.error('Supabase 개인레슨 보고 내역을 불러오지 못했습니다.', error);
 
-    return getLocalPersonalMembers();
+    const membersResult = await client
+      .from('members')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (membersResult.error) {
+      console.error(
+        'Supabase 회원 데이터를 불러오지 못했습니다.',
+        membersResult.error
+      );
+
+      return getLocalPersonalMembers();
+    }
+
+    return (membersResult.data || []).filter(isPersonalSettlementMember);
   }
 
-  return (data || []).filter(isPersonalSettlementMember);
+  return (data || []).map(mapPersonalReport);
 }
 
 /* ==================================================
@@ -516,7 +565,7 @@ function renderFinanceSummary(result) {
 
   if (personalMemberCount) {
     personalMemberCount.textContent =
-      `정산 ${result.personalMemberCount}명 · 수강료 ` +
+      `정산 ${result.personalMemberCount}건 · 수강료 ` +
       `${formatCurrency(result.personalBaseAmount)}`;
   }
 

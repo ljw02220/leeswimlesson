@@ -62,7 +62,34 @@ create table if not exists public.lessons (
 );
 
 -- =========================================
--- 3. 재무 테이블
+-- 3. 개인레슨 보고 내역 테이블
+-- =========================================
+
+create table if not exists public.personal_lesson_reports (
+  id uuid primary key default gen_random_uuid(),
+
+  member_id uuid
+    references public.members(id)
+    on delete set null,
+
+  member_name text not null,
+  phone text,
+  lesson_format text,
+  days text[],
+  lesson_time time,
+
+  payment_amount integer not null default 0,
+  payment_date date not null,
+  payment_status text not null default '완납',
+
+  reported_at date not null,
+  memo text,
+
+  created_at timestamptz not null default now()
+);
+
+-- =========================================
+-- 4. 재무 테이블
 -- =========================================
 
 create table if not exists public.transactions (
@@ -82,7 +109,7 @@ create table if not exists public.transactions (
 );
 
 -- =========================================
--- 4. RLS 활성화
+-- 5. RLS 활성화
 -- =========================================
 
 alter table public.members
@@ -91,27 +118,33 @@ enable row level security;
 alter table public.lessons
 enable row level security;
 
+alter table public.personal_lesson_reports
+enable row level security;
+
 alter table public.transactions
 enable row level security;
 
 -- =========================================
--- 5. API 역할 권한 부여
+-- 6. API 역할 권한 부여
 -- =========================================
 
 grant select, insert, update, delete on public.members to anon;
 grant select, insert, update, delete on public.lessons to anon;
+grant select, insert, update, delete on public.personal_lesson_reports to anon;
 grant select, insert, update, delete on public.transactions to anon;
 
 grant select, insert, update, delete on public.members to authenticated;
 grant select, insert, update, delete on public.lessons to authenticated;
+grant select, insert, update, delete on public.personal_lesson_reports to authenticated;
 grant select, insert, update, delete on public.transactions to authenticated;
 
 -- =========================================
--- 6. 로그인한 사용자만 접근 허용
+-- 7. 로그인한 사용자만 접근 허용
 -- =========================================
 
 drop policy if exists "authenticated members access" on public.members;
 drop policy if exists "authenticated lessons access" on public.lessons;
+drop policy if exists "authenticated personal lesson reports access" on public.personal_lesson_reports;
 drop policy if exists "authenticated transactions access" on public.transactions;
 
 create policy "authenticated members access"
@@ -128,6 +161,13 @@ to authenticated
 using (true)
 with check (true);
 
+create policy "authenticated personal lesson reports access"
+on public.personal_lesson_reports
+for all
+to authenticated
+using (true)
+with check (true);
+
 create policy "authenticated transactions access"
 on public.transactions
 for all
@@ -136,7 +176,7 @@ using (true)
 with check (true);
 
 -- =========================================
--- 7. 개발 테스트용 익명 접근 허용
+-- 8. 개발 테스트용 익명 접근 허용
 --    Supabase Auth 전환 후에는 아래 정책과 anon grant를 제거하세요.
 -- =========================================
 
@@ -150,7 +190,7 @@ using (true)
 with check (true);
 
 -- =========================================
--- 8. 초기 회원 데이터
+-- 9. 초기 회원 데이터
 --    이미 같은 이름/전화번호가 있으면 다시 넣지 않습니다.
 -- =========================================
 
