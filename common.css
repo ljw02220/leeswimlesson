@@ -110,7 +110,7 @@ body {
   width: 100%;
   max-width: 560px;
 
-  margin: 0;
+  margin: 0 auto;
 }
 
 .lessons-heading {
