@@ -18,6 +18,8 @@ create table if not exists public.members (
   payment_amount integer not null default 0,
   payment_date date,
   payment_status text not null default '확인필요',
+  personal_reported_at date,
+  personal_reported_payment_date date,
 
   status text not null default '수강중',
 
@@ -27,6 +29,12 @@ create table if not exists public.members (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.members
+add column if not exists personal_reported_at date;
+
+alter table public.members
+add column if not exists personal_reported_payment_date date;
 
 -- =========================================
 -- 2. 수업 테이블

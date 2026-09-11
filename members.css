@@ -52,12 +52,12 @@
 
 .members-page .data-table th:nth-child(1),
 .members-page .data-table td:nth-child(1) {
-  width: 32%;
+  width: 25%;
 }
 
 .members-page .data-table th:nth-child(2),
 .members-page .data-table td:nth-child(2) {
-  width: 26%;
+  width: 20%;
 }
 
 .members-page .data-table th:nth-child(3),
@@ -80,7 +80,13 @@
 
 .members-page .data-table th:nth-child(6),
 .members-page .data-table td:nth-child(6) {
-  width: 13%;
+  width: 12%;
+  text-align: center;
+}
+
+.members-page .data-table th:nth-child(7),
+.members-page .data-table td:nth-child(7) {
+  width: 14%;
   text-align: center;
 }
 
@@ -152,6 +158,41 @@
 .members-page .status.pending {
   background: #fff6df;
   color: #c88700;
+}
+
+/* ======================================================
+     보고 버튼
+  ====================================================== */
+
+.members-page .report-button {
+  min-width: 72px;
+  height: 28px;
+
+  padding: 0 9px;
+
+  border: 1px solid #d8e3f0;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #45627f;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.members-page .report-button:hover {
+  background: #eef5ff;
+  border-color: #bad0ec;
+}
+
+.members-page .report-button.reported {
+  background: #e9f8f1;
+  border-color: #bee8d2;
+  color: #15935a;
 }
 
 /* ======================================================

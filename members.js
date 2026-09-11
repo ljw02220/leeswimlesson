@@ -47,7 +47,7 @@ function showMemberLoadError(message) {
   tbody.innerHTML = `
     <tr>
       <td
-        colspan="6"
+        colspan="7"
         class="empty-member-row"
       >
         ${escapeHTML(message)}
@@ -77,6 +77,8 @@ function mapMemberFromDatabase(row) {
     paymentAmount: Number(row.payment_amount || 0),
     paymentDate: row.payment_date || '',
     paymentStatus: row.payment_status || '확인필요',
+    personalReportedAt: row.personal_reported_at || '',
+    personalReportedPaymentDate: row.personal_reported_payment_date || '',
     lastLessonDate: row.last_lesson_date || '',
     status: row.status || '수강중',
     memo: row.memo || '',
@@ -226,6 +228,24 @@ function formatMoney(amount) {
   return Number(amount || 0).toLocaleString('ko-KR');
 }
 
+function getDateKey(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function formatShortDate(dateValue) {
+  if (!dateValue) {
+    return '';
+  }
+
+  const date = new Date(`${dateValue}T00:00:00`);
+
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
 function escapeHTML(value) {
   const element = document.createElement('div');
 
@@ -260,6 +280,14 @@ function getPaymentClass(status) {
     default:
       return 'pending';
   }
+}
+
+function isCurrentPaymentReported(member) {
+  return Boolean(
+    member.personalReportedAt &&
+      member.paymentDate &&
+      member.personalReportedPaymentDate === member.paymentDate
+  );
 }
 
 // ======================================================
@@ -316,7 +344,7 @@ function renderMembers() {
     tbody.innerHTML = `
       <tr>
         <td
-          colspan="6"
+          colspan="7"
           class="empty-member-row"
         >
           등록된 회원이 없습니다.
@@ -375,6 +403,23 @@ function renderMembers() {
           ${escapeHTML(member.paymentStatus || '확인필요')}
         </span>
       </td>
+
+      <td class="center-cell">
+        <button
+          type="button"
+          class="
+            report-button
+            ${isCurrentPaymentReported(member) ? 'reported' : ''}
+          "
+          data-report-member-id="${member.id}"
+        >
+          ${
+            isCurrentPaymentReported(member)
+              ? `${formatShortDate(member.personalReportedAt)} 보고`
+              : '보고 완료'
+          }
+        </button>
+      </td>
     `;
 
     row.addEventListener('click', () => {
@@ -382,6 +427,100 @@ function renderMembers() {
     });
 
     tbody.appendChild(row);
+  });
+}
+
+// ======================================================
+// 개인레슨 보고 완료
+// ======================================================
+
+async function markMemberReported(memberId) {
+  const member = members.find(
+    (item) => String(item.id) === String(memberId)
+  );
+
+  if (!member) {
+    return;
+  }
+
+  if (Number(member.paymentAmount || 0) <= 0) {
+    alert('결제 금액이 있는 회원만 보고 완료 처리할 수 있습니다.');
+
+    return;
+  }
+
+  if (!member.paymentDate) {
+    alert('결제일을 먼저 입력해주세요.');
+
+    return;
+  }
+
+  if (member.paymentStatus === '미납') {
+    alert('미납 회원은 보고 완료 처리할 수 없습니다.');
+
+    return;
+  }
+
+  const reportedAt = getDateKey(new Date());
+  const reportedPaymentDate = member.paymentDate;
+
+  try {
+    if (hasSupabaseConnection()) {
+      const { data, error } = await window.swimDb.client
+        .from('members')
+        .update({
+          personal_reported_at: reportedAt,
+          personal_reported_payment_date: reportedPaymentDate,
+        })
+        .eq('id', member.id)
+        .select('*')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const index = members.findIndex(
+        (item) => String(item.id) === String(member.id)
+      );
+
+      if (index !== -1) {
+        members[index] = mapMemberFromDatabase(data);
+      }
+    } else {
+      member.personalReportedAt = reportedAt;
+      member.personalReportedPaymentDate = reportedPaymentDate;
+
+      saveLocalMembers();
+    }
+
+    renderAll();
+  } catch (error) {
+    console.error('보고 완료 처리에 실패했습니다.', error);
+
+    alert(
+      '보고 완료 처리 중 오류가 발생했습니다. Supabase 컬럼을 먼저 추가했는지 확인해주세요.'
+    );
+  }
+}
+
+function setupReportButtons() {
+  const tbody = document.getElementById('memberTableBody');
+
+  if (!tbody) {
+    return;
+  }
+
+  tbody.addEventListener('click', (event) => {
+    const reportButton = event.target.closest('[data-report-member-id]');
+
+    if (!reportButton) {
+      return;
+    }
+
+    event.stopPropagation();
+
+    markMemberReported(reportButton.dataset.reportMemberId);
   });
 }
 
@@ -1007,6 +1146,7 @@ function renderAll() {
 document.addEventListener('DOMContentLoaded', () => {
   setupFilters();
   setupAddButton();
+  setupReportButtons();
   setupModalEvents();
 
   loadMembers().then(renderAll);

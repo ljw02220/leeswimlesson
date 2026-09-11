@@ -354,6 +354,12 @@ function mapLocalMember(member) {
     payment_amount: Number(member.paymentAmount ?? member.payment_amount ?? 0),
     payment_date: member.paymentDate || member.payment_date || '',
     payment_status: member.paymentStatus || member.payment_status || '확인필요',
+    personal_reported_at:
+      member.personalReportedAt || member.personal_reported_at || '',
+    personal_reported_payment_date:
+      member.personalReportedPaymentDate ||
+      member.personal_reported_payment_date ||
+      '',
     last_lesson_date: member.lastLessonDate || member.last_lesson_date || '',
     status: member.status || '수강중',
   };
@@ -363,6 +369,8 @@ function isPersonalSettlementMember(member) {
   const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
   const amount = Number(member.payment_amount) || 0;
   const paymentDate = member.payment_date || '';
+  const reportedAt = member.personal_reported_at || '';
+  const reportedPaymentDate = member.personal_reported_payment_date || '';
 
   if (amount <= 0 || member.payment_status === '미납') {
     return false;
@@ -372,7 +380,11 @@ function isPersonalSettlementMember(member) {
     return false;
   }
 
-  return paymentDate >= start && paymentDate < end;
+  if (reportedPaymentDate !== paymentDate) {
+    return false;
+  }
+
+  return reportedAt >= start && reportedAt < end;
 }
 
 function getLocalPersonalMembers() {
@@ -390,23 +402,7 @@ async function getPersonalMembers() {
 
   const { data, error } = await client
     .from('members')
-    .select(
-      [
-        'id',
-        'name',
-        'phone',
-        'lesson_format',
-        'days',
-        'lesson_time',
-        'total_lessons',
-        'used_lessons',
-        'payment_amount',
-        'payment_date',
-        'payment_status',
-        'last_lesson_date',
-        'status',
-      ].join(', ')
-    )
+    .select('*')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -588,11 +584,21 @@ function createReportText(member) {
   ]
     .filter(Boolean)
     .join(' ');
-  const paymentLine = member.payment_date
-    ? `${formatDate(member.payment_date)} 입금`
-    : member.payment_status || '확인필요';
+  const paymentLine = [
+    member.payment_date ? `${formatDate(member.payment_date)} 입금` : '',
+    member.personal_reported_at
+      ? `${formatDate(member.personal_reported_at)} 보고`
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
-  return [firstLine, member.phone || '', lessonLine, paymentLine]
+  return [
+    firstLine,
+    member.phone || '',
+    lessonLine,
+    paymentLine || member.payment_status || '확인필요',
+  ]
     .filter(Boolean)
     .join('\n');
 }
@@ -626,6 +632,9 @@ function renderMonthlyReport(personalMembers) {
       const paymentLabel = member.payment_date
         ? `${formatDate(member.payment_date)} 입금`
         : member.payment_status || '확인필요';
+      const reportLabel = member.personal_reported_at
+        ? `${formatDate(member.personal_reported_at)} 보고`
+        : '보고일 미등록';
 
       return `
         <article class="report-item">
@@ -650,7 +659,7 @@ function renderMonthlyReport(personalMembers) {
           </p>
 
           <p class="report-line">
-            ${paymentLabel}
+            ${paymentLabel} · ${reportLabel}
           </p>
         </article>
       `;
