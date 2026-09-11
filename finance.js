@@ -139,6 +139,16 @@ function getMonthRange(year, month) {
   return { start, end };
 }
 
+function getSalarySettlementRange(year, month) {
+  const startDate = new Date(year, month - 1, 15);
+  const endDate = new Date(year, month, 15);
+
+  const start = toDateKey(startDate);
+  const end = toDateKey(endDate);
+
+  return { start, end };
+}
+
 function toDateKey(date) {
   return [
     date.getFullYear(),
@@ -339,23 +349,38 @@ function mapLocalMember(member) {
     lesson_format: member.lessonFormat || member.lesson_format || '1:1',
     days: member.days || [],
     lesson_time: member.time || member.lesson_time || '',
+    total_lessons: Number(member.totalLessons ?? member.total_lessons ?? 0),
+    used_lessons: Number(member.usedLessons ?? member.used_lessons ?? 0),
     payment_amount: Number(member.paymentAmount ?? member.payment_amount ?? 0),
     payment_date: member.paymentDate || member.payment_date || '',
     payment_status: member.paymentStatus || member.payment_status || '확인필요',
+    last_lesson_date: member.lastLessonDate || member.last_lesson_date || '',
     status: member.status || '수강중',
   };
 }
 
-function isPaidPersonalMember(member) {
+function isPersonalSettlementMember(member) {
+  const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
   const amount = Number(member.payment_amount) || 0;
+  const totalLessons = Number(member.total_lessons) || 0;
+  const usedLessons = Number(member.used_lessons) || 0;
+  const lastLessonDate = member.last_lesson_date || '';
 
-  return amount > 0 && member.status !== '종료';
+  if (amount <= 0 || member.payment_status === '미납') {
+    return false;
+  }
+
+  if (totalLessons <= 0 || usedLessons < totalLessons) {
+    return false;
+  }
+
+  return lastLessonDate >= start && lastLessonDate < end;
 }
 
 function getLocalPersonalMembers() {
   const localMembers = getStorageData(MEMBER_STORAGE_KEY, []);
 
-  return localMembers.map(mapLocalMember).filter(isPaidPersonalMember);
+  return localMembers.map(mapLocalMember).filter(isPersonalSettlementMember);
 }
 
 async function getPersonalMembers() {
@@ -375,9 +400,12 @@ async function getPersonalMembers() {
         'lesson_format',
         'days',
         'lesson_time',
+        'total_lessons',
+        'used_lessons',
         'payment_amount',
         'payment_date',
         'payment_status',
+        'last_lesson_date',
         'status',
       ].join(', ')
     )
@@ -389,7 +417,7 @@ async function getPersonalMembers() {
     return getLocalPersonalMembers();
   }
 
-  return (data || []).filter(isPaidPersonalMember);
+  return (data || []).filter(isPersonalSettlementMember);
 }
 
 /* ==================================================
@@ -494,7 +522,7 @@ function renderFinanceSummary(result) {
 
   if (personalMemberCount) {
     personalMemberCount.textContent =
-      `${result.personalMemberCount}명 · 수강료 ` +
+      `정산 ${result.personalMemberCount}명 · 수강료 ` +
       `${formatCurrency(result.personalBaseAmount)}`;
   }
 
@@ -577,9 +605,14 @@ function renderMonthlyReport(personalMembers) {
   }
 
   if (personalMembers.length === 0) {
+    const { start, end } = getSalarySettlementRange(
+      currentYear,
+      currentMonth
+    );
+
     monthlyReport.innerHTML = `
       <p class="report-empty">
-        회원정보에 결제 금액이 등록된 개인레슨 회원이 없습니다.
+        ${formatDate(start)}부터 ${formatDate(end)} 전까지 완료된 개인레슨 회차권이 없습니다.
       </p>
     `;
 
