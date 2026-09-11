@@ -1,55 +1,204 @@
 /* ==================================================
-  1. 재무 요약
+  1. 재무 페이지
 ================================================== */
 
-.finance-page .finance-summary {
+.finance-page {
+  min-height: 100vh;
+}
+
+/* ==================================================
+  2. 월 이동
+================================================== */
+
+.finance-month-control {
   display: flex;
-  flex-direction: column;
+  align-items: center;
 
   gap: 10px;
 }
 
-.finance-page .summary-row,
-.finance-page .summary-total {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.finance-month-control strong {
+  min-width: 100px;
 
-  gap: 14px;
+  text-align: center;
 
-  padding: 13px 0;
-
-  border-bottom: 1px solid #edf1f5;
-}
-
-.finance-page .summary-row span,
-.finance-page .summary-total span {
-  font-size: 13px;
-  font-weight: 700;
-
-  color: #7b899b;
-}
-
-.finance-page .summary-row strong,
-.finance-page .summary-total strong {
   font-size: 15px;
   font-weight: 900;
 
   color: #26364d;
 }
 
-.finance-page .summary-total {
-  margin-top: 8px;
+.month-button {
+  width: 34px;
+  height: 34px;
 
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  border: none;
+  border: 1px solid #dce5ef;
   border-radius: 8px;
 
-  background: #edf4ff;
+  background: #ffffff;
+
+  color: #44658c;
+
+  font-size: 21px;
+
+  cursor: pointer;
+
+  transition: 0.15s;
 }
 
-.finance-page .summary-total span,
-.finance-page .summary-total strong {
+.month-button:hover {
+  background: #eef5ff;
+  border-color: #bfd2eb;
+}
+
+/* ==================================================
+  3. 월급 계산
+================================================== */
+
+.salary-total-row td {
+  background: #f7faff;
+}
+
+.salary-total-row strong {
   color: #2f67b8;
+}
+
+/* ==================================================
+  4. 월말 보고
+================================================== */
+
+.report-card {
+  margin-top: 18px;
+}
+
+.secondary-action {
+  height: 36px;
+
+  padding: 0 13px;
+
+  border: 1px solid #cbd9ea;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #3976d1;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition: 0.15s;
+}
+
+.secondary-action:hover {
+  background: #f2f7ff;
+  border-color: #aac4e7;
+}
+
+.monthly-report {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.report-item {
+  padding: 15px;
+
+  border: 1px solid #e5ebf2;
+  border-radius: 10px;
+
+  background: #fbfdff;
+}
+
+.report-item strong {
+  display: block;
+
+  margin-bottom: 6px;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  color: #26364d;
+}
+
+.report-line {
+  margin-top: 3px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #65758a;
+}
+
+.report-empty {
+  padding: 24px;
+
+  text-align: center;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  font-size: 12px;
+
+  color: #9aa5b3;
+}
+
+/* ==================================================
+  5. 모바일
+================================================== */
+
+@media (max-width: 850px) {
+  .finance-month-control strong {
+    min-width: 90px;
+  }
+}
+
+@media (max-width: 430px) {
+  .finance-month-control {
+    gap: 5px;
+  }
+
+  .finance-month-control strong {
+    min-width: 76px;
+
+    font-size: 12px;
+  }
+
+  .month-button {
+    width: 30px;
+    height: 30px;
+
+    font-size: 18px;
+  }
+
+  .report-card {
+    margin-top: 14px;
+  }
+
+  .secondary-action {
+    height: 32px;
+
+    padding: 0 9px;
+
+    font-size: 10px;
+  }
+
+  .report-item {
+    padding: 12px;
+  }
+
+  .report-item strong {
+    font-size: 12px;
+  }
+
+  .report-line {
+    font-size: 10px;
+  }
 }

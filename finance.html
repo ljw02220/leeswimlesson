@@ -7,15 +7,18 @@
     <link rel="stylesheet" href="common.css" />
     <link rel="stylesheet" href="finance.css" />
 
-    <title>재무</title>
+    <title>재무관리</title>
   </head>
 
   <body class="finance-page">
     <nav class="top-nav">
-      <a href="home.html" class="nav-link">홈</a>
-      <a href="lessons.html" class="nav-link">수업관리</a>
-      <a href="members.html" class="nav-link">회원관리</a>
-      <a href="finance.html" class="nav-link active">재무관리</a>
+      <a href="home.html" class="nav-link"> 홈 </a>
+
+      <a href="lessons.html" class="nav-link"> 수업관리 </a>
+
+      <a href="members.html" class="nav-link"> 회원관리 </a>
+
+      <a href="finance.html" class="nav-link active"> 재무관리 </a>
 
       <button id="logoutButton" class="logout-button" type="button">
         로그아웃
@@ -23,53 +26,80 @@
     </nav>
 
     <main class="management-page">
+      <!-- 페이지 제목 -->
       <section class="page-heading">
         <div>
-          <span class="page-kicker">Finance</span>
-          <h1>재무</h1>
+          <span class="page-kicker"> Finance </span>
+
+          <h1>재무관리</h1>
         </div>
 
-        <button type="button" class="primary-action">내역 추가</button>
+        <div class="finance-month-control">
+          <button
+            id="prevMonthButton"
+            class="month-button"
+            type="button"
+            aria-label="이전 달"
+          >
+            ‹
+          </button>
+
+          <strong id="financeMonth"> 2026년 9월 </strong>
+
+          <button
+            id="nextMonthButton"
+            class="month-button"
+            type="button"
+            aria-label="다음 달"
+          >
+            ›
+          </button>
+        </div>
       </section>
 
+      <!-- 급여 요약 -->
       <section class="metric-grid">
         <article class="metric-card income">
-          <span>9월 매출</span>
-          <strong>4,820,000원</strong>
-          <small>지난달 대비 +12%</small>
+          <span id="expectedSalaryLabel"> 9월 예상 월급 </span>
+
+          <strong id="expectedSalary"> 0원 </strong>
+
+          <small> 3.3% 공제 후 예상 금액 </small>
         </article>
 
-        <article class="metric-card">
+        <article id="paidSalaryCard" class="metric-card">
           <span>입금 완료</span>
-          <strong>4,400,000원</strong>
-          <small>총 31건</small>
+
+          <strong id="paidSalary"> 0원 </strong>
+
+          <small id="paidSalaryStatus"> 미입금 </small>
         </article>
 
         <article class="metric-card">
-          <span>미수금</span>
-          <strong>420,000원</strong>
-          <small>회원 3명</small>
+          <span>단체강습 수입</span>
+
+          <strong id="groupIncome"> 0원 </strong>
+
+          <small id="groupLessonCount"> 총 0회 </small>
         </article>
 
-        <article class="metric-card expense">
-          <span>운영 지출</span>
-          <strong>1,180,000원</strong>
-          <small>레인 대관료 포함</small>
+        <article class="metric-card">
+          <span>개인레슨 수입</span>
+
+          <strong id="personalIncome"> 0원 </strong>
+
+          <small id="personalMemberCount"> 0명 </small>
         </article>
       </section>
 
+      <!-- 월급 상세 -->
       <section class="content-grid finance-grid">
         <div class="manager-card">
           <div class="card-header">
             <div>
-              <h2>결제 현황</h2>
-              <p>회원별 수강료 입금 상태를 정리합니다.</p>
-            </div>
+              <h2>월급 계산</h2>
 
-            <div class="filter-group">
-              <button type="button" class="filter-chip active">9월</button>
-              <button type="button" class="filter-chip">입금</button>
-              <button type="button" class="filter-chip">미납</button>
+              <p>수업관리의 단체강습과 회원정보의 개인레슨 금액을 기준으로 자동 계산합니다.</p>
             </div>
           </div>
 
@@ -78,94 +108,131 @@
               <thead>
                 <tr>
                   <th>항목</th>
-                  <th>분류</th>
+                  <th>기준</th>
                   <th>금액</th>
-                  <th>일자</th>
-                  <th>상태</th>
                 </tr>
               </thead>
 
               <tbody>
                 <tr>
                   <td>
-                    <strong>김혜민</strong>
-                    <span>개인레슨 4회권</span>
+                    <strong> 단체강습 </strong>
                   </td>
-                  <td>개인</td>
-                  <td>280,000원</td>
-                  <td>9월 8일</td>
-                  <td><span class="status paid">입금</span></td>
+
+                  <td id="groupCalculation">0회 × 27,000원</td>
+
+                  <td id="groupCalculationAmount">0원</td>
                 </tr>
 
                 <tr>
                   <td>
-                    <strong>화목 20시반</strong>
-                    <span>단체 월 수강료</span>
+                    <strong> 개인레슨 </strong>
                   </td>
-                  <td>단체</td>
-                  <td>960,000원</td>
-                  <td>9월 3일</td>
-                  <td><span class="status paid">입금</span></td>
+
+                  <td>개인레슨 수강료 × 70%</td>
+
+                  <td id="personalCalculationAmount">0원</td>
                 </tr>
 
                 <tr>
                   <td>
-                    <strong>이은하</strong>
-                    <span>개인레슨 4회권</span>
+                    <strong> 세전 합계 </strong>
                   </td>
-                  <td>개인</td>
-                  <td>280,000원</td>
-                  <td>9월 12일</td>
-                  <td><span class="status overdue">미납</span></td>
+
+                  <td>단체강습 + 개인레슨</td>
+
+                  <td id="grossIncome">0원</td>
                 </tr>
 
                 <tr>
                   <td>
-                    <strong>레인 대관료</strong>
-                    <span>9월 운영비</span>
+                    <strong> 3.3% 공제 </strong>
                   </td>
-                  <td>지출</td>
-                  <td>-820,000원</td>
-                  <td>9월 1일</td>
-                  <td><span class="status active">처리</span></td>
+
+                  <td>세전 합계 × 3.3%</td>
+
+                  <td id="taxAmount">-0원</td>
+                </tr>
+
+                <tr class="salary-total-row">
+                  <td>
+                    <strong> 예상 실수령액 </strong>
+                  </td>
+
+                  <td>세전 합계 × 96.7%</td>
+
+                  <td>
+                    <strong id="netIncome"> 0원 </strong>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
+        <!-- 월간 요약 -->
         <aside class="manager-card side-card">
           <div class="card-header compact">
-            <h2>월간 요약</h2>
+            <div>
+              <h2>월간 요약</h2>
+
+              <p id="summaryMonth">2026년 9월</p>
+            </div>
           </div>
 
           <div class="finance-summary">
             <div class="summary-row">
-              <span>개인레슨</span>
-              <strong>2,240,000원</strong>
+              <span> 단체강습 </span>
+
+              <strong id="summaryGroupCount"> 0회 </strong>
             </div>
 
             <div class="summary-row">
-              <span>단체강습</span>
-              <strong>2,580,000원</strong>
+              <span> 개인레슨 </span>
+
+              <strong id="summaryPersonalIncome"> 0원 </strong>
             </div>
 
             <div class="summary-row">
-              <span>고정 지출</span>
-              <strong>-1,180,000원</strong>
+              <span> 세전 합계 </span>
+
+              <strong id="summaryGrossIncome"> 0원 </strong>
             </div>
 
             <div class="summary-total">
-              <span>예상 순수익</span>
-              <strong>3,640,000원</strong>
+              <span> 예상 월급 </span>
+
+              <strong id="summaryNetIncome"> 0원 </strong>
             </div>
           </div>
         </aside>
+      </section>
+
+      <!-- 개인레슨 월말 보고 -->
+      <section class="manager-card report-card">
+        <div class="card-header">
+          <div>
+            <h2>개인레슨 월말 보고</h2>
+
+            <p>
+              회원정보와 결제정보를 이용해 월말 보고 내용을 자동으로 만듭니다.
+            </p>
+          </div>
+
+          <button id="copyReportButton" class="secondary-action" type="button">
+            보고서 복사
+          </button>
+        </div>
+
+        <div id="monthlyReport" class="monthly-report">
+          <p class="report-empty">개인레슨 정보를 불러오는 중입니다.</p>
+        </div>
       </section>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260911"></script>
+    <script src="finance.js?v=20260911"></script>
   </body>
 </html>
