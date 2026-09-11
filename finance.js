@@ -362,19 +362,17 @@ function mapLocalMember(member) {
 function isPersonalSettlementMember(member) {
   const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
   const amount = Number(member.payment_amount) || 0;
-  const totalLessons = Number(member.total_lessons) || 0;
-  const usedLessons = Number(member.used_lessons) || 0;
-  const lastLessonDate = member.last_lesson_date || '';
+  const paymentDate = member.payment_date || '';
 
   if (amount <= 0 || member.payment_status === '미납') {
     return false;
   }
 
-  if (totalLessons <= 0 || usedLessons < totalLessons) {
+  if (!paymentDate) {
     return false;
   }
 
-  return lastLessonDate >= start && lastLessonDate < end;
+  return paymentDate >= start && paymentDate < end;
 }
 
 function getLocalPersonalMembers() {
@@ -612,7 +610,7 @@ function renderMonthlyReport(personalMembers) {
 
     monthlyReport.innerHTML = `
       <p class="report-empty">
-        ${formatDate(start)}부터 ${formatDate(end)} 전까지 완료된 개인레슨 회차권이 없습니다.
+        ${formatDate(start)}부터 ${formatDate(end)} 전까지 결제된 개인레슨 회차권이 없습니다.
       </p>
     `;
 
