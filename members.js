@@ -296,10 +296,10 @@ function isCurrentPaymentReported(member) {
 
 function getReportButtonLabel(member) {
   if (!isCurrentPaymentReported(member)) {
-    return '보고 완료';
+    return '미보고';
   }
 
-  return `${formatShortDate(member.personalReportedAt)} 취소`;
+  return '보고 완료';
 }
 
 // ======================================================
