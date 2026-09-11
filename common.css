@@ -110,11 +110,13 @@ body {
   width: 100%;
   max-width: 560px;
 
-  margin: 0;
+  margin: 0 auto;
 }
 
 .lessons-heading {
   max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ==================================================
