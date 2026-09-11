@@ -97,6 +97,10 @@ function mapMemberToDatabase(member) {
     payment_amount: Number(member.paymentAmount || 0),
     payment_date: normalizeDateValue(member.paymentDate),
     payment_status: member.paymentStatus || '확인필요',
+    personal_reported_at: normalizeDateValue(member.personalReportedAt),
+    personal_reported_payment_date: member.personalReportedAt
+      ? normalizeDateValue(member.paymentDate)
+      : null,
     last_lesson_date: normalizeDateValue(member.lastLessonDate),
     status: member.status || '수강중',
     memo: member.memo || null,
@@ -703,6 +707,12 @@ async function addMember(memberData) {
 
     paymentStatus: memberData.paymentStatus || '확인필요',
 
+    personalReportedAt: memberData.personalReportedAt || '',
+
+    personalReportedPaymentDate: memberData.personalReportedAt
+      ? memberData.paymentDate || ''
+      : '',
+
     lastLessonDate: memberData.lastLessonDate || '',
 
     status: memberData.status || '수강중',
@@ -981,6 +991,9 @@ function openMemberDetail(memberId) {
   document.getElementById('paymentStatus').value =
     member.paymentStatus || '완납';
 
+  document.getElementById('personalReportedAt').value =
+    member.personalReportedAt || '';
+
   document.getElementById('memberStatus').value = member.status || '수강중';
 
   document.getElementById('lastLessonDate').value = member.lastLessonDate || '';
@@ -1037,9 +1050,24 @@ async function handleMemberSubmit(event) {
     Number(document.getElementById('totalLessons').value) || 0;
 
   const usedLessons = Number(document.getElementById('usedLessons').value) || 0;
+  const paymentDate = document.getElementById('paymentDate').value;
+  const paymentStatus = document.getElementById('paymentStatus').value;
+  const personalReportedAt = document.getElementById('personalReportedAt').value;
 
   if (usedLessons > totalLessons) {
     alert('진행 횟수는 등록 횟수보다 많을 수 없습니다.');
+
+    return;
+  }
+
+  if (personalReportedAt && !paymentDate) {
+    alert('보고 완료일을 입력하려면 결제일도 입력해주세요.');
+
+    return;
+  }
+
+  if (personalReportedAt && paymentStatus === '미납') {
+    alert('미납 회원은 보고 완료 처리할 수 없습니다.');
 
     return;
   }
@@ -1061,9 +1089,11 @@ async function handleMemberSubmit(event) {
 
     paymentAmount: Number(document.getElementById('paymentAmount').value) || 0,
 
-    paymentDate: document.getElementById('paymentDate').value,
+    paymentDate,
 
-    paymentStatus: document.getElementById('paymentStatus').value,
+    paymentStatus,
+
+    personalReportedAt,
 
     status: document.getElementById('memberStatus').value,
 
