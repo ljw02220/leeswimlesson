@@ -21,6 +21,17 @@ const RECURRING_GROUP_SCHEDULE = [
 ];
 
 const MEMBER_STORAGE_KEY = 'personalLessonMembers';
+const HOLIDAY_API_URL =
+  'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
+const HOLIDAY_SERVICE_KEY = window.SWIM_CONFIG?.HOLIDAY_API_KEY || '';
+
+const HOLIDAY_OVERRIDES = {
+  '2026-09-24': '추석 연휴',
+  '2026-09-25': '추석',
+  '2026-09-26': '추석 연휴',
+};
+
+const holidayCache = {};
 
 /* ==================================================
   2. DOM
@@ -166,18 +177,93 @@ function updateMonthText() {
 }
 
 /* ==================================================
-  5. 단체강습 조회
+  5. 공휴일
 ================================================== */
 
-function createRecurringGroupLessons() {
+async function getHolidays(year, month) {
+  const cacheKey = `${year}-${month}`;
+
+  if (holidayCache[cacheKey]) {
+    return holidayCache[cacheKey];
+  }
+
+  const holidays = {};
+
+  Object.entries(HOLIDAY_OVERRIDES).forEach(([dateKey, name]) => {
+    const holidayDate = new Date(`${dateKey}T00:00:00`);
+
+    if (
+      holidayDate.getFullYear() === year &&
+      holidayDate.getMonth() === month
+    ) {
+      holidays[dateKey] = name;
+    }
+  });
+
+  if (!HOLIDAY_SERVICE_KEY) {
+    holidayCache[cacheKey] = holidays;
+
+    return holidays;
+  }
+
+  const formattedMonth = String(month + 1).padStart(2, '0');
+  const url =
+    `${HOLIDAY_API_URL}/getRestDeInfo` +
+    `?ServiceKey=${HOLIDAY_SERVICE_KEY}` +
+    `&solYear=${year}` +
+    `&solMonth=${formattedMonth}` +
+    `&numOfRows=50`;
+
+  try {
+    const response = await fetch(url);
+    const text = await response.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'text/xml');
+    const items = xml.querySelectorAll('item');
+
+    items.forEach((item) => {
+      const date = item.querySelector('locdate')?.textContent;
+      const name = item.querySelector('dateName')?.textContent;
+
+      if (!date) {
+        return;
+      }
+
+      const dateKey = [
+        date.slice(0, 4),
+        date.slice(4, 6),
+        date.slice(6, 8),
+      ].join('-');
+
+      holidays[dateKey] = name || '공휴일';
+    });
+  } catch (error) {
+    console.error('공휴일 정보를 불러오지 못했습니다.', error);
+  }
+
+  holidayCache[cacheKey] = holidays;
+
+  return holidays;
+}
+
+/* ==================================================
+  6. 단체강습 조회
+================================================== */
+
+async function createRecurringGroupLessons() {
   const cancelledLessons = getStorageData('cancelledLessons', {});
   const completedLessons = getStorageData('completedLessons', {});
+  const holidaysByDate = await getHolidays(currentYear, currentMonth);
   const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
   const lessons = [];
 
   for (let day = 1; day <= lastDay; day++) {
     const date = new Date(currentYear, currentMonth, day);
     const dateKey = toDateKey(date);
+
+    if (holidaysByDate[dateKey]) {
+      continue;
+    }
 
     RECURRING_GROUP_SCHEDULE.forEach((item) => {
       if (date.getDay() !== item.day) {
@@ -211,29 +297,38 @@ async function getGroupLessons() {
   const client = getSupabaseClient();
 
   if (!client) {
-    return createRecurringGroupLessons();
+    return await createRecurringGroupLessons();
   }
 
   const { start, end } = getMonthRange(currentYear, currentMonth);
 
-  const { data, error } = await client
-    .from('lessons')
-    .select('id, lesson_date, lesson_time, lesson_type, status, source')
-    .eq('lesson_type', 'group')
-    .gte('lesson_date', start)
-    .lt('lesson_date', end);
+  const [holidayData, lessonResult] = await Promise.all([
+    getHolidays(currentYear, currentMonth),
+    client
+      .from('lessons')
+      .select('id, lesson_date, lesson_time, lesson_type, status, source')
+      .eq('lesson_type', 'group')
+      .gte('lesson_date', start)
+      .lt('lesson_date', end),
+  ]);
+
+  const { data, error } = lessonResult;
 
   if (error) {
     console.error('Supabase 단체강습 데이터를 불러오지 못했습니다.', error);
 
-    return createRecurringGroupLessons();
+    return await createRecurringGroupLessons();
   }
 
-  return data && data.length > 0 ? data : createRecurringGroupLessons();
+  const lessons = (data || []).filter(
+    (lesson) => !holidayData[lesson.lesson_date]
+  );
+
+  return lessons.length > 0 ? lessons : await createRecurringGroupLessons();
 }
 
 /* ==================================================
-  6. 개인레슨 회원 조회
+  7. 개인레슨 회원 조회
 ================================================== */
 
 function mapLocalMember(member) {
@@ -298,7 +393,7 @@ async function getPersonalMembers() {
 }
 
 /* ==================================================
-  7. 실제 급여 입금 조회
+  8. 실제 급여 입금 조회
 ================================================== */
 
 async function getPaidSalary() {
@@ -330,7 +425,7 @@ async function getPaidSalary() {
 }
 
 /* ==================================================
-  8. 급여 계산
+  9. 급여 계산
 ================================================== */
 
 function calculateFinance(groupLessons, personalMembers, paidAmount) {
@@ -367,7 +462,7 @@ function calculateFinance(groupLessons, personalMembers, paidAmount) {
 }
 
 /* ==================================================
-  9. 급여 화면 출력
+  10. 급여 화면 출력
 ================================================== */
 
 function renderFinanceSummary(result) {
@@ -453,7 +548,7 @@ function renderFinanceSummary(result) {
 }
 
 /* ==================================================
-  10. 개인레슨 월말 보고
+  11. 개인레슨 월말 보고
 ================================================== */
 
 function createReportText(member) {
@@ -533,7 +628,7 @@ function renderMonthlyReport(personalMembers) {
 }
 
 /* ==================================================
-  11. 보고서 복사
+  12. 보고서 복사
 ================================================== */
 
 async function copyMonthlyReport() {
@@ -558,7 +653,7 @@ async function copyMonthlyReport() {
 }
 
 /* ==================================================
-  12. 실제 월급 입금 등록
+  13. 실제 월급 입금 등록
 ================================================== */
 
 async function registerPaidSalary() {
@@ -643,7 +738,7 @@ async function registerPaidSalary() {
 }
 
 /* ==================================================
-  13. 전체 데이터 불러오기
+  14. 전체 데이터 불러오기
 ================================================== */
 
 async function loadFinance() {
@@ -676,7 +771,7 @@ async function loadFinance() {
 }
 
 /* ==================================================
-  14. 이벤트
+  15. 이벤트
 ================================================== */
 
 if (prevMonthButton) {
@@ -714,7 +809,7 @@ if (paidSalaryCard) {
 }
 
 /* ==================================================
-  15. 처음 실행
+  16. 처음 실행
 ================================================== */
 
 loadFinance();
