@@ -250,11 +250,11 @@
             <div class="form-group">
               <label for="paymentAmount">결제 금액</label>
               <input
-                type="number"
+                type="text"
                 id="paymentAmount"
-                min="0"
-                step="1000"
-                placeholder="예: 320000"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="예: 300,000"
               />
             </div>
 
@@ -328,6 +328,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260911"></script>
-    <script src="members.js?v=20260911-report-form"></script>
+    <script src="members.js?v=20260912-money-input"></script>
   </body>
 </html>

@@ -232,6 +232,18 @@ function formatMoney(amount) {
   return Number(amount || 0).toLocaleString('ko-KR');
 }
 
+function parseMoney(value) {
+  const numberText = String(value || '').replace(/[^\d]/g, '');
+
+  return Number(numberText) || 0;
+}
+
+function formatMoneyInputValue(value) {
+  const amount = parseMoney(value);
+
+  return amount > 0 ? formatMoney(amount) : '';
+}
+
 function formatTime(timeValue) {
   if (!timeValue) {
     return '';
@@ -834,6 +846,8 @@ function setupModalEvents() {
 
   const phoneInput = document.getElementById('memberPhone');
 
+  const paymentAmountInput = document.getElementById('paymentAmount');
+
   if (!modal) {
     console.error('memberModal을 찾을 수 없습니다.');
 
@@ -881,6 +895,10 @@ function setupModalEvents() {
   if (phoneInput) {
     phoneInput.addEventListener('input', formatPhoneInput);
   }
+
+  if (paymentAmountInput) {
+    paymentAmountInput.addEventListener('input', formatMoneyInput);
+  }
 }
 
 // ======================================================
@@ -904,6 +922,14 @@ function formatPhoneInput(event) {
       7
     )}-${value.slice(7)}`;
   }
+}
+
+// ======================================================
+// 금액 자동 쉼표
+// ======================================================
+
+function formatMoneyInput(event) {
+  event.target.value = formatMoneyInputValue(event.target.value);
 }
 
 // ======================================================
@@ -998,7 +1024,9 @@ function openMemberDetail(memberId) {
 
   document.getElementById('usedLessons').value = member.usedLessons || 0;
 
-  document.getElementById('paymentAmount').value = member.paymentAmount || '';
+  document.getElementById('paymentAmount').value = formatMoneyInputValue(
+    member.paymentAmount
+  );
 
   document.getElementById('paymentDate').value = member.paymentDate || '';
 
@@ -1101,7 +1129,7 @@ async function handleMemberSubmit(event) {
 
     usedLessons,
 
-    paymentAmount: Number(document.getElementById('paymentAmount').value) || 0,
+    paymentAmount: parseMoney(document.getElementById('paymentAmount').value),
 
     paymentDate,
 
