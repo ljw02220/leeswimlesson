@@ -232,6 +232,14 @@ function formatMoney(amount) {
   return Number(amount || 0).toLocaleString('ko-KR');
 }
 
+function formatTime(timeValue) {
+  if (!timeValue) {
+    return '';
+  }
+
+  return String(timeValue).slice(0, 5);
+}
+
 function getDateKey(date) {
   return [
     date.getFullYear(),
@@ -261,7 +269,7 @@ function escapeHTML(value) {
 function getSchedule(member) {
   const days = Array.isArray(member.days) ? member.days.join('·') : '';
 
-  const time = member.time || '';
+  const time = formatTime(member.time);
 
   if (!days && !time) {
     return '-';
@@ -406,6 +414,7 @@ function renderMembers() {
       </td>
 
       <td class="center-cell">
+        <div class="payment-cell">
         <span
           class="
             status
@@ -414,6 +423,11 @@ function renderMembers() {
         >
           ${escapeHTML(member.paymentStatus || '확인필요')}
         </span>
+
+          <small>
+            ${formatMoney(member.paymentAmount)}원
+          </small>
+        </div>
       </td>
 
       <td class="center-cell">
