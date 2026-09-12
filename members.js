@@ -26,6 +26,12 @@ const DAY_INDEX_BY_NAME = {
   토: 6,
 };
 
+const OPTIONAL_MEMBER_COLUMNS = [
+  'lesson_start_date',
+  'personal_reported_at',
+  'personal_reported_payment_date',
+];
+
 let members = [];
 let currentFilter = '전체';
 let editingMemberId = null;
@@ -107,6 +113,87 @@ function hasSupabaseConnection() {
 
 function normalizeDateValue(value) {
   return value || null;
+}
+
+function getErrorText(error) {
+  return [error?.code, error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function getDisplayErrorMessage(error) {
+  const message = getErrorText(error);
+
+  return message || '알 수 없는 오류입니다.';
+}
+
+function getUnavailableOptionalColumn(error, payload) {
+  const errorText = getErrorText(error);
+
+  return OPTIONAL_MEMBER_COLUMNS.find(
+    (column) =>
+      Object.prototype.hasOwnProperty.call(payload, column) &&
+      errorText.includes(column)
+  );
+}
+
+async function insertMemberPayload(payload) {
+  const mutablePayload = { ...payload };
+
+  while (true) {
+    const { data, error } = await window.swimDb.client
+      .from('members')
+      .insert(mutablePayload)
+      .select()
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    const unavailableColumn = getUnavailableOptionalColumn(
+      error,
+      mutablePayload
+    );
+
+    if (!unavailableColumn) {
+      throw error;
+    }
+
+    console.warn(`${unavailableColumn} 컬럼 없이 회원 저장을 다시 시도합니다.`);
+
+    delete mutablePayload[unavailableColumn];
+  }
+}
+
+async function updateMemberPayload(memberId, payload) {
+  const mutablePayload = { ...payload };
+
+  while (true) {
+    const { data, error } = await window.swimDb.client
+      .from('members')
+      .update(mutablePayload)
+      .eq('id', memberId)
+      .select()
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    const unavailableColumn = getUnavailableOptionalColumn(
+      error,
+      mutablePayload
+    );
+
+    if (!unavailableColumn) {
+      throw error;
+    }
+
+    console.warn(`${unavailableColumn} 컬럼 없이 회원 수정을 다시 시도합니다.`);
+
+    delete mutablePayload[unavailableColumn];
+  }
 }
 
 function mapMemberFromDatabase(row) {
@@ -212,15 +299,7 @@ async function createMember(memberData) {
     return localMember;
   }
 
-  const { data, error } = await window.swimDb.client
-    .from('members')
-    .insert(mapMemberToDatabase(memberData))
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
+  const data = await insertMemberPayload(mapMemberToDatabase(memberData));
 
   return mapMemberFromDatabase(data);
 }
@@ -245,16 +324,10 @@ async function saveMember(memberId, memberData) {
     return members[index];
   }
 
-  const { data, error } = await window.swimDb.client
-    .from('members')
-    .update(mapMemberToDatabase(memberData))
-    .eq('id', memberId)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
+  const data = await updateMemberPayload(
+    memberId,
+    mapMemberToDatabase(memberData)
+  );
 
   return mapMemberFromDatabase(data);
 }
@@ -1023,7 +1096,7 @@ async function addMember(memberData) {
   } catch (error) {
     console.error('회원을 저장하지 못했습니다.', error);
 
-    alert('회원 저장 중 오류가 발생했습니다.');
+    alert(`회원 저장 중 오류가 발생했습니다.\n${getDisplayErrorMessage(error)}`);
   }
 }
 
@@ -1073,7 +1146,7 @@ async function updateMember(memberId, updatedData) {
   } catch (error) {
     console.error('회원 정보를 수정하지 못했습니다.', error);
 
-    alert('회원 수정 중 오류가 발생했습니다.');
+    alert(`회원 수정 중 오류가 발생했습니다.\n${getDisplayErrorMessage(error)}`);
   }
 }
 
