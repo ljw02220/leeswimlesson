@@ -188,6 +188,34 @@ function getStorageData(key, fallback) {
   }
 }
 
+function saveStorageData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function getErrorMessage(error) {
+  return [error?.code, error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function normalizeDateInput(value) {
+  const trimmedValue = String(value || '').trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  const numbers = trimmedValue.replace(/[^\d]/g, '');
+
+  if (numbers.length === 8) {
+    return [numbers.slice(0, 4), numbers.slice(4, 6), numbers.slice(6, 8)].join(
+      '-'
+    );
+  }
+
+  return '';
+}
+
 function updateMonthText() {
   const monthNumber = currentMonth + 1;
   const monthText = `${currentYear}년 ${monthNumber}월 입금`;
@@ -454,6 +482,30 @@ function mapMemberToManualReport(member, fallbackName) {
   };
 }
 
+function saveLocalPersonalReport(report) {
+  const reports = getStorageData(REPORT_STORAGE_KEY, []);
+  const existingIndex = reports.findIndex(
+    (item) =>
+      item.member_name === report.member_name &&
+      item.payment_date === report.payment_date &&
+      item.reported_at === report.reported_at
+  );
+
+  if (existingIndex !== -1) {
+    reports[existingIndex] = {
+      ...reports[existingIndex],
+      ...report,
+    };
+  } else {
+    reports.push({
+      id: Date.now(),
+      ...report,
+    });
+  }
+
+  saveStorageData(REPORT_STORAGE_KEY, reports);
+}
+
 async function findMemberForManualReport(name) {
   const client = getSupabaseClient();
 
@@ -482,31 +534,7 @@ async function saveManualPersonalReport(report) {
   const client = getSupabaseClient();
 
   if (!client) {
-    const reports = getStorageData(REPORT_STORAGE_KEY, []);
-    const existingIndex = reports.findIndex(
-      (item) =>
-        item.member_name === report.member_name &&
-        item.payment_date === report.payment_date &&
-        item.reported_at === report.reported_at
-    );
-
-    if (existingIndex !== -1) {
-      reports[existingIndex] = {
-        ...reports[existingIndex],
-        ...report,
-      };
-
-      localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(reports));
-
-      return;
-    }
-
-    reports.push({
-      id: Date.now(),
-      ...report,
-    });
-
-    localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(reports));
+    saveLocalPersonalReport(report);
 
     return;
   }
@@ -895,13 +923,8 @@ async function addManualPersonalReport() {
     return;
   }
 
-  const matchedMember = await findMemberForManualReport(memberName);
-  const defaultAmount = Number(
-    matchedMember?.payment_amount || matchedMember?.paymentAmount || 0
-  );
   const amountInput = prompt(
-    '보고에 반영할 수강료를 입력해주세요.\n예: 300000',
-    defaultAmount > 0 ? String(defaultAmount) : ''
+    '보고에 반영할 수강료를 입력해주세요.\n예: 300000'
   );
 
   if (amountInput === null) {
@@ -916,25 +939,29 @@ async function addManualPersonalReport() {
     return;
   }
 
-  const defaultPaymentDate =
-    matchedMember?.payment_date ||
-    matchedMember?.paymentDate ||
-    getDefaultReportedAt(currentYear, currentMonth);
-  const paymentDate = prompt(
-    '결제일을 입력해주세요.\n예: 2026-08-08',
-    defaultPaymentDate
-  )?.trim();
+  const paymentDate = normalizeDateInput(
+    prompt(
+      '결제일을 입력해주세요.\n예: 2026-08-08',
+      getDefaultReportedAt(currentYear, currentMonth)
+    )
+  );
 
   if (!paymentDate) {
+    alert('결제일은 2026-08-08 형식으로 입력해주세요.');
+
     return;
   }
 
-  const reportedAt = prompt(
-    '보고 완료일을 입력해주세요.\n예: 2026-08-31',
-    getDefaultReportedAt(currentYear, currentMonth)
-  )?.trim();
+  const reportedAt = normalizeDateInput(
+    prompt(
+      '보고 완료일을 입력해주세요.\n예: 2026-08-31',
+      getDefaultReportedAt(currentYear, currentMonth)
+    )
+  );
 
   if (!reportedAt) {
+    alert('보고 완료일은 2026-08-31 형식으로 입력해주세요.');
+
     return;
   }
 
@@ -951,9 +978,10 @@ async function addManualPersonalReport() {
     }
   }
 
-  const baseReport = mapMemberToManualReport(matchedMember, memberName);
-
   try {
+    const matchedMember = await findMemberForManualReport(memberName);
+    const baseReport = mapMemberToManualReport(matchedMember, memberName);
+
     await saveManualPersonalReport({
       ...baseReport,
       payment_amount: amount,
@@ -962,10 +990,14 @@ async function addManualPersonalReport() {
     });
 
     await loadFinance();
+
+    alert('개인레슨 보고 내역을 추가했습니다.');
   } catch (error) {
     console.error('개인레슨 보고 내역 추가 실패:', error);
 
-    alert('개인레슨 보고 내역을 추가하지 못했습니다.');
+    alert(
+      `개인레슨 보고 내역을 추가하지 못했습니다.\n${getErrorMessage(error)}`
+    );
   }
 }
 
