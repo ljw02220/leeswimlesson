@@ -21,6 +21,7 @@ const RECURRING_GROUP_SCHEDULE = [
 ];
 
 const MEMBER_STORAGE_KEY = 'personalLessonMembers';
+const REPORT_STORAGE_KEY = 'personalLessonReports';
 const HOLIDAY_API_URL =
   'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
 const HOLIDAY_SERVICE_KEY = window.SWIM_CONFIG?.HOLIDAY_API_KEY || '';
@@ -68,6 +69,9 @@ const summaryNetIncome = document.getElementById('summaryNetIncome');
 const personalReportSummary = document.getElementById('personalReportSummary');
 const monthlyReport = document.getElementById('monthlyReport');
 const copyReportButton = document.getElementById('copyReportButton');
+const addPersonalReportButton = document.getElementById(
+  'addPersonalReportButton'
+);
 
 /* ==================================================
   3. 현재 조회 월
@@ -150,6 +154,20 @@ function getSalarySettlementRange(year, month) {
   return { start, end };
 }
 
+function getSalaryReportMonth(year, month) {
+  return new Date(year, month - 1, 1);
+}
+
+function getSalaryReportLabel(year, month) {
+  const reportMonth = getSalaryReportMonth(year, month);
+
+  return `${reportMonth.getFullYear()}년 ${reportMonth.getMonth() + 1}월달 월급`;
+}
+
+function getDefaultReportedAt(year, month) {
+  return toDateKey(new Date(year, month, 0));
+}
+
 function toDateKey(date) {
   return [
     date.getFullYear(),
@@ -172,18 +190,19 @@ function getStorageData(key, fallback) {
 
 function updateMonthText() {
   const monthNumber = currentMonth + 1;
-  const monthText = `${currentYear}년 ${monthNumber}월`;
+  const monthText = `${currentYear}년 ${monthNumber}월 입금`;
+  const salaryLabel = getSalaryReportLabel(currentYear, currentMonth);
 
   if (financeMonth) {
     financeMonth.textContent = monthText;
   }
 
   if (summaryMonth) {
-    summaryMonth.textContent = monthText;
+    summaryMonth.textContent = salaryLabel;
   }
 
   if (expectedSalaryLabel) {
-    expectedSalaryLabel.textContent = `${monthNumber}월 예상 월급`;
+    expectedSalaryLabel.textContent = salaryLabel;
   }
 }
 
@@ -389,13 +408,10 @@ function isPersonalSettlementMember(member) {
 }
 
 function getLocalPersonalMembers() {
-  const localReports = getStorageData('personalLessonReports', []);
+  const localReports = getStorageData(REPORT_STORAGE_KEY, []);
 
   if (localReports.length > 0) {
-    const { start, end } = getSalarySettlementRange(
-      currentYear,
-      currentMonth
-    );
+    const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
 
     return localReports
       .filter(
@@ -423,6 +439,108 @@ function mapPersonalReport(report) {
     personal_reported_payment_date: report.payment_date || '',
     status: '보고완료',
   };
+}
+
+function mapMemberToManualReport(member, fallbackName) {
+  return {
+    member_id: member?.id || null,
+    member_name: member?.name || fallbackName,
+    phone: member?.phone || null,
+    lesson_format: member?.lesson_format || member?.lessonFormat || '개인레슨',
+    days: member?.days || [],
+    lesson_time: member?.lesson_time || member?.time || null,
+    payment_status: '완납',
+    memo: '재무 화면에서 직접 추가',
+  };
+}
+
+async function findMemberForManualReport(name) {
+  const client = getSupabaseClient();
+
+  if (client) {
+    const { data, error } = await client
+      .from('members')
+      .select(
+        'id, name, phone, lesson_format, days, lesson_time, payment_amount, payment_date'
+      )
+      .eq('name', name)
+      .limit(1);
+
+    if (error) {
+      console.error('보고 추가용 회원 조회 실패:', error);
+    }
+
+    return data?.[0] || null;
+  }
+
+  const localMembers = getStorageData(MEMBER_STORAGE_KEY, []);
+
+  return localMembers.find((member) => member.name === name) || null;
+}
+
+async function saveManualPersonalReport(report) {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    const reports = getStorageData(REPORT_STORAGE_KEY, []);
+    const existingIndex = reports.findIndex(
+      (item) =>
+        item.member_name === report.member_name &&
+        item.payment_date === report.payment_date &&
+        item.reported_at === report.reported_at
+    );
+
+    if (existingIndex !== -1) {
+      reports[existingIndex] = {
+        ...reports[existingIndex],
+        ...report,
+      };
+
+      localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(reports));
+
+      return;
+    }
+
+    reports.push({
+      id: Date.now(),
+      ...report,
+    });
+
+    localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(reports));
+
+    return;
+  }
+
+  const existing = await client
+    .from('personal_lesson_reports')
+    .select('id')
+    .eq('member_name', report.member_name)
+    .eq('payment_date', report.payment_date)
+    .eq('reported_at', report.reported_at)
+    .limit(1);
+
+  if (existing.error) {
+    throw existing.error;
+  }
+
+  if (existing.data && existing.data.length > 0) {
+    const { error } = await client
+      .from('personal_lesson_reports')
+      .update(report)
+      .eq('id', existing.data[0].id);
+
+    if (error) {
+      throw error;
+    }
+
+    return;
+  }
+
+  const { error } = await client.from('personal_lesson_reports').insert(report);
+
+  if (error) {
+    throw error;
+  }
 }
 
 async function getPersonalMembers() {
@@ -556,8 +674,7 @@ function renderFinanceSummary(result) {
   }
 
   if (groupLessonCount) {
-    groupLessonCount.textContent =
-      `총 ${result.groupCount}회 · 완료 ${result.completedGroupCount}회`;
+    groupLessonCount.textContent = `총 ${result.groupCount}회 · 완료 ${result.completedGroupCount}회`;
   }
 
   if (personalIncome) {
@@ -581,9 +698,9 @@ function renderFinanceSummary(result) {
   }
 
   if (personalCalculationAmount) {
-    personalCalculationAmount.textContent =
-      `${formatCurrency(result.personalAmount)} ` +
-      `(수강료 ${formatCurrency(result.personalBaseAmount)} × 70%)`;
+    personalCalculationAmount.textContent = formatCurrency(
+      result.personalAmount
+    );
   }
 
   if (grossIncome) {
@@ -659,14 +776,13 @@ function renderMonthlyReport(personalMembers) {
   }
 
   if (personalMembers.length === 0) {
-    const { start, end } = getSalarySettlementRange(
-      currentYear,
-      currentMonth
-    );
+    const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
 
     monthlyReport.innerHTML = `
       <p class="report-empty">
-        ${formatDate(start)}부터 ${formatDate(end)} 전까지 결제된 개인레슨 회차권이 없습니다.
+        ${formatDate(start)}부터 ${formatDate(
+      end
+    )} 전까지 보고 완료된 개인레슨 내역이 없습니다.
       </p>
     `;
 
@@ -723,14 +839,13 @@ function renderPersonalReportSummary(personalMembers, result) {
   }
 
   if (personalMembers.length === 0) {
-    const { start, end } = getSalarySettlementRange(
-      currentYear,
-      currentMonth
-    );
+    const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
 
     personalReportSummary.innerHTML = `
       <p class="report-empty">
-        ${formatDate(start)}부터 ${formatDate(end)} 전까지 보고 완료된 개인레슨이 없습니다.
+        ${formatDate(start)}부터 ${formatDate(
+      end
+    )} 전까지 보고 완료된 개인레슨이 없습니다.
       </p>
     `;
 
@@ -768,7 +883,94 @@ function renderPersonalReportSummary(personalMembers, result) {
 }
 
 /* ==================================================
-  12. 보고서 복사
+  12. 개인레슨 보고 직접 추가
+================================================== */
+
+async function addManualPersonalReport() {
+  const memberName = prompt(
+    '개인레슨 보고에 추가할 회원명을 입력해주세요.\n예: 김혜민 또는 문지영, 전효원'
+  )?.trim();
+
+  if (!memberName) {
+    return;
+  }
+
+  const matchedMember = await findMemberForManualReport(memberName);
+  const defaultAmount = Number(
+    matchedMember?.payment_amount || matchedMember?.paymentAmount || 0
+  );
+  const amountInput = prompt(
+    '보고에 반영할 수강료를 입력해주세요.\n예: 300000',
+    defaultAmount > 0 ? String(defaultAmount) : ''
+  );
+
+  if (amountInput === null) {
+    return;
+  }
+
+  const amount = Number(String(amountInput).replace(/[^\d]/g, ''));
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    alert('수강료는 0원보다 큰 숫자로 입력해주세요.');
+
+    return;
+  }
+
+  const defaultPaymentDate =
+    matchedMember?.payment_date ||
+    matchedMember?.paymentDate ||
+    getDefaultReportedAt(currentYear, currentMonth);
+  const paymentDate = prompt(
+    '결제일을 입력해주세요.\n예: 2026-08-08',
+    defaultPaymentDate
+  )?.trim();
+
+  if (!paymentDate) {
+    return;
+  }
+
+  const reportedAt = prompt(
+    '보고 완료일을 입력해주세요.\n예: 2026-08-31',
+    getDefaultReportedAt(currentYear, currentMonth)
+  )?.trim();
+
+  if (!reportedAt) {
+    return;
+  }
+
+  const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
+
+  if (reportedAt < start || reportedAt >= end) {
+    const shouldContinue = confirm(
+      `현재 화면의 정산 범위는 ${start}부터 ${end} 전까지입니다.\n` +
+        '그래도 이 보고 내역을 추가할까요?'
+    );
+
+    if (!shouldContinue) {
+      return;
+    }
+  }
+
+  const baseReport = mapMemberToManualReport(matchedMember, memberName);
+
+  try {
+    await saveManualPersonalReport({
+      ...baseReport,
+      payment_amount: amount,
+      payment_date: paymentDate,
+      reported_at: reportedAt,
+    });
+
+    await loadFinance();
+  } catch (error) {
+    console.error('개인레슨 보고 내역 추가 실패:', error);
+
+    alert('개인레슨 보고 내역을 추가하지 못했습니다.');
+  }
+}
+
+/* ==================================================
+  13. 보고서 복사
 ================================================== */
 
 async function copyMonthlyReport() {
@@ -779,7 +981,10 @@ async function copyMonthlyReport() {
       return;
     }
 
-    const title = `[${currentYear}년 ${currentMonth + 1}월 개인레슨 현황]`;
+    const title = `[${getSalaryReportLabel(
+      currentYear,
+      currentMonth
+    )} 개인레슨 보고 내역]`;
     const report = latestReportMembers.map(createReportText).join('\n\n');
 
     await navigator.clipboard.writeText(`${title}\n\n${report}`);
@@ -793,7 +998,7 @@ async function copyMonthlyReport() {
 }
 
 /* ==================================================
-  13. 실제 월급 입금 등록
+  14. 실제 월급 입금 등록
 ================================================== */
 
 async function registerPaidSalary() {
@@ -842,7 +1047,7 @@ async function registerPaidSalary() {
       .update({
         amount,
         category: '급여',
-        memo: `${currentYear}년 ${currentMonth + 1}월 급여`,
+        memo: getSalaryReportLabel(currentYear, currentMonth),
       })
       .eq('id', existing.data[0].id);
 
@@ -862,7 +1067,7 @@ async function registerPaidSalary() {
       type: 'salary',
       category: '급여',
       amount,
-      memo: `${currentYear}년 ${currentMonth + 1}월 급여`,
+      memo: getSalaryReportLabel(currentYear, currentMonth),
     });
 
     if (error) {
@@ -878,7 +1083,7 @@ async function registerPaidSalary() {
 }
 
 /* ==================================================
-  14. 전체 데이터 불러오기
+  15. 전체 데이터 불러오기
 ================================================== */
 
 async function loadFinance() {
@@ -920,7 +1125,7 @@ async function loadFinance() {
 }
 
 /* ==================================================
-  15. 이벤트
+  16. 이벤트
 ================================================== */
 
 if (prevMonthButton) {
@@ -953,12 +1158,16 @@ if (copyReportButton) {
   copyReportButton.addEventListener('click', copyMonthlyReport);
 }
 
+if (addPersonalReportButton) {
+  addPersonalReportButton.addEventListener('click', addManualPersonalReport);
+}
+
 if (paidSalaryCard) {
   paidSalaryCard.addEventListener('click', registerPaidSalary);
 }
 
 /* ==================================================
-  16. 처음 실행
+  17. 처음 실행
 ================================================== */
 
 loadFinance();
