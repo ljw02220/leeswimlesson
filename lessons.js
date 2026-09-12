@@ -98,6 +98,14 @@ const API_URL =
 
 const SERVICE_KEY = window.SWIM_CONFIG?.HOLIDAY_API_KEY || '';
 
+const HOLIDAY_OVERRIDES = {
+  '2026-09-24': '추석 연휴',
+  '2026-09-25': '추석',
+  '2026-09-26': '추석 연휴',
+  '2026-10-03': '개천절',
+  '2026-10-09': '한글날',
+};
+
 /* ==================================================
   4. 기본 개인레슨
 ================================================== */
@@ -205,14 +213,29 @@ let addedLessons = getStorageData('addedLessons', []);
 const holidayCache = {};
 
 async function getHolidays(year, month) {
-  if (!SERVICE_KEY) {
-    return {};
-  }
-
   const cacheKey = `${year}-${month}`;
 
   if (holidayCache[cacheKey]) {
     return holidayCache[cacheKey];
+  }
+
+  const holidays = {};
+
+  Object.entries(HOLIDAY_OVERRIDES).forEach(([dateKey, name]) => {
+    const holidayDate = new Date(`${dateKey}T00:00:00`);
+
+    if (
+      holidayDate.getFullYear() === year &&
+      holidayDate.getMonth() === month
+    ) {
+      holidays[holidayDate.getDate()] = name;
+    }
+  });
+
+  if (!SERVICE_KEY) {
+    holidayCache[cacheKey] = holidays;
+
+    return holidays;
   }
 
   const formattedMonth = String(month + 1).padStart(2, '0');
@@ -234,8 +257,6 @@ async function getHolidays(year, month) {
     const xml = parser.parseFromString(text, 'text/xml');
 
     const items = xml.querySelectorAll('item');
-
-    const holidays = {};
 
     items.forEach((item) => {
       const date = item.querySelector('locdate')?.textContent;
