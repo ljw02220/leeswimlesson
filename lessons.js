@@ -175,6 +175,23 @@ function saveStorageData(key, data) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
+function hasSupabaseConnection() {
+  return Boolean(window.swimDb?.isConfigured() && window.swimDb?.client);
+}
+
+function getLessonMemberNames(lesson) {
+  const title = getLessonName(lesson).trim();
+
+  if (!title || title === '개인레슨') {
+    return [];
+  }
+
+  return title
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
 let completedLessons = getStorageData('completedLessons', {});
 
 let cancelledLessons = getStorageData('cancelledLessons', {});
@@ -416,7 +433,142 @@ function escapeHTML(value) {
 }
 
 /* ==================================================
-  15. 날짜별 수업 만들기
+  15. 개인레슨 완료 횟수 반영
+================================================== */
+
+function getNextUsedLessonCount(member, change) {
+  const totalLessons = Number(member.total_lessons || member.totalLessons || 0);
+  const usedLessons = Number(member.used_lessons || member.usedLessons || 0);
+  const nextUsedLessons = Math.max(usedLessons + change, 0);
+
+  return totalLessons > 0
+    ? Math.min(nextUsedLessons, totalLessons)
+    : nextUsedLessons;
+}
+
+async function findDatabaseMembersForLesson(lesson) {
+  if (!hasSupabaseConnection()) {
+    return [];
+  }
+
+  const title = getLessonName(lesson).trim();
+  const memberNames = getLessonMemberNames(lesson);
+  const client = window.swimDb.client;
+
+  if (title) {
+    const { data, error } = await client
+      .from('members')
+      .select('id, name, total_lessons, used_lessons, last_lesson_date')
+      .eq('name', title);
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.length > 0) {
+      return data;
+    }
+  }
+
+  if (memberNames.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from('members')
+    .select('id, name, total_lessons, used_lessons, last_lesson_date')
+    .in('name', memberNames);
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+async function updateDatabaseMemberLessonCounts(lesson, change) {
+  const matchedMembers = await findDatabaseMembersForLesson(lesson);
+
+  if (matchedMembers.length === 0) {
+    return;
+  }
+
+  await Promise.all(
+    matchedMembers.map((member) => {
+      const updateData = {
+        used_lessons: getNextUsedLessonCount(member, change),
+      };
+
+      if (change > 0 && lesson.date) {
+        updateData.last_lesson_date = lesson.date;
+      }
+
+      return window.swimDb.client
+        .from('members')
+        .update(updateData)
+        .eq('id', member.id);
+    })
+  ).then((results) => {
+    const failedResult = results.find((result) => result.error);
+
+    if (failedResult) {
+      throw failedResult.error;
+    }
+  });
+}
+
+function updateLocalMemberLessonCounts(lesson, change) {
+  const savedMembers = getStorageData('personalLessonMembers', []);
+
+  if (!Array.isArray(savedMembers) || savedMembers.length === 0) {
+    return;
+  }
+
+  const title = getLessonName(lesson).trim();
+  const memberNames = getLessonMemberNames(lesson);
+  const exactMatches = savedMembers.filter((member) => member.name === title);
+  const matchedMembers =
+    exactMatches.length > 0
+      ? exactMatches
+      : savedMembers.filter((member) => memberNames.includes(member.name));
+
+  if (matchedMembers.length === 0) {
+    return;
+  }
+
+  const matchedIds = new Set(matchedMembers.map((member) => member.id));
+  const updatedMembers = savedMembers.map((member) => {
+    if (!matchedIds.has(member.id)) {
+      return member;
+    }
+
+    const usedLessons = getNextUsedLessonCount(member, change);
+
+    return {
+      ...member,
+      usedLessons,
+      lastLessonDate:
+        change > 0 && lesson.date ? lesson.date : member.lastLessonDate,
+    };
+  });
+
+  saveStorageData('personalLessonMembers', updatedMembers);
+}
+
+async function syncPersonalLessonCount(lesson, change) {
+  if (!lesson || lesson.type !== 'personal') {
+    return;
+  }
+
+  if (hasSupabaseConnection()) {
+    await updateDatabaseMemberLessonCounts(lesson, change);
+  }
+
+  updateLocalMemberLessonCounts(lesson, change);
+}
+
+/* ==================================================
+  16. 날짜별 수업 만들기
 ================================================== */
 
 function getDaySchedule(date, dateKey, holidayName, personalLessonsByDate) {
@@ -889,7 +1041,7 @@ if (closeDetailModal && lessonDetailModal) {
 ================================================== */
 
 if (confirmDetailBtn && detailStatus) {
-  confirmDetailBtn.addEventListener('click', () => {
+  confirmDetailBtn.addEventListener('click', async () => {
     if (!selectedLesson) {
       return;
     }
@@ -897,6 +1049,9 @@ if (confirmDetailBtn && detailStatus) {
     const lessonKey = selectedLesson.lessonKey;
 
     const status = detailStatus.value;
+    const wasCompleted = completedLessons[lessonKey] === true;
+    const previousCompletedLessons = { ...completedLessons };
+    const previousCancelledLessons = { ...cancelledLessons };
 
     // 기존 상태 초기화
     delete completedLessons[lessonKey];
@@ -913,13 +1068,29 @@ if (confirmDetailBtn && detailStatus) {
       cancelledLessons[lessonKey] = true;
     }
 
-    saveStorageData('completedLessons', completedLessons);
+    const isCompleted = completedLessons[lessonKey] === true;
 
-    saveStorageData('cancelledLessons', cancelledLessons);
+    try {
+      if (wasCompleted !== isCompleted) {
+        await syncPersonalLessonCount(selectedLesson, isCompleted ? 1 : -1);
+      }
 
-    closeLessonDetailModal();
+      saveStorageData('completedLessons', completedLessons);
 
-    renderCalendar();
+      saveStorageData('cancelledLessons', cancelledLessons);
+
+      closeLessonDetailModal();
+
+      renderCalendar();
+    } catch (error) {
+      completedLessons = previousCompletedLessons;
+
+      cancelledLessons = previousCancelledLessons;
+
+      console.error('회원 진행 횟수를 변경하지 못했습니다.', error);
+
+      alert('회원 진행 횟수 변경 중 오류가 발생했습니다.');
+    }
   });
 }
 
@@ -928,7 +1099,7 @@ if (confirmDetailBtn && detailStatus) {
 ================================================== */
 
 if (deleteLessonBtn) {
-  deleteLessonBtn.addEventListener('click', () => {
+  deleteLessonBtn.addEventListener('click', async () => {
     if (!selectedLesson) {
       return;
     }
@@ -940,6 +1111,20 @@ if (deleteLessonBtn) {
     const shouldDelete = confirm('이 수업을 삭제할까요?');
 
     if (!shouldDelete) {
+      return;
+    }
+
+    const wasCompleted = completedLessons[selectedLesson.lessonKey] === true;
+
+    try {
+      if (wasCompleted) {
+        await syncPersonalLessonCount(selectedLesson, -1);
+      }
+    } catch (error) {
+      console.error('회원 진행 횟수를 되돌리지 못했습니다.', error);
+
+      alert('회원 진행 횟수 변경 중 오류가 발생했습니다.');
+
       return;
     }
 
@@ -965,10 +1150,14 @@ if (deleteLessonBtn) {
   24. 완료 체크
 ================================================== */
 
-function toggleComplete(event, lessonKey) {
+async function toggleComplete(event, lessonKey) {
   event.stopPropagation();
 
+  const dateKey = lessonKey.slice(0, 10);
+  const lesson = findLesson(dateKey, lessonKey);
   const isCompleted = completedLessons[lessonKey] === true;
+  const previousCompletedLessons = { ...completedLessons };
+  const previousCancelledLessons = { ...cancelledLessons };
 
   if (isCompleted) {
     delete completedLessons[lessonKey];
@@ -978,11 +1167,23 @@ function toggleComplete(event, lessonKey) {
     delete cancelledLessons[lessonKey];
   }
 
-  saveStorageData('completedLessons', completedLessons);
+  try {
+    await syncPersonalLessonCount(lesson, isCompleted ? -1 : 1);
 
-  saveStorageData('cancelledLessons', cancelledLessons);
+    saveStorageData('completedLessons', completedLessons);
 
-  renderCalendar();
+    saveStorageData('cancelledLessons', cancelledLessons);
+
+    renderCalendar();
+  } catch (error) {
+    completedLessons = previousCompletedLessons;
+
+    cancelledLessons = previousCancelledLessons;
+
+    console.error('회원 진행 횟수를 변경하지 못했습니다.', error);
+
+    alert('회원 진행 횟수 변경 중 오류가 발생했습니다.');
+  }
 }
 
 /* ==================================================
