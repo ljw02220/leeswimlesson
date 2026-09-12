@@ -182,6 +182,21 @@ function getSalaryReportMonth(year, month) {
   return new Date(year, month - 1, 1);
 }
 
+function getSalaryActivityMonth(year, month) {
+  const activityMonth = getSalaryReportMonth(year, month);
+
+  return {
+    year: activityMonth.getFullYear(),
+    month: activityMonth.getMonth(),
+  };
+}
+
+function getSalaryActivityMonthLabel(year, month) {
+  const activityMonth = getSalaryReportMonth(year, month);
+
+  return `${activityMonth.getMonth() + 1}월 수업`;
+}
+
 function getSalaryReportLabel(year, month) {
   const reportMonth = getSalaryReportMonth(year, month);
 
@@ -332,15 +347,15 @@ async function getHolidays(year, month) {
   6. 단체강습 조회
 ================================================== */
 
-async function createRecurringGroupLessons() {
+async function createRecurringGroupLessons(year, month) {
   const cancelledLessons = getStorageData('cancelledLessons', {});
   const completedLessons = getStorageData('completedLessons', {});
-  const holidaysByDate = await getHolidays(currentYear, currentMonth);
-  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const holidaysByDate = await getHolidays(year, month);
+  const lastDay = new Date(year, month + 1, 0).getDate();
   const lessons = [];
 
   for (let day = 1; day <= lastDay; day++) {
-    const date = new Date(currentYear, currentMonth, day);
+    const date = new Date(year, month, day);
     const dateKey = toDateKey(date);
 
     if (holidaysByDate[dateKey]) {
@@ -377,15 +392,19 @@ async function createRecurringGroupLessons() {
 
 async function getGroupLessons() {
   const client = getSupabaseClient();
+  const activityMonth = getSalaryActivityMonth(currentYear, currentMonth);
 
   if (!client) {
-    return await createRecurringGroupLessons();
+    return await createRecurringGroupLessons(
+      activityMonth.year,
+      activityMonth.month
+    );
   }
 
-  const { start, end } = getMonthRange(currentYear, currentMonth);
+  const { start, end } = getMonthRange(activityMonth.year, activityMonth.month);
 
   const [holidayData, lessonResult] = await Promise.all([
-    getHolidays(currentYear, currentMonth),
+    getHolidays(activityMonth.year, activityMonth.month),
     client
       .from('lessons')
       .select('id, lesson_date, lesson_time, lesson_type, status, source')
@@ -399,14 +418,22 @@ async function getGroupLessons() {
   if (error) {
     console.error('Supabase 단체강습 데이터를 불러오지 못했습니다.', error);
 
-    return await createRecurringGroupLessons();
+    return await createRecurringGroupLessons(
+      activityMonth.year,
+      activityMonth.month
+    );
   }
 
   const lessons = (data || []).filter(
     (lesson) => !holidayData[lesson.lesson_date]
   );
 
-  return lessons.length > 0 ? lessons : await createRecurringGroupLessons();
+  return lessons.length > 0
+    ? lessons
+    : await createRecurringGroupLessons(
+        activityMonth.year,
+        activityMonth.month
+      );
 }
 
 /* ==================================================
@@ -671,6 +698,10 @@ async function getPaidSalary() {
 ================================================== */
 
 function calculateFinance(groupLessons, personalMembers, paidAmount) {
+  const groupActivityLabel = getSalaryActivityMonthLabel(
+    currentYear,
+    currentMonth
+  );
   const activeGroupLessons = groupLessons.filter(
     (lesson) => lesson.status !== 'cancelled'
   );
@@ -700,6 +731,7 @@ function calculateFinance(groupLessons, personalMembers, paidAmount) {
     netAmount,
     paidAmount,
     personalMemberCount: personalMembers.length,
+    groupActivityLabel,
   };
 }
 
@@ -726,7 +758,9 @@ function renderFinanceSummary(result) {
   }
 
   if (groupLessonCount) {
-    groupLessonCount.textContent = `총 ${result.groupCount}회 · 완료 ${result.completedGroupCount}회`;
+    groupLessonCount.textContent =
+      `${result.groupActivityLabel} 총 ${result.groupCount}회` +
+      ` · 완료 ${result.completedGroupCount}회`;
   }
 
   if (personalIncome) {
@@ -741,7 +775,7 @@ function renderFinanceSummary(result) {
 
   if (groupCalculation) {
     groupCalculation.textContent =
-      `${result.groupCount}회 × ` +
+      `${result.groupActivityLabel} ${result.groupCount}회 × ` +
       `${GROUP_LESSON_RATE.toLocaleString('ko-KR')}원`;
   }
 
