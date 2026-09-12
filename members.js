@@ -4,11 +4,33 @@
 
 const STORAGE_KEY = 'personalLessonMembers';
 const REPORT_STORAGE_KEY = 'personalLessonReports';
+const HOLIDAY_API_URL =
+  'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
+const HOLIDAY_SERVICE_KEY = window.SWIM_CONFIG?.HOLIDAY_API_KEY || '';
+
+const HOLIDAY_OVERRIDES = {
+  '2026-09-24': '추석 연휴',
+  '2026-09-25': '추석',
+  '2026-09-26': '추석 연휴',
+  '2026-10-03': '개천절',
+  '2026-10-09': '한글날',
+};
+
+const DAY_INDEX_BY_NAME = {
+  일: 0,
+  월: 1,
+  화: 2,
+  수: 3,
+  목: 4,
+  금: 5,
+  토: 6,
+};
 
 let members = [];
 let currentFilter = '전체';
 let editingMemberId = null;
 let memberLoadError = '';
+const holidayCache = {};
 
 // ======================================================
 // 데이터 불러오기 / 저장
@@ -70,7 +92,7 @@ function showMemberLoadError(message) {
   tbody.innerHTML = `
     <tr>
       <td
-        colspan="7"
+        colspan="6"
         class="empty-member-row"
       >
         ${escapeHTML(message)}
@@ -95,6 +117,7 @@ function mapMemberFromDatabase(row) {
     lessonFormat: row.lesson_format || '1:1',
     days: row.days || [],
     time: row.lesson_time || '',
+    lessonStartDate: row.lesson_start_date || '',
     totalLessons: Number(row.total_lessons || 0),
     usedLessons: Number(row.used_lessons || 0),
     paymentAmount: Number(row.payment_amount || 0),
@@ -115,6 +138,7 @@ function mapMemberToDatabase(member) {
     lesson_format: member.lessonFormat || '1:1',
     days: member.days || [],
     lesson_time: normalizeDateValue(member.time),
+    lesson_start_date: normalizeDateValue(member.lessonStartDate),
     total_lessons: Number(member.totalLessons || 0),
     used_lessons: Number(member.usedLessons || 0),
     payment_amount: Number(member.paymentAmount || 0),
@@ -398,6 +422,116 @@ function formatShortDate(dateValue) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
+function formatKoreanDate(dateValue) {
+  if (!dateValue) {
+    return '';
+  }
+
+  const date = new Date(`${dateValue}T00:00:00`);
+
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+async function getHolidays(year, month) {
+  const cacheKey = `${year}-${month}`;
+
+  if (holidayCache[cacheKey]) {
+    return holidayCache[cacheKey];
+  }
+
+  const holidays = {};
+
+  Object.entries(HOLIDAY_OVERRIDES).forEach(([dateKey, name]) => {
+    const holidayDate = new Date(`${dateKey}T00:00:00`);
+
+    if (
+      holidayDate.getFullYear() === year &&
+      holidayDate.getMonth() === month
+    ) {
+      holidays[dateKey] = name;
+    }
+  });
+
+  if (!HOLIDAY_SERVICE_KEY) {
+    holidayCache[cacheKey] = holidays;
+
+    return holidays;
+  }
+
+  const formattedMonth = String(month + 1).padStart(2, '0');
+  const url =
+    `${HOLIDAY_API_URL}/getRestDeInfo` +
+    `?ServiceKey=${HOLIDAY_SERVICE_KEY}` +
+    `&solYear=${year}` +
+    `&solMonth=${formattedMonth}` +
+    `&numOfRows=50`;
+
+  try {
+    const response = await fetch(url);
+    const text = await response.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'text/xml');
+    const items = xml.querySelectorAll('item');
+
+    items.forEach((item) => {
+      const date = item.querySelector('locdate')?.textContent;
+      const name = item.querySelector('dateName')?.textContent;
+
+      if (!date) {
+        return;
+      }
+
+      const dateKey = [
+        date.slice(0, 4),
+        date.slice(4, 6),
+        date.slice(6, 8),
+      ].join('-');
+
+      holidays[dateKey] = name || '공휴일';
+    });
+  } catch (error) {
+    console.error('공휴일 정보를 불러오지 못했습니다.', error);
+  }
+
+  holidayCache[cacheKey] = holidays;
+
+  return holidays;
+}
+
+async function getPersonalLessonDates(member) {
+  const totalLessons = Number(member.totalLessons || 0);
+  const startDate = member.lessonStartDate || member.lastLessonDate || '';
+  const lessonDays = Array.isArray(member.days) ? member.days : [];
+  const dayIndexes = lessonDays
+    .map((day) => DAY_INDEX_BY_NAME[day])
+    .filter((day) => day !== undefined);
+  const lessonDates = [];
+
+  if (!startDate || totalLessons <= 0 || dayIndexes.length === 0) {
+    return lessonDates;
+  }
+
+  const currentDate = new Date(`${startDate}T00:00:00`);
+  let guard = 0;
+
+  while (lessonDates.length < totalLessons && guard < 500) {
+    const dateKey = getDateKey(currentDate);
+    const holidays = await getHolidays(
+      currentDate.getFullYear(),
+      currentDate.getMonth()
+    );
+
+    if (dayIndexes.includes(currentDate.getDay()) && !holidays[dateKey]) {
+      lessonDates.push(dateKey);
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+    guard++;
+  }
+
+  return lessonDates;
+}
+
 function escapeHTML(value) {
   const element = document.createElement('div');
 
@@ -444,10 +578,10 @@ function isCurrentPaymentReported(member) {
 
 function getReportButtonLabel(member) {
   if (!isCurrentPaymentReported(member)) {
-    return '미보고';
+    return '미완료';
   }
 
-  return '보고 완료';
+  return '완료';
 }
 
 // ======================================================
@@ -504,7 +638,7 @@ function renderMembers() {
     tbody.innerHTML = `
       <tr>
         <td
-          colspan="7"
+          colspan="6"
           class="empty-member-row"
         >
           등록된 회원이 없습니다.
@@ -529,10 +663,6 @@ function renderMembers() {
         <strong>
           ${escapeHTML(member.name)}
         </strong>
-
-        <span>
-          ${escapeHTML(member.phone || '-')}
-        </span>
       </td>
 
       <td class="schedule-cell">
@@ -554,23 +684,6 @@ function renderMembers() {
       </td>
 
       <td class="center-cell">
-        <div class="payment-cell">
-        <span
-          class="
-            status
-            ${getPaymentClass(member.paymentStatus)}
-          "
-        >
-          ${escapeHTML(member.paymentStatus || '확인필요')}
-        </span>
-
-          <small>
-            ${formatMoney(member.paymentAmount)}원
-          </small>
-        </div>
-      </td>
-
-      <td class="center-cell">
         <button
           type="button"
           class="
@@ -579,9 +692,7 @@ function renderMembers() {
           "
           data-report-member-id="${member.id}"
         >
-          ${
-            getReportButtonLabel(member)
-          }
+          ${getReportButtonLabel(member)}
         </button>
       </td>
     `;
@@ -599,9 +710,7 @@ function renderMembers() {
 // ======================================================
 
 async function markMemberReported(memberId) {
-  const member = members.find(
-    (item) => String(item.id) === String(memberId)
-  );
+  const member = members.find((item) => String(item.id) === String(memberId));
 
   if (!member) {
     return;
@@ -854,6 +963,8 @@ async function addMember(memberData) {
     days: memberData.days || [],
 
     time: memberData.time || '',
+
+    lessonStartDate: memberData.lessonStartDate || '',
 
     totalLessons: Number(memberData.totalLessons || 0),
 
@@ -1131,6 +1242,8 @@ function openAddMemberModal() {
 
   document.getElementById('lessonFormat').value = '1:1';
 
+  document.getElementById('lessonStartDate').value = '';
+
   document.getElementById('paymentStatus').value = '완납';
 
   document.getElementById('memberStatus').value = '수강중';
@@ -1173,6 +1286,9 @@ function openMemberDetail(memberId) {
   });
 
   document.getElementById('memberTime').value = member.time || '';
+
+  document.getElementById('lessonStartDate').value =
+    member.lessonStartDate || '';
 
   document.getElementById('lessonFormat').value = member.lessonFormat || '1:1';
 
@@ -1250,7 +1366,8 @@ async function handleMemberSubmit(event) {
   const usedLessons = Number(document.getElementById('usedLessons').value) || 0;
   const paymentDate = document.getElementById('paymentDate').value;
   const paymentStatus = document.getElementById('paymentStatus').value;
-  const personalReportedAt = document.getElementById('personalReportedAt').value;
+  const personalReportedAt =
+    document.getElementById('personalReportedAt').value;
 
   if (usedLessons > totalLessons) {
     alert('진행 횟수는 등록 횟수보다 많을 수 없습니다.');
@@ -1280,6 +1397,8 @@ async function handleMemberSubmit(event) {
     days: selectedDays,
 
     time: document.getElementById('memberTime').value,
+
+    lessonStartDate: document.getElementById('lessonStartDate').value,
 
     totalLessons,
 
@@ -1324,95 +1443,103 @@ function setupAddButton() {
 }
 
 // ======================================================
-// 관리 메모
+// 개인레슨 시작/마감 일정
 // ======================================================
 
-function renderManagementMemo() {
-  const memoList = document.querySelector('.memo-list');
+async function renderLessonPeriods() {
+  const periodList = document.querySelector('.lesson-period-list');
 
-  if (!memoList) {
+  if (!periodList) {
     return;
   }
 
-  const importantMembers = members
-    .filter((member) => {
-      const remaining = getRemainingLessons(member);
+  periodList.innerHTML = `
+    <article class="lesson-period-empty">
+      개인레슨 일정을 계산하는 중입니다.
+    </article>
+  `;
 
-      return (
-        member.paymentStatus === '미납' ||
-        member.paymentStatus === '확인필요' ||
-        (member.status === '수강중' && remaining <= 2)
-      );
+  const schedules = await Promise.all(
+    members
+      .filter((member) => member.status !== '종료')
+      .map(async (member) => {
+        const lessonDates = await getPersonalLessonDates(member);
+        const usedLessons = Number(member.usedLessons || 0);
+        const upcomingDates = lessonDates.slice(usedLessons);
+
+        return {
+          member,
+          lessonDates,
+          upcomingDates,
+          startDate:
+            lessonDates[0] ||
+            member.lessonStartDate ||
+            member.lastLessonDate ||
+            '',
+          endDate: lessonDates[lessonDates.length - 1] || '',
+        };
+      })
+  );
+
+  const visibleSchedules = schedules
+    .filter(
+      (schedule) =>
+        schedule.startDate ||
+        schedule.member.lessonStartDate ||
+        schedule.member.lastLessonDate
+    )
+    .sort((a, b) => {
+      const aEnd = a.endDate || '9999-12-31';
+      const bEnd = b.endDate || '9999-12-31';
+
+      return aEnd.localeCompare(bEnd);
     })
-    .slice(0, 5);
+    .slice(0, 6);
 
-  memoList.innerHTML = '';
+  periodList.innerHTML = '';
 
-  if (importantMembers.length === 0) {
-    memoList.innerHTML = `
-      <article class="memo-item">
-        <span class="memo-date">
-          관리
-        </span>
-
-        <strong>
-          확인할 회원이 없습니다.
-        </strong>
-
-        <p>
-          미납 또는 재등록 예정 회원이 없습니다.
-        </p>
+  if (visibleSchedules.length === 0) {
+    periodList.innerHTML = `
+      <article class="lesson-period-empty">
+        수업 시작일을 입력하면 개인레슨 마감일이 표시됩니다.
       </article>
     `;
 
     return;
   }
 
-  importantMembers.forEach((member) => {
+  visibleSchedules.forEach((schedule) => {
+    const { member, upcomingDates, startDate, endDate } = schedule;
     const remaining = getRemainingLessons(member);
-
-    let title = '';
-    let description = '';
-
-    if (
-      member.paymentStatus === '미납' ||
-      member.paymentStatus === '확인필요'
-    ) {
-      title = `${member.name} 회원 결제 확인`;
-
-      description =
-        member.paymentStatus === '미납'
-          ? `결제 예정금액 ${formatMoney(member.paymentAmount)}원`
-          : '결제 상태 확인 필요';
-    } else {
-      title = `${member.name} 회원 재등록 예정`;
-
-      description = `잔여 수업 ${remaining}회`;
-    }
-
     const article = document.createElement('article');
+    const nextDates = upcomingDates
+      .slice(0, 4)
+      .map(formatKoreanDate)
+      .join(', ');
 
-    article.className = 'memo-item';
-
+    article.className = 'lesson-period-item';
     article.innerHTML = `
-        <span class="memo-date">
-          확인
-        </span>
+      <div class="lesson-period-top">
+        <strong>${escapeHTML(member.name)}</strong>
+        <span>${remaining}회 남음</span>
+      </div>
 
-        <strong>
-          ${escapeHTML(title)}
-        </strong>
+      <p>
+        시작 ${escapeHTML(formatKoreanDate(startDate) || '-')}
+        ·
+        마감 ${escapeHTML(formatKoreanDate(endDate) || '계산 필요')}
+      </p>
 
-        <p>
-          ${escapeHTML(description)}
-        </p>
-      `;
+      <small>
+        ${escapeHTML(nextDates || '남은 예정 수업이 없습니다.')}
+      </small>
+    `;
 
     article.addEventListener('click', () => {
       openMemberDetail(member.id);
     });
 
-    memoList.appendChild(article);
+    periodList.appendChild(article);
   });
 }
 
@@ -1423,7 +1550,7 @@ function renderManagementMemo() {
 function renderAll() {
   renderMembers();
   renderMetrics();
-  renderManagementMemo();
+  renderLessonPeriods();
 }
 
 // ======================================================

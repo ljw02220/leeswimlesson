@@ -62,13 +62,12 @@
         </article>
       </section>
 
-      <!-- 회원 목록 / 관리 메모 -->
+      <!-- 회원 목록 / 개인레슨 일정 -->
       <section class="content-grid">
         <div class="manager-card member-list-card">
           <div class="card-header">
             <div>
               <h2>회원 목록</h2>
-              <p>개인레슨 회원의 수업 상태와 결제 현황을 확인합니다.</p>
             </div>
 
             <div class="filter-group">
@@ -107,7 +106,6 @@
                   <th>예정</th>
                   <th>잔여</th>
                   <th>수업 형태</th>
-                  <th>결제</th>
                   <th>보고</th>
                 </tr>
               </thead>
@@ -119,10 +117,10 @@
 
         <aside class="manager-card side-card">
           <div class="card-header compact">
-            <h2>관리 메모</h2>
+            <h2>개인레슨 일정</h2>
           </div>
 
-          <div class="memo-list"></div>
+          <div class="lesson-period-list"></div>
         </aside>
       </section>
     </main>
@@ -164,7 +162,7 @@
               <input
                 type="tel"
                 id="memberPhone"
-                placeholder="010-0000-0000"
+                placeholder="010-1234-5678"
                 maxlength="13"
               />
             </div>
@@ -184,6 +182,11 @@
             <div class="form-group">
               <label for="memberTime">수업 시간</label>
               <input type="time" id="memberTime" />
+            </div>
+
+            <div class="form-group">
+              <label for="lessonStartDate">수업 시작일</label>
+              <input type="date" id="lessonStartDate" />
             </div>
 
             <div class="form-group full-width">
@@ -225,13 +228,12 @@
             <!-- 수업 횟수 -->
             <div class="form-group">
               <label for="totalLessons">등록 횟수</label>
-              <input
-                type="number"
-                id="totalLessons"
-                min="1"
-                value="8"
-                required
-              />
+              <select id="totalLessons">
+                <option value="4">4회</option>
+                <option value="8">8회</option>
+                <option value="12">12회</option>
+                <option value="16">16회</option>
+              </select>
             </div>
 
             <div class="form-group">
@@ -326,8 +328,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260911"></script>
-    <script src="members.js?v=20260912-report-history"></script>
+    <script src="members.js?v=20260912-lesson-periods"></script>
   </body>
 </html>

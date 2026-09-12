@@ -52,41 +52,35 @@
 
 .members-page .data-table th:nth-child(1),
 .members-page .data-table td:nth-child(1) {
-  width: 25%;
+  width: 26%;
 }
 
 .members-page .data-table th:nth-child(2),
 .members-page .data-table td:nth-child(2) {
-  width: 20%;
+  width: 24%;
 }
 
 .members-page .data-table th:nth-child(3),
 .members-page .data-table td:nth-child(3) {
-  width: 9%;
+  width: 10%;
   text-align: center;
 }
 
 .members-page .data-table th:nth-child(4),
 .members-page .data-table td:nth-child(4) {
-  width: 9%;
+  width: 10%;
   text-align: center;
 }
 
 .members-page .data-table th:nth-child(5),
 .members-page .data-table td:nth-child(5) {
-  width: 11%;
+  width: 14%;
   text-align: center;
 }
 
 .members-page .data-table th:nth-child(6),
 .members-page .data-table td:nth-child(6) {
-  width: 12%;
-  text-align: center;
-}
-
-.members-page .data-table th:nth-child(7),
-.members-page .data-table td:nth-child(7) {
-  width: 14%;
+  width: 16%;
   text-align: center;
 }
 
@@ -483,70 +477,225 @@
 }
 
 /* ======================================================
-    관리 메모
+    개인레슨 일정
   ====================================================== */
 
-.members-page .memo-item {
+.members-page .lesson-period-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.members-page .lesson-period-item {
+  padding: 13px;
+
+  border: 1px solid #e5ebf2;
+  border-radius: 8px;
+
+  background: #fbfdff;
+
   cursor: pointer;
 }
 
-/* ======================================================
-    모바일
-  ====================================================== */
+.members-page .lesson-period-item:hover {
+  border-color: #c7d8ef;
+  background: #f5f9ff;
+}
+
+.members-page .lesson-period-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.members-page .lesson-period-top strong {
+  min-width: 0;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  color: #26364d;
+}
+
+.members-page .lesson-period-top span {
+  flex: 0 0 auto;
+
+  padding: 5px 8px;
+
+  border-radius: 999px;
+
+  background: #eef4ff;
+  color: #3366cc;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.members-page .lesson-period-item p {
+  margin-top: 8px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  color: #526174;
+}
+
+.members-page .lesson-period-item small,
+.members-page .lesson-period-empty {
+  display: block;
+
+  margin-top: 6px;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+
+  color: #8290a3;
+}
+
+.members-page .lesson-period-empty {
+  margin-top: 0;
+  padding: 22px 14px;
+
+  text-align: center;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+}
+
+/* ==================================================
+  모바일
+================================================== */
 
 @media (max-width: 430px) {
+  /* 회원 목록 카드 헤더 */
+  .members-page .card-header {
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 10px;
+  }
+
+  .members-page .card-header h2 {
+    font-size: 17px;
+  }
+
+  .members-page .card-header p {
+    margin-top: 3px;
+
+    font-size: 10px;
+  }
+
+  /* 필터 */
   .members-page .filter-group {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+
     width: 100%;
+
+    gap: 5px;
   }
 
   .members-page .filter-chip {
-    flex: 1;
-    min-width: 0;
-    padding: 6px 4px;
+    width: 100%;
+    height: 30px;
+
+    padding: 0;
+
     font-size: 9px;
+
     white-space: nowrap;
   }
-}
 
-@media (max-width: 430px) {
-  .members-page .data-table th:nth-child(1),
-  .members-page .data-table td:nth-child(1) {
-    width: 29%;
+  /* 회원 테이블 */
+  .members-page .data-table {
+    width: 100%;
+
+    table-layout: fixed;
   }
 
-  .members-page .data-table th:nth-child(2),
-  .members-page .data-table td:nth-child(2) {
-    width: 22%;
-  }
-
-  .members-page .data-table th:nth-child(3),
-  .members-page .data-table td:nth-child(3) {
-    width: 10%;
-  }
-
-  .members-page .data-table th:nth-child(4),
-  .members-page .data-table td:nth-child(4) {
-    width: 10%;
-  }
-
-  .members-page .data-table th:nth-child(5),
-  .members-page .data-table td:nth-child(5) {
-    width: 14%;
-  }
-
-  .members-page .data-table th:nth-child(6),
-  .members-page .data-table td:nth-child(6) {
-    width: 15%;
-  }
-}
-
-@media (max-width: 430px) {
   .members-page .data-table th,
   .members-page .data-table td {
-    padding-left: 3px;
-    padding-right: 3px;
+    padding: 10px 3px;
+
+    font-size: 9px;
+
+    vertical-align: middle;
+  }
+
+  .members-page .data-table th {
+    font-size: 8px;
+  }
+
+  /* 회원명 */
+  .members-page .data-table th:nth-child(1),
+  .members-page .data-table td:nth-child(1) {
+    width: 28%;
+  }
+
+  /* 요일 & 시간 */
+  .members-page .data-table th:nth-child(2),
+  .members-page .data-table td:nth-child(2) {
+    width: 24%;
+  }
+
+  /* 잔여 */
+  .members-page .data-table th:nth-child(3),
+  .members-page .data-table td:nth-child(3) {
+    width: 12%;
+
+    text-align: center;
+  }
+
+  /* 수업 형태 */
+  .members-page .data-table th:nth-child(4),
+  .members-page .data-table td:nth-child(4) {
+    width: 16%;
+
+    text-align: center;
+  }
+
+  /* 보고 */
+  .members-page .data-table th:nth-child(5),
+  .members-page .data-table td:nth-child(5) {
+    width: 20%;
+
+    text-align: center;
+  }
+
+  /* 회원명 */
+  .members-page .member-name {
+    font-size: 10px;
+    line-height: 1.3;
+
+    white-space: normal;
+    word-break: keep-all;
+  }
+
+  /* 요일 & 시간 */
+  .members-page .member-schedule {
+    font-size: 9px;
+
+    white-space: nowrap;
+  }
+
+  /* 수업형태 / 보고 배지 */
+  .members-page .format-badge,
+  .members-page .status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 34px;
+
+    padding: 4px 5px;
+
+    font-size: 8px;
+
+    white-space: nowrap;
   }
 }

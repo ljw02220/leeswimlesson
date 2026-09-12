@@ -5,6 +5,9 @@ add column if not exists personal_reported_at date;
 alter table public.members
 add column if not exists personal_reported_payment_date date;
 
+alter table public.members
+add column if not exists lesson_start_date date;
+
 create table if not exists public.personal_lesson_reports (
   id uuid primary key default gen_random_uuid(),
 

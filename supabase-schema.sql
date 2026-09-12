@@ -11,6 +11,7 @@ create table if not exists public.members (
   lesson_format text,
   days text[],
   lesson_time time,
+  lesson_start_date date,
 
   total_lessons integer not null default 0,
   used_lessons integer not null default 0,
@@ -35,6 +36,9 @@ add column if not exists personal_reported_at date;
 
 alter table public.members
 add column if not exists personal_reported_payment_date date;
+
+alter table public.members
+add column if not exists lesson_start_date date;
 
 -- =========================================
 -- 2. 수업 테이블
