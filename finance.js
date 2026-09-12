@@ -72,6 +72,18 @@ const copyReportButton = document.getElementById('copyReportButton');
 const addPersonalReportButton = document.getElementById(
   'addPersonalReportButton'
 );
+const personalReportModal = document.getElementById('personalReportModal');
+const closePersonalReportModal = document.getElementById(
+  'closePersonalReportModal'
+);
+const cancelPersonalReportButton = document.getElementById(
+  'cancelPersonalReportButton'
+);
+const personalReportForm = document.getElementById('personalReportForm');
+const reportMemberName = document.getElementById('reportMemberName');
+const reportPaymentAmount = document.getElementById('reportPaymentAmount');
+const reportPaymentDate = document.getElementById('reportPaymentDate');
+const reportReportedAt = document.getElementById('reportReportedAt');
 
 /* ==================================================
   3. 현재 조회 월
@@ -97,6 +109,18 @@ function getSupabaseClient() {
 
 function formatCurrency(value) {
   return `${Math.round(Number(value) || 0).toLocaleString('ko-KR')}원`;
+}
+
+function parseMoney(value) {
+  const numberText = String(value || '').replace(/[^\d]/g, '');
+
+  return Number(numberText) || 0;
+}
+
+function formatMoneyInputValue(value) {
+  const amount = parseMoney(value);
+
+  return amount > 0 ? amount.toLocaleString('ko-KR') : '';
 }
 
 function formatDate(dateValue) {
@@ -914,53 +938,74 @@ function renderPersonalReportSummary(personalMembers, result) {
   12. 개인레슨 보고 직접 추가
 ================================================== */
 
-async function addManualPersonalReport() {
-  const memberName = prompt(
-    '개인레슨 보고에 추가할 회원명을 입력해주세요.\n예: 김혜민 또는 문지영, 전효원'
-  )?.trim();
+function openPersonalReportModal() {
+  if (!personalReportModal || !personalReportForm) {
+    return;
+  }
+
+  personalReportForm.reset();
+
+  if (reportPaymentDate) {
+    reportPaymentDate.value = getDefaultReportedAt(currentYear, currentMonth);
+  }
+
+  if (reportReportedAt) {
+    reportReportedAt.value = getDefaultReportedAt(currentYear, currentMonth);
+  }
+
+  personalReportModal.classList.add('open');
+  personalReportModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  reportMemberName?.focus();
+}
+
+function closeManualReportModal() {
+  if (!personalReportModal) {
+    return;
+  }
+
+  personalReportModal.classList.remove('open');
+  personalReportModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+async function handleManualReportSubmit(event) {
+  event.preventDefault();
+
+  const memberName = reportMemberName?.value.trim() || '';
+  const amount = parseMoney(reportPaymentAmount?.value);
+  const paymentDate = normalizeDateInput(reportPaymentDate?.value);
+  const reportedAt = normalizeDateInput(reportReportedAt?.value);
 
   if (!memberName) {
-    return;
-  }
+    alert('이름을 입력해주세요.');
 
-  const amountInput = prompt(
-    '보고에 반영할 수강료를 입력해주세요.\n예: 300000'
-  );
-
-  if (amountInput === null) {
-    return;
-  }
-
-  const amount = Number(String(amountInput).replace(/[^\d]/g, ''));
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    alert('수강료는 0원보다 큰 숫자로 입력해주세요.');
+    reportMemberName?.focus();
 
     return;
   }
 
-  const paymentDate = normalizeDateInput(
-    prompt(
-      '결제일을 입력해주세요.\n예: 2026-08-08',
-      getDefaultReportedAt(currentYear, currentMonth)
-    )
-  );
+  if (amount <= 0) {
+    alert('가격을 입력해주세요.');
+
+    reportPaymentAmount?.focus();
+
+    return;
+  }
 
   if (!paymentDate) {
-    alert('결제일은 2026-08-08 형식으로 입력해주세요.');
+    alert('결제일을 입력해주세요.');
+
+    reportPaymentDate?.focus();
 
     return;
   }
 
-  const reportedAt = normalizeDateInput(
-    prompt(
-      '보고 완료일을 입력해주세요.\n예: 2026-08-31',
-      getDefaultReportedAt(currentYear, currentMonth)
-    )
-  );
-
   if (!reportedAt) {
-    alert('보고 완료일은 2026-08-31 형식으로 입력해주세요.');
+    alert('보고일을 입력해주세요.');
+
+    reportReportedAt?.focus();
 
     return;
   }
@@ -989,9 +1034,9 @@ async function addManualPersonalReport() {
       reported_at: reportedAt,
     });
 
-    await loadFinance();
+    closeManualReportModal();
 
-    alert('개인레슨 보고 내역을 추가했습니다.');
+    await loadFinance();
   } catch (error) {
     console.error('개인레슨 보고 내역 추가 실패:', error);
 
@@ -1191,7 +1236,33 @@ if (copyReportButton) {
 }
 
 if (addPersonalReportButton) {
-  addPersonalReportButton.addEventListener('click', addManualPersonalReport);
+  addPersonalReportButton.addEventListener('click', openPersonalReportModal);
+}
+
+if (closePersonalReportModal) {
+  closePersonalReportModal.addEventListener('click', closeManualReportModal);
+}
+
+if (cancelPersonalReportButton) {
+  cancelPersonalReportButton.addEventListener('click', closeManualReportModal);
+}
+
+if (personalReportModal) {
+  personalReportModal.addEventListener('click', (event) => {
+    if (event.target === personalReportModal) {
+      closeManualReportModal();
+    }
+  });
+}
+
+if (personalReportForm) {
+  personalReportForm.addEventListener('submit', handleManualReportSubmit);
+}
+
+if (reportPaymentAmount) {
+  reportPaymentAmount.addEventListener('input', (event) => {
+    event.target.value = formatMoneyInputValue(event.target.value);
+  });
 }
 
 if (paidSalaryCard) {

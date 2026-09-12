@@ -253,7 +253,167 @@
 }
 
 /* ==================================================
-  5. 모바일
+  5. 보고 추가 모달
+================================================== */
+
+.finance-modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(16, 24, 40, 0.45);
+  backdrop-filter: blur(4px);
+
+  z-index: 9999;
+}
+
+.finance-modal-overlay.open {
+  display: flex;
+}
+
+.finance-modal {
+  width: min(520px, 100%);
+
+  padding: 26px;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+}
+
+.finance-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.finance-modal-header h2 {
+  margin-top: 4px;
+
+  font-size: 22px;
+  font-weight: 900;
+
+  color: #26364d;
+}
+
+.finance-page .modal-kicker {
+  font-size: 11px;
+  font-weight: 800;
+
+  color: #7b8ca3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.finance-page .modal-close-button {
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f2f5f9;
+  color: #344054;
+
+  font-size: 22px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.finance-page .modal-close-button:hover {
+  background: #e5ebf3;
+}
+
+.finance-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 16px;
+}
+
+.finance-form .form-group {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.finance-form .form-group label {
+  font-size: 13px;
+  font-weight: 800;
+
+  color: #344054;
+}
+
+.finance-form .form-group input {
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 1px solid #d0d8e3;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #101828;
+
+  font: inherit;
+  outline: none;
+}
+
+.finance-form .form-group input:focus {
+  border-color: #4f8df7;
+  box-shadow: 0 0 0 3px rgba(79, 141, 247, 0.12);
+}
+
+.finance-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.finance-page .secondary-button {
+  min-width: 78px;
+  height: 38px;
+
+  padding: 0 14px;
+
+  border: 1px solid #d0d8e3;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #4a5d75;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.finance-page .secondary-button:hover {
+  background: #f6f9fc;
+}
+
+/* ==================================================
+  6. 모바일
 ================================================== */
 
 @media (max-width: 850px) {
@@ -306,6 +466,14 @@
 
   .report-line {
     font-size: 10px;
+  }
+
+  .finance-modal {
+    padding: 22px;
+  }
+
+  .finance-form-grid {
+    grid-template-columns: 1fr;
   }
 }
 

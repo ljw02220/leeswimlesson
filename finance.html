@@ -214,10 +214,81 @@
       </section>
     </main>
 
+    <div
+      id="personalReportModal"
+      class="finance-modal-overlay"
+      aria-hidden="true"
+    >
+      <div class="finance-modal" role="dialog" aria-modal="true">
+        <div class="finance-modal-header">
+          <div>
+            <span class="modal-kicker">Personal Report</span>
+            <h2>개인레슨 보고 추가</h2>
+          </div>
+
+          <button
+            id="closePersonalReportModal"
+            class="modal-close-button"
+            type="button"
+            aria-label="닫기"
+          >
+            ×
+          </button>
+        </div>
+
+        <form id="personalReportForm" class="finance-form">
+          <div class="finance-form-grid">
+            <div class="form-group">
+              <label for="reportMemberName">이름</label>
+              <input
+                id="reportMemberName"
+                type="text"
+                placeholder="예: 김혜민"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="reportPaymentAmount">가격</label>
+              <input
+                id="reportPaymentAmount"
+                type="text"
+                inputmode="numeric"
+                placeholder="예: 300,000"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="reportPaymentDate">결제일</label>
+              <input id="reportPaymentDate" type="date" required />
+            </div>
+
+            <div class="form-group">
+              <label for="reportReportedAt">보고일</label>
+              <input id="reportReportedAt" type="date" required />
+            </div>
+          </div>
+
+          <div class="finance-modal-actions">
+            <button
+              id="cancelPersonalReportButton"
+              class="secondary-button"
+              type="button"
+            >
+              취소
+            </button>
+
+            <button class="primary-action" type="submit">저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260911"></script>
-    <script src="finance.js?v=20260912-report-add-fix"></script>
+    <script src="finance.js?v=20260912-report-form"></script>
   </body>
 </html>
