@@ -325,6 +325,15 @@ async function createPersonalLessonReport(member, reportedAt) {
   }
 
   if (existing.data && existing.data.length > 0) {
+    const { error } = await window.swimDb.client
+      .from('personal_lesson_reports')
+      .update(report)
+      .eq('id', existing.data[0].id);
+
+    if (error) {
+      throw error;
+    }
+
     return;
   }
 
@@ -573,6 +582,15 @@ function isCurrentPaymentReported(member) {
     member.personalReportedAt &&
       member.paymentDate &&
       member.personalReportedPaymentDate === member.paymentDate
+  );
+}
+
+function hasReportStateChanged(previousMember, currentMember) {
+  return (
+    previousMember.personalReportedAt !== currentMember.personalReportedAt ||
+    previousMember.paymentDate !== currentMember.paymentDate ||
+    Number(previousMember.paymentAmount || 0) !==
+      Number(currentMember.paymentAmount || 0)
   );
 }
 
@@ -1027,7 +1045,12 @@ async function updateMember(memberId, updatedData) {
   try {
     const previousMember = members[index];
     const savedMember = await saveMember(memberId, updatedData);
+    const reportStateChanged = hasReportStateChanged(
+      previousMember,
+      savedMember
+    );
     const shouldDeletePreviousReport =
+      reportStateChanged &&
       isCurrentPaymentReported(previousMember) &&
       (!savedMember.personalReportedAt ||
         previousMember.personalReportedAt !== savedMember.personalReportedAt ||
@@ -1037,7 +1060,7 @@ async function updateMember(memberId, updatedData) {
       await deletePersonalLessonReport(previousMember);
     }
 
-    if (savedMember.personalReportedAt) {
+    if (reportStateChanged && savedMember.personalReportedAt) {
       await createPersonalLessonReport(
         savedMember,
         savedMember.personalReportedAt
