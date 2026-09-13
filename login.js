@@ -63,8 +63,31 @@ function getMemberLoginEmail(phone) {
   return `${normalizePhone(phone)}@members.leeswimlesson.com`;
 }
 
+function getAdminLoginEmail(loginId) {
+  const configuredAdminId = window.SWIM_CONFIG?.ADMIN_ID || 'admin';
+  const configuredAdminEmail = window.SWIM_CONFIG?.ADMIN_EMAIL;
+
+  if (configuredAdminEmail && loginId === configuredAdminId) {
+    return configuredAdminEmail;
+  }
+
+  return `${loginId}@admins.leeswimlesson.com`;
+}
+
+function isPhoneLogin(loginId) {
+  return normalizePhone(loginId).length >= 10;
+}
+
 function getLoginEmail(loginId) {
-  return loginId.includes('@') ? loginId : getMemberLoginEmail(loginId);
+  if (loginId.includes('@')) {
+    return loginId;
+  }
+
+  if (isPhoneLogin(loginId)) {
+    return getMemberLoginEmail(loginId);
+  }
+
+  return getAdminLoginEmail(loginId);
 }
 
 function getErrorText(error) {
