@@ -60,7 +60,7 @@ function normalizePhone(value) {
 }
 
 function getMemberLoginEmail(phone) {
-  return `${normalizePhone(phone)}@leeswim.member`;
+  return `${normalizePhone(phone)}@members.leeswimlesson.com`;
 }
 
 function getLoginEmail(loginId) {
@@ -91,7 +91,7 @@ function getSignupErrorMessage(error) {
     return 'Supabase Auth 설정 때문에 회원 계정을 만들지 못했습니다.';
   }
 
-  return `가입 신청을 저장하지 못했습니다. ${errorText}`;
+  return `가입 신청을 저장하지 못했습니다. ${errorText || 'Supabase 설정을 확인해주세요.'}`;
 }
 
 async function getSignupRequest(userId) {
