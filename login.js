@@ -67,6 +67,33 @@ function getLoginEmail(loginId) {
   return loginId.includes('@') ? loginId : getMemberLoginEmail(loginId);
 }
 
+function getErrorText(error) {
+  return [error?.code, error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function getSignupErrorMessage(error) {
+  const errorText = getErrorText(error);
+
+  if (error?.code === '23505') {
+    return '이미 가입 신청된 전화번호입니다.';
+  }
+
+  if (errorText.includes('signup_requests')) {
+    return (
+      '가입 신청 테이블이 아직 준비되지 않았습니다. ' +
+      'Supabase SQL Editor에서 supabase-approval-migration.sql을 먼저 실행해주세요.'
+    );
+  }
+
+  if (errorText.includes('Database error saving new user')) {
+    return 'Supabase Auth 설정 때문에 회원 계정을 만들지 못했습니다.';
+  }
+
+  return `가입 신청을 저장하지 못했습니다. ${errorText}`;
+}
+
 async function getSignupRequest(userId) {
   const { data, error } = await window.swimDb.client
     .from('signup_requests')
@@ -309,10 +336,7 @@ function setupSignup() {
       console.error('가입 신청 실패:', error);
 
       if (signupError) {
-        signupError.textContent =
-          error?.code === '23505'
-            ? '이미 가입 신청된 전화번호입니다.'
-            : '가입 신청을 저장하지 못했습니다.';
+        signupError.textContent = getSignupErrorMessage(error);
       }
     }
   });
