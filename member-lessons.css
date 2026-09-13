@@ -1,0 +1,865 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+/* ==================================================
+  1. 기본 설정
+================================================== */
+
+:root {
+  --bg: #eef3f8;
+  --card: #ffffff;
+
+  --text: #18243a;
+  --text-soft: #7c899b;
+
+  --blue: #4c8df6;
+  --blue-strong: #3478f6;
+  --blue-soft: #edf4ff;
+
+  --green: #15935a;
+  --green-soft: #e7f7ee;
+
+  --border: #e4ebf3;
+  --nav: #7d8b9e;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+
+  font-family: 'Pretendard', sans-serif;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  min-height: 100vh;
+
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+/* ==================================================
+  2. 전체 화면
+================================================== */
+
+.member-page {
+  min-height: 100vh;
+
+  padding-bottom: 78px;
+}
+
+.member-app {
+  width: 100%;
+
+  margin: 0 auto;
+  padding: 18px 12px 26px;
+}
+
+/* ==================================================
+  3. 상단 헤더
+================================================== */
+
+.member-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 22px;
+}
+
+.member-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+}
+
+.member-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  flex-shrink: 0;
+
+  border-radius: 11px;
+
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.member-brand-mark svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 2.2;
+}
+
+.member-brand-text {
+  display: flex;
+  flex-direction: column;
+
+  gap: 1px;
+}
+
+.member-brand-text strong {
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.member-brand-text span {
+  color: #8090a3;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.member-notification-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  border: none;
+  border-radius: 11px;
+
+  background: #ffffff;
+  color: var(--blue);
+
+  box-shadow: 0 5px 16px rgba(39, 67, 105, 0.08);
+
+  cursor: pointer;
+}
+
+.member-notification-button svg {
+  width: 17px;
+  height: 17px;
+
+  stroke-width: 2.2;
+}
+
+/* ==================================================
+  4. 페이지 제목
+================================================== */
+
+.lesson-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  margin-bottom: 18px;
+}
+
+.lesson-page-heading > div:first-child {
+  min-width: 0;
+}
+
+.member-kicker {
+  margin-bottom: 4px;
+
+  color: var(--blue);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.lesson-page-heading h1 {
+  margin-bottom: 6px;
+
+  color: var(--text);
+
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.lesson-page-heading > div:first-child > p:last-child {
+  color: var(--text-soft);
+
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+/* ==================================================
+  5. 회원 프로필
+================================================== */
+
+.member-profile-mini {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  gap: 5px;
+
+  flex-shrink: 0;
+}
+
+.member-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+
+  border-radius: 50%;
+
+  background: #e8f1ff;
+  color: var(--blue);
+}
+
+.member-avatar svg {
+  width: 22px;
+  height: 22px;
+
+  stroke-width: 2.2;
+}
+
+.member-profile-mini > span {
+  padding: 3px 7px;
+
+  border-radius: 999px;
+
+  background: #e8f1ff;
+  color: var(--blue-strong);
+
+  font-size: 8px;
+  font-weight: 800;
+}
+
+/* ==================================================
+  6. 수업 요약
+================================================== */
+
+.lesson-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 8px;
+
+  margin-bottom: 10px;
+}
+
+.lesson-summary-card {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 8px;
+
+  min-width: 0;
+  min-height: 92px;
+
+  padding: 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  background: var(--card);
+
+  box-shadow: 0 7px 20px rgba(38, 66, 104, 0.06);
+}
+
+.lesson-summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 32px;
+  height: 32px;
+
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.lesson-summary-icon svg {
+  width: 16px;
+  height: 16px;
+
+  stroke-width: 2.2;
+}
+
+.lesson-summary-card > div:last-child {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.lesson-summary-card span {
+  color: var(--blue);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.lesson-summary-card strong {
+  overflow: hidden;
+
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lesson-summary-card small {
+  color: var(--text-soft);
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* ==================================================
+  7. 공통 카드
+================================================== */
+
+.member-card {
+  margin-bottom: 12px;
+  padding: 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  background: var(--card);
+
+  box-shadow: 0 7px 20px rgba(38, 66, 104, 0.06);
+}
+
+.member-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+
+  margin-bottom: 12px;
+}
+
+.member-card-title {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+}
+
+.member-card-title svg {
+  width: 15px;
+  height: 15px;
+
+  color: var(--blue);
+
+  stroke-width: 2.2;
+}
+
+.member-card-title h2,
+.member-card-header h2 {
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+/* ==================================================
+  8. 진행률
+================================================== */
+
+.lesson-progress-card {
+  margin-bottom: 12px;
+}
+
+.lesson-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+
+  margin-bottom: 9px;
+}
+
+.lesson-progress-header > div {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+}
+
+.lesson-progress-header span {
+  color: var(--text-soft);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.lesson-progress-header strong {
+  color: var(--blue-strong);
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.lesson-progress-header small {
+  color: #8a97a8;
+
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.lesson-progress-track {
+  width: 100%;
+  height: 7px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #e6eef8;
+}
+
+.lesson-progress-fill {
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: var(--blue);
+}
+
+/* ==================================================
+  9. 수업 개수
+================================================== */
+
+.lesson-count {
+  padding: 4px 7px;
+
+  border-radius: 999px;
+
+  background: var(--blue-soft);
+  color: var(--blue-strong);
+
+  font-size: 8px;
+  font-weight: 800;
+}
+
+/* ==================================================
+  10. 예정된 수업
+================================================== */
+
+.lesson-detail-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.lesson-detail-item {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 9px;
+
+  border-radius: 11px;
+
+  background: #f7faff;
+}
+
+.lesson-date-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  min-height: 56px;
+
+  border-radius: 9px;
+
+  background: #eaf3ff;
+}
+
+.lesson-date-box span {
+  color: var(--blue);
+
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.lesson-date-box strong {
+  margin: 1px 0;
+
+  color: var(--text);
+
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.lesson-date-box small {
+  color: #728199;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.lesson-detail-content {
+  min-width: 0;
+}
+
+.lesson-detail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+}
+
+.lesson-detail-top > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.lesson-detail-top span:not(.lesson-status) {
+  color: #68788f;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.lesson-detail-top strong {
+  color: var(--text);
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.lesson-detail-content > p {
+  overflow: hidden;
+
+  margin-top: 4px;
+
+  color: #7f8b9c;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ==================================================
+  11. 상태
+================================================== */
+
+.lesson-status {
+  flex-shrink: 0;
+
+  padding: 4px 7px;
+
+  border-radius: 999px;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.lesson-status.scheduled {
+  background: #eaf3ff;
+  color: var(--blue-strong);
+}
+
+.lesson-status.completed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.member-empty {
+  padding: 18px 12px;
+
+  text-align: center;
+
+  border-radius: 12px;
+
+  background: #f8fafc;
+  color: var(--text-soft);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ==================================================
+  12. 지난 수업
+================================================== */
+
+.lesson-history-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.lesson-history-item {
+  padding: 11px;
+
+  border-radius: 11px;
+
+  background: #f7faff;
+}
+
+.lesson-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+
+  margin-bottom: 9px;
+}
+
+.lesson-history-header > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.lesson-history-header span:not(.lesson-status) {
+  color: #7e8a9a;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.lesson-history-header strong {
+  color: var(--blue-strong);
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.lesson-content-box {
+  padding: 10px;
+
+  border: 1px solid #e5edf6;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.lesson-content-box p {
+  color: #5f6f83;
+
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.lesson-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  min-height: 30px;
+
+  margin-top: 8px;
+  padding: 0 10px;
+
+  border: 1px solid #d6e4f7;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: var(--blue-strong);
+
+  font-size: 8px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.lesson-edit-button svg {
+  width: 12px;
+  height: 12px;
+
+  stroke-width: 2.2;
+}
+
+/* ==================================================
+  13. 안내
+================================================== */
+
+.lesson-guide-card {
+  background: #f9fbff;
+}
+
+.lesson-guide-card .member-card-title {
+  margin-bottom: 7px;
+}
+
+.lesson-guide-card p {
+  color: #748296;
+
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+/* ==================================================
+  14. 하단 네비게이션
+================================================== */
+
+.member-bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+
+  transform: translateX(-50%);
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  width: min(100%, 520px);
+  height: 68px;
+
+  border-top: 1px solid #dfe7f0;
+
+  background: rgba(255, 255, 255, 0.97);
+
+  backdrop-filter: blur(12px);
+
+  z-index: 100;
+}
+
+.member-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  gap: 4px;
+
+  color: var(--member-nav);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.member-nav-item.active {
+  color: var(--member-blue-strong);
+}
+
+.member-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-nav-icon svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 2.2;
+}
+
+/* ==================================================
+  15. 아주 작은 모바일
+================================================== */
+
+@media (max-width: 360px) {
+  .member-app {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .lesson-summary-card {
+    padding: 10px;
+  }
+
+  .lesson-summary-icon {
+    width: 29px;
+    height: 29px;
+  }
+
+  .lesson-summary-card strong {
+    font-size: 12px;
+  }
+
+  .lesson-page-heading h1 {
+    font-size: 20px;
+  }
+}
+
+/* ==================================================
+  16. 태블릿 / PC
+================================================== */
+
+@media (min-width: 700px) {
+  .member-app {
+    width: 520px;
+
+    margin: 24px auto 40px;
+    padding: 24px;
+
+    border: 1px solid #dde7f1;
+    border-radius: 22px;
+
+    background: #f7faff;
+
+    box-shadow: 0 18px 50px rgba(38, 66, 104, 0.08);
+  }
+
+  .member-bottom-nav {
+    right: auto;
+    left: 50%;
+    bottom: 18px;
+
+    transform: translateX(-50%);
+
+    width: 472px;
+
+    border: 1px solid #dfe7f0;
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    box-shadow: 0 8px 24px rgba(38, 66, 104, 0.1);
+  }
+}

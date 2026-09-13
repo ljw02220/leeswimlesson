@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>내 수업</title>
+    <link rel="stylesheet" href="member-lessons.css" />
+  </head>
+
+  <body class="member-page">
+    <main class="member-app">
+      <!-- 상단 -->
+      <header class="member-header">
+        <div class="member-brand">
+          <div class="member-brand-mark">
+            <i data-lucide="waves"></i>
+          </div>
+
+          <div class="member-brand-text">
+            <strong>수영관리</strong>
+            <span>LEE Swimming Management</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="member-notification-button"
+          aria-label="알림"
+        >
+          <i data-lucide="bell"></i>
+        </button>
+      </header>
+
+      <!-- 제목 -->
+      <section class="lesson-page-heading">
+        <div>
+          <p class="member-kicker">My Lessons</p>
+
+          <h1>내 수업</h1>
+
+          <p>예정된 수업과 지난 수업 내용을 확인하세요.</p>
+        </div>
+
+        <div class="member-profile-mini">
+          <div class="member-avatar">
+            <i data-lucide="user-round"></i>
+          </div>
+
+          <span> 일반회원 </span>
+        </div>
+      </section>
+
+      <!-- 요약 -->
+      <section class="lesson-summary-grid">
+        <article class="lesson-summary-card">
+          <div class="lesson-summary-icon">
+            <i data-lucide="calendar-days"></i>
+          </div>
+
+          <div>
+            <span> 다음 수업 </span>
+
+            <strong id="nextLessonDate"> 9월 15일 (화) </strong>
+
+            <small id="nextLessonTime"> 오후 7:00 </small>
+          </div>
+        </article>
+
+        <article class="lesson-summary-card">
+          <div class="lesson-summary-icon">
+            <i data-lucide="chart-no-axes-column-increasing"></i>
+          </div>
+
+          <div>
+            <span> 수업 진행 </span>
+
+            <strong id="lessonProgress"> 4 / 8회 </strong>
+
+            <small id="remainingLessons"> 4회 남음 </small>
+          </div>
+        </article>
+      </section>
+
+      <!-- 진행 바 -->
+      <section class="member-card lesson-progress-card">
+        <div class="lesson-progress-header">
+          <div>
+            <span> 전체 수업 진행률 </span>
+
+            <strong> 50% </strong>
+          </div>
+
+          <small> 총 8회 중 4회 진행 </small>
+        </div>
+
+        <div class="lesson-progress-track">
+          <div class="lesson-progress-fill" style="width: 50%"></div>
+        </div>
+      </section>
+
+      <!-- 예정된 수업 -->
+      <section class="member-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="calendar-check"></i>
+
+            <h2>예정된 수업</h2>
+          </div>
+
+          <span class="lesson-count"> 4건 </span>
+        </div>
+
+        <div id="scheduledLessonList" class="lesson-detail-list">
+          <article class="lesson-detail-item">
+            <div class="lesson-date-box">
+              <span> 9월 </span>
+
+              <strong> 15 </strong>
+
+              <small> 화 </small>
+            </div>
+
+            <div class="lesson-detail-content">
+              <div class="lesson-detail-top">
+                <div>
+                  <span> 오후 7:00 </span>
+
+                  <strong> 개인레슨 </strong>
+                </div>
+
+                <span class="lesson-status scheduled"> 예정 </span>
+              </div>
+
+              <p>자유형 자세 교정</p>
+            </div>
+          </article>
+
+          <article class="lesson-detail-item">
+            <div class="lesson-date-box">
+              <span> 9월 </span>
+
+              <strong> 22 </strong>
+
+              <small> 화 </small>
+            </div>
+
+            <div class="lesson-detail-content">
+              <div class="lesson-detail-top">
+                <div>
+                  <span> 오후 7:00 </span>
+
+                  <strong> 개인레슨 </strong>
+                </div>
+
+                <span class="lesson-status scheduled"> 예정 </span>
+              </div>
+
+              <p>호흡 및 킥 연습</p>
+            </div>
+          </article>
+
+          <article class="lesson-detail-item">
+            <div class="lesson-date-box">
+              <span> 9월 </span>
+
+              <strong> 29 </strong>
+
+              <small> 화 </small>
+            </div>
+
+            <div class="lesson-detail-content">
+              <div class="lesson-detail-top">
+                <div>
+                  <span> 오후 7:00 </span>
+
+                  <strong> 개인레슨 </strong>
+                </div>
+
+                <span class="lesson-status scheduled"> 예정 </span>
+              </div>
+
+              <p>자유형 스트로크 연습</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 최근 수업 -->
+      <section class="member-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="notebook-text"></i>
+
+            <h2>최근 수업 내용</h2>
+          </div>
+        </div>
+
+        <div class="lesson-history-list">
+          <article class="lesson-history-item">
+            <div class="lesson-history-header">
+              <div>
+                <span> 9월 8일 </span>
+
+                <strong> 자유형 호흡 </strong>
+              </div>
+
+              <span class="lesson-status completed"> 완료 </span>
+            </div>
+
+            <div class="lesson-content-box">
+              <p>
+                호흡 타이밍과 팔 동작을 중심으로 연습했습니다. 물에 얼굴을 넣는
+                타이밍을 조금 더 편하게 가져가면 좋습니다.
+              </p>
+            </div>
+
+            <button type="button" class="lesson-edit-button">
+              <i data-lucide="pencil"></i>
+              수업 내용 수정
+            </button>
+          </article>
+
+          <article class="lesson-history-item">
+            <div class="lesson-history-header">
+              <div>
+                <span> 9월 1일 </span>
+
+                <strong> 킥 연습 </strong>
+              </div>
+
+              <span class="lesson-status completed"> 완료 </span>
+            </div>
+
+            <div class="lesson-content-box">
+              <p>
+                하체 킥과 자세 균형을 집중적으로 연습했습니다. 무릎이 너무 많이
+                굽지 않도록 신경 쓰면 좋습니다.
+              </p>
+            </div>
+
+            <button type="button" class="lesson-edit-button">
+              <i data-lucide="pencil"></i>
+              수업 내용 수정
+            </button>
+          </article>
+        </div>
+      </section>
+
+      <!-- 안내 -->
+      <section class="member-card lesson-guide-card">
+        <div class="member-card-title">
+          <i data-lucide="info"></i>
+
+          <h2>안내</h2>
+        </div>
+
+        <p>
+          수업 내용은 회원과 코치가 함께 수정할 수 있습니다. 수정된 내용은 내
+          수업 기록에 바로 반영됩니다.
+        </p>
+      </section>
+    </main>
+
+    <!-- 하단 메뉴 -->
+    <nav class="member-bottom-nav">
+      <a href="member-home.html" class="member-nav-item">
+        <span class="member-nav-icon">
+          <i data-lucide="house"></i>
+        </span>
+
+        <span> 홈 </span>
+      </a>
+
+      <a href="member-lessons.html" class="member-nav-item active">
+        <span class="member-nav-icon">
+          <i data-lucide="calendar-days"></i>
+        </span>
+
+        <span> 내 수업 </span>
+      </a>
+
+      <a href="member-profile.html" class="member-nav-item">
+        <span class="member-nav-icon">
+          <i data-lucide="user-round"></i>
+        </span>
+
+        <span> 내 정보 </span>
+      </a>
+    </nav>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase.js?v=20260911"></script>
+    <script src="member-shared.js?v=20260913"></script>
+    <script src="member-lessons.js?v=20260913"></script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>내 정보</title>
+
+    <link rel="stylesheet" href="member-profile.css?v=20260913" />
+  </head>
+
+  <body class="member-page">
+    <main class="member-app">
+      <!-- 상단 -->
+      <header class="member-header">
+        <div class="member-brand">
+          <div class="member-brand-mark">
+            <i data-lucide="waves"></i>
+          </div>
+
+          <div class="member-brand-text">
+            <strong> 수영관리 </strong>
+
+            <span> LEE Swimming Management </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="member-notification-button"
+          aria-label="알림"
+        >
+          <i data-lucide="bell"></i>
+        </button>
+      </header>
+
+      <!-- 페이지 제목 -->
+      <section class="profile-page-heading">
+        <div>
+          <p class="member-kicker">My Profile</p>
+
+          <h1>내 정보</h1>
+
+          <p>회원 정보와 수강 현황을 확인하세요.</p>
+        </div>
+
+        <div class="member-profile-mini">
+          <div class="member-avatar">
+            <i data-lucide="user-round"></i>
+          </div>
+
+          <span> 일반회원 </span>
+        </div>
+      </section>
+
+      <!-- 회원 기본정보 -->
+      <section class="profile-card">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <i data-lucide="user-round"></i>
+
+            <h2>회원 정보</h2>
+          </div>
+        </div>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span> 이름 </span>
+
+            <strong id="profileName"> 이정우 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 전화번호 </span>
+
+            <strong id="profilePhone"> 010-1234-5678 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 회원 상태 </span>
+
+            <strong id="profileStatus" class="profile-status active">
+              수강중
+            </strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="profile-outline-button"
+          id="profileEditButton"
+        >
+          <i data-lucide="pencil"></i>
+
+          회원 정보 수정
+        </button>
+      </section>
+
+      <!-- 수강 정보 -->
+      <section class="profile-card">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <i data-lucide="calendar-days"></i>
+
+            <h2>수강 정보</h2>
+          </div>
+        </div>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span> 수업 형태 </span>
+
+            <strong id="profileLessonType"> 개인레슨 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 수업 요일 </span>
+
+            <strong id="profileLessonDays"> 화요일 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 수업 시간 </span>
+
+            <strong id="profileLessonTime"> 오후 7:00 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 등록 횟수 </span>
+
+            <strong id="profileTotalLessons"> 8회 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 진행 횟수 </span>
+
+            <strong id="profileUsedLessons"> 4회 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 남은 횟수 </span>
+
+            <strong id="profileRemainingLessons" class="profile-highlight">
+              4회
+            </strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- 결제 현황 -->
+      <section class="profile-card">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <i data-lucide="wallet-cards"></i>
+
+            <h2>결제 현황</h2>
+          </div>
+
+          <span id="profilePaymentStatus" class="payment-status complete">
+            완납
+          </span>
+        </div>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row">
+            <span> 수강료 </span>
+
+            <strong id="profilePaymentAmount"> 150,000원 </strong>
+          </div>
+
+          <div class="profile-info-row">
+            <span> 최근 결제일 </span>
+
+            <strong id="profilePaymentDate"> 2026.09.11 </strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- 결제 알리기 -->
+      <section class="profile-card payment-report-card">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <i data-lucide="circle-dollar-sign"></i>
+
+            <h2>결제 알리기</h2>
+          </div>
+        </div>
+
+        <p class="profile-card-description">
+          입금 후 결제 정보를 남기면 관리자 확인 후 반영됩니다.
+        </p>
+
+        <form id="paymentReportForm">
+          <div class="profile-form-group">
+            <label for="paymentReportDate"> 결제일 </label>
+
+            <input type="date" id="paymentReportDate" required />
+          </div>
+
+          <div class="profile-form-group">
+            <label for="paymentReportAmount"> 결제금액 </label>
+
+            <div class="amount-input-wrap">
+              <input
+                type="number"
+                id="paymentReportAmount"
+                placeholder="150000"
+                min="0"
+                required
+              />
+
+              <span> 원 </span>
+            </div>
+          </div>
+
+          <div class="profile-form-group">
+            <label for="paymentReportMethod"> 결제방법 </label>
+
+            <select id="paymentReportMethod" required>
+              <option value="">선택해주세요</option>
+
+              <option value="계좌이체">계좌이체</option>
+
+              <option value="카드결제">카드결제</option>
+
+              <option value="기타">기타</option>
+            </select>
+          </div>
+
+          <button type="submit" class="profile-primary-button">
+            <i data-lucide="send"></i>
+
+            결제했다고 알리기
+          </button>
+        </form>
+
+        <div id="paymentReportMessage" class="profile-form-message"></div>
+      </section>
+
+      <!-- 전달 메모 -->
+      <section class="profile-card">
+        <div class="profile-card-header">
+          <div class="profile-card-title">
+            <i data-lucide="message-square-text"></i>
+
+            <h2>코치에게 전달하기</h2>
+          </div>
+        </div>
+
+        <p class="profile-card-description">
+          다음 수업 전에 전달하고 싶은 내용을 간단히 남겨주세요.
+        </p>
+
+        <form id="memberMessageForm">
+          <div class="profile-form-group">
+            <label for="memberMessage"> 전달 내용 </label>
+
+            <textarea
+              id="memberMessage"
+              rows="4"
+              maxlength="300"
+              placeholder="예: 다음 수업 때 자유형 호흡을 다시 한번 봐주세요."
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="profile-outline-button profile-message-button"
+          >
+            <i data-lucide="message-circle-more"></i>
+
+            전달하기
+          </button>
+        </form>
+      </section>
+
+      <!-- 로그아웃 -->
+      <section class="profile-footer-actions">
+        <button type="button" class="profile-logout-button" id="logoutButton">
+          <i data-lucide="log-out"></i>
+
+          로그아웃
+        </button>
+      </section>
+    </main>
+
+    <!-- 하단 메뉴 -->
+    <nav class="member-bottom-nav">
+      <a href="member-home.html" class="member-nav-item">
+        <span class="member-nav-icon">
+          <i data-lucide="house"></i>
+        </span>
+
+        <span> 홈 </span>
+      </a>
+
+      <a href="member-lessons.html" class="member-nav-item">
+        <span class="member-nav-icon">
+          <i data-lucide="calendar-days"></i>
+        </span>
+
+        <span> 내 수업 </span>
+      </a>
+
+      <a href="member-profile.html" class="member-nav-item active">
+        <span class="member-nav-icon">
+          <i data-lucide="user-round"></i>
+        </span>
+
+        <span> 내 정보 </span>
+      </a>
+    </nav>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase.js?v=20260911"></script>
+    <script src="member-shared.js?v=20260913"></script>
+    <script src="member-profile.js?v=20260913"></script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      });
+    </script>
+  </body>
+</html>

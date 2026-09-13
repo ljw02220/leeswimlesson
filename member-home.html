@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>회원 홈</title>
+
+    <link rel="stylesheet" href="member-home.css" />
+  </head>
+
+  <body class="member-page">
+    <main class="member-app">
+      <!-- 상단 -->
+      <header class="member-header">
+        <div class="member-brand">
+          <div class="member-brand-mark">
+            <i data-lucide="waves"></i>
+          </div>
+
+          <div class="member-brand-text">
+            <strong>수영관리</strong>
+            <span>LEE Swimming Management</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="member-notification-button"
+          aria-label="알림"
+        >
+          <i data-lucide="bell"></i>
+        </button>
+      </header>
+
+      <!-- 인사 -->
+      <section class="member-greeting">
+        <div class="member-greeting-text">
+          <p class="member-kicker">Member</p>
+
+          <h1>
+            안녕하세요,
+            <span id="memberGreetingName"> 이정우 </span> 님
+          </h1>
+
+          <p>이번 주 수업과 결제 현황을 확인하세요.</p>
+        </div>
+
+        <div class="member-profile-mini">
+          <div class="member-avatar">
+            <i data-lucide="user-round"></i>
+          </div>
+
+          <span> 일반회원 </span>
+        </div>
+      </section>
+
+      <!-- 요약 카드 -->
+      <section class="member-summary-grid">
+        <article class="member-summary-card">
+          <div class="summary-icon">
+            <i data-lucide="calendar-days"></i>
+          </div>
+
+          <div class="summary-content">
+            <span> 다음 수업 </span>
+
+            <strong id="nextLessonDate"> 9월 15일 (화) </strong>
+
+            <small id="nextLessonTime"> 오후 7:00 </small>
+          </div>
+        </article>
+
+        <article class="member-summary-card">
+          <div class="summary-icon">
+            <i data-lucide="bookmark"></i>
+          </div>
+
+          <div class="summary-content">
+            <span> 남은 수업 </span>
+
+            <strong id="remainingLessons"> 4회 </strong>
+
+            <small id="lessonProgressText"> 총 8회 중 </small>
+          </div>
+        </article>
+
+        <article class="member-summary-card">
+          <div class="summary-icon">
+            <i data-lucide="chart-no-axes-column-increasing"></i>
+          </div>
+
+          <div class="summary-content">
+            <span> 이번 달 진행 </span>
+
+            <strong id="monthlyLessonCount"> 3회 </strong>
+
+            <small> 이번 달 수업 </small>
+          </div>
+        </article>
+
+        <article class="member-summary-card">
+          <div class="summary-icon">
+            <i data-lucide="credit-card"></i>
+          </div>
+
+          <div class="summary-content">
+            <span> 결제 상태 </span>
+
+            <strong id="paymentStatus" class="payment-complete"> 완납 </strong>
+
+            <small id="paymentDate"> 9월 11일 입금 </small>
+          </div>
+        </article>
+      </section>
+
+      <!-- 다가오는 수업 -->
+      <section class="member-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="calendar-check"></i>
+
+            <h2>다가오는 수업</h2>
+          </div>
+
+          <a href="member-lessons.html" class="member-card-link"> 전체 보기 </a>
+        </div>
+
+        <div id="upcomingLessonList" class="member-lesson-list">
+          <article class="member-lesson-item">
+            <div class="lesson-date-box">
+              <span> 9월 </span>
+
+              <strong> 15 </strong>
+
+              <small> 화 </small>
+            </div>
+
+            <div class="lesson-info">
+              <span> 오후 7:00 </span>
+
+              <strong> 개인레슨 </strong>
+
+              <small> 자유형 자세 교정 </small>
+            </div>
+
+            <span class="lesson-status scheduled"> 예정 </span>
+          </article>
+
+          <article class="member-lesson-item">
+            <div class="lesson-date-box">
+              <span> 9월 </span>
+
+              <strong> 22 </strong>
+
+              <small> 화 </small>
+            </div>
+
+            <div class="lesson-info">
+              <span> 오후 7:00 </span>
+
+              <strong> 개인레슨 </strong>
+
+              <small> 호흡 및 킥 연습 </small>
+            </div>
+
+            <span class="lesson-status scheduled"> 예정 </span>
+          </article>
+        </div>
+      </section>
+
+      <!-- 최근 수업 내용 -->
+      <section class="member-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="notebook-text"></i>
+
+            <h2>최근 수업 내용</h2>
+          </div>
+
+          <a href="member-lessons.html" class="member-card-link"> 전체 보기 </a>
+        </div>
+
+        <div class="member-feedback-list">
+          <article class="member-feedback-item">
+            <div class="feedback-date">9월 8일</div>
+
+            <div class="feedback-content">
+              <strong> 자유형 호흡 </strong>
+
+              <p>호흡 타이밍과 팔 동작을 중심으로 연습했습니다.</p>
+            </div>
+          </article>
+
+          <article class="member-feedback-item">
+            <div class="feedback-date">9월 1일</div>
+
+            <div class="feedback-content">
+              <strong> 킥 연습 </strong>
+
+              <p>하체 킥과 자세 균형을 집중적으로 연습했습니다.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 결제 정보 -->
+      <section class="member-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="credit-card"></i>
+
+            <h2>이번 달 결제</h2>
+          </div>
+
+          <a href="member-payment.html" class="member-card-link"> 결제 내역 </a>
+        </div>
+
+        <div class="member-payment-summary">
+          <div>
+            <span> 수강료 </span>
+
+            <strong id="memberPaymentAmount"> 150,000원 </strong>
+          </div>
+
+          <div>
+            <span> 상태 </span>
+
+            <strong class="payment-complete"> 완납 </strong>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 하단 메뉴 -->
+    <nav class="member-bottom-nav">
+      <a href="member-home.html" class="member-nav-item active">
+        <span class="member-nav-icon">
+          <i data-lucide="house"></i>
+        </span>
+
+        <span> 홈 </span>
+      </a>
+
+      <a href="member-lessons.html" class="member-nav-item">
+        <span class="member-nav-icon">
+          <i data-lucide="calendar-days"></i>
+        </span>
+
+        <span> 내 수업 </span>
+      </a>
+
+      <a href="member-profile.html" class="member-nav-item">
+        <span class="member-nav-icon">
+          <i data-lucide="user-round"></i>
+        </span>
+
+        <span> 내 정보 </span>
+      </a>
+    </nav>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase.js?v=20260911"></script>
+    <script src="member-shared.js?v=20260913"></script>
+    <script src="member-home.js?v=20260913"></script>
+
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

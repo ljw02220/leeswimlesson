@@ -1,0 +1,857 @@
+/* ==================================================
+  1. 기본 설정
+================================================== */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+
+  font-family: 'Pretendard', sans-serif;
+}
+
+:root {
+  --member-bg: #eef3f8;
+  --member-card: #ffffff;
+
+  --member-text: #18243a;
+  --member-text-soft: #7c899b;
+
+  --member-blue: #4c8df6;
+  --member-blue-strong: #3478f6;
+  --member-blue-soft: #edf4ff;
+
+  --member-green: #15935a;
+  --member-green-soft: #e7f7ee;
+
+  --member-border: #e4ebf3;
+  --member-nav: #7d8b9e;
+}
+
+body {
+  min-height: 100vh;
+
+  background: var(--member-bg);
+  color: var(--member-text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+/* ==================================================
+  2. 회원 화면 전체
+================================================== */
+
+.member-page {
+  min-height: 100vh;
+
+  padding-bottom: 82px;
+}
+
+.member-app {
+  width: min(100%, 520px);
+
+  margin: 0 auto;
+  padding: 24px 18px 30px;
+}
+
+/* ==================================================
+  3. 상단 헤더
+================================================== */
+
+.member-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 28px;
+}
+
+.member-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.member-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 42px;
+  height: 42px;
+
+  flex-shrink: 0;
+
+  border-radius: 14px;
+
+  background: var(--member-blue-soft);
+  color: var(--member-blue);
+}
+
+.member-brand-mark svg {
+  width: 22px;
+  height: 22px;
+
+  stroke-width: 2.2;
+}
+
+.member-brand-text {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.member-brand-text strong {
+  color: var(--member-text);
+
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.member-brand-text span {
+  color: #8090a3;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.member-notification-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: var(--member-card);
+  color: var(--member-blue);
+
+  box-shadow: 0 6px 18px rgba(39, 67, 105, 0.08);
+
+  cursor: pointer;
+}
+
+.member-notification-button svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 2.2;
+}
+
+/* ==================================================
+  4. 인사 영역
+================================================== */
+
+.member-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 22px;
+}
+
+.member-greeting-text {
+  min-width: 0;
+}
+
+.member-kicker {
+  margin-bottom: 5px;
+
+  color: var(--member-blue);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.member-greeting h1 {
+  margin-bottom: 8px;
+
+  color: var(--member-text);
+
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.member-greeting-text > p:last-child {
+  color: var(--member-text-soft);
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.member-profile-mini {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  gap: 6px;
+
+  flex-shrink: 0;
+}
+
+.member-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 54px;
+  height: 54px;
+
+  border-radius: 50%;
+
+  background: #e8f1ff;
+  color: var(--member-blue);
+}
+
+.member-avatar svg {
+  width: 26px;
+  height: 26px;
+
+  stroke-width: 2.2;
+}
+
+.member-profile-mini > span {
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  background: #e8f1ff;
+  color: var(--member-blue-strong);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/* ==================================================
+  5. 상단 요약
+================================================== */
+
+.member-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-bottom: 16px;
+}
+
+.member-summary-card {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 10px;
+
+  min-height: 110px;
+
+  padding: 15px;
+
+  border: 1px solid var(--member-border);
+  border-radius: 16px;
+
+  background: var(--member-card);
+
+  box-shadow: 0 8px 22px rgba(38, 66, 104, 0.07);
+}
+
+.summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  border-radius: 12px;
+
+  background: var(--member-blue-soft);
+  color: var(--member-blue);
+}
+
+.summary-icon svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 2.2;
+}
+
+.summary-content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.summary-content span {
+  color: var(--member-blue);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.summary-content strong {
+  color: var(--member-text);
+
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.summary-content small {
+  color: var(--member-text-soft);
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.payment-complete {
+  color: var(--member-green) !important;
+}
+
+/* ==================================================
+  6. 공통 카드
+================================================== */
+
+.member-card {
+  margin-bottom: 16px;
+  padding: 16px;
+
+  border: 1px solid var(--member-border);
+  border-radius: 16px;
+
+  background: var(--member-card);
+
+  box-shadow: 0 8px 22px rgba(38, 66, 104, 0.07);
+}
+
+.member-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-bottom: 14px;
+}
+
+.member-card-title {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+}
+
+.member-card-title svg {
+  width: 17px;
+  height: 17px;
+
+  color: var(--member-blue);
+
+  stroke-width: 2.2;
+}
+
+.member-card-header h2 {
+  color: var(--member-text);
+
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.member-card-link {
+  color: var(--member-blue);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* ==================================================
+  7. 다가오는 수업
+================================================== */
+
+.member-lesson-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.member-lesson-item {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 10px;
+
+  border-radius: 12px;
+
+  background: #f7faff;
+}
+
+.lesson-date-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  min-height: 62px;
+
+  border-radius: 10px;
+
+  background: #eaf3ff;
+}
+
+.lesson-date-box span {
+  color: var(--member-blue);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.lesson-date-box strong {
+  margin: 1px 0;
+
+  color: var(--member-text);
+
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.lesson-date-box small {
+  color: #728199;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.lesson-info {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.lesson-info span {
+  color: #68788f;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.lesson-info strong {
+  color: var(--member-text);
+
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.lesson-info small {
+  overflow: hidden;
+
+  color: #8490a1;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lesson-status {
+  padding: 5px 8px;
+
+  border-radius: 999px;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.lesson-status.scheduled {
+  background: #eaf3ff;
+  color: var(--member-blue-strong);
+}
+
+.lesson-status.completed {
+  background: var(--member-green-soft);
+  color: var(--member-green);
+}
+
+.member-empty {
+  padding: 18px 12px;
+
+  text-align: center;
+
+  border-radius: 12px;
+
+  background: #f8fafc;
+  color: var(--member-text-soft);
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ==================================================
+  8. 최근 수업 내용
+================================================== */
+
+.member-feedback-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.member-feedback-item {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+
+  gap: 12px;
+
+  padding: 11px;
+
+  border-radius: 12px;
+
+  background: #f7faff;
+}
+
+.feedback-date {
+  display: flex;
+  align-items: center;
+
+  color: #56667b;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.feedback-content strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: var(--member-blue-strong);
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.feedback-content p {
+  color: #6f7d90;
+
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+/* ==================================================
+  9. 결제 정보
+================================================== */
+
+.member-payment-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+.member-payment-summary > div {
+  padding: 12px;
+
+  border-radius: 12px;
+
+  background: #f7faff;
+}
+
+.member-payment-summary span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--member-text-soft);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.member-payment-summary strong {
+  color: var(--member-text);
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+/* ==================================================
+  10. 하단 메뉴
+================================================== */
+
+.member-bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+
+  transform: translateX(-50%);
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  width: min(100%, 520px);
+  height: 68px;
+
+  border-top: 1px solid #dfe7f0;
+
+  background: rgba(255, 255, 255, 0.97);
+
+  backdrop-filter: blur(12px);
+
+  z-index: 100;
+}
+
+.member-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  gap: 4px;
+
+  color: var(--member-nav);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.member-nav-item.active {
+  color: var(--member-blue-strong);
+}
+
+.member-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-nav-icon svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 2.2;
+}
+
+/* ==================================================
+  11. 태블릿 / PC
+================================================== */
+
+@media (min-width: 700px) {
+  .member-app {
+    margin-top: 24px;
+    margin-bottom: 40px;
+
+    padding: 28px 24px 38px;
+
+    border: 1px solid #dde7f1;
+    border-radius: 24px;
+
+    background: #f7faff;
+
+    box-shadow: 0 18px 50px rgba(38, 66, 104, 0.08);
+  }
+
+  .member-bottom-nav {
+    bottom: 18px;
+
+    width: 472px;
+
+    border: 1px solid #dfe7f0;
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    box-shadow: 0 8px 24px rgba(38, 66, 104, 0.1);
+  }
+}
+
+/* ==================================================
+  12. 모바일
+================================================== */
+
+@media (max-width: 430px) {
+  .member-page {
+    padding-bottom: 72px;
+  }
+
+  .member-app {
+    padding: 18px 12px 24px;
+  }
+
+  .member-header {
+    margin-bottom: 22px;
+  }
+
+  .member-brand-mark {
+    width: 36px;
+    height: 36px;
+
+    border-radius: 11px;
+  }
+
+  .member-brand-mark svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .member-brand-text strong {
+    font-size: 14px;
+  }
+
+  .member-brand-text span {
+    font-size: 9px;
+  }
+
+  .member-notification-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .member-notification-button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .member-greeting {
+    margin-bottom: 18px;
+  }
+
+  .member-greeting h1 {
+    font-size: 21px;
+  }
+
+  .member-greeting-text > p:last-child {
+    font-size: 11px;
+  }
+
+  .member-avatar {
+    width: 46px;
+    height: 46px;
+  }
+
+  .member-avatar svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .member-summary-grid {
+    gap: 8px;
+  }
+
+  .member-summary-card {
+    min-height: 96px;
+
+    padding: 12px;
+
+    gap: 8px;
+  }
+
+  .summary-icon {
+    width: 32px;
+    height: 32px;
+
+    border-radius: 10px;
+  }
+
+  .summary-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .summary-content span {
+    font-size: 9px;
+  }
+
+  .summary-content strong {
+    font-size: 14px;
+  }
+
+  .summary-content small {
+    font-size: 9px;
+  }
+
+  .member-card {
+    padding: 14px;
+  }
+
+  .member-card-header h2 {
+    font-size: 14px;
+  }
+
+  .member-card-title svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .member-card-link {
+    font-size: 9px;
+  }
+
+  .member-lesson-item {
+    grid-template-columns: 46px 1fr auto;
+
+    padding: 9px;
+  }
+
+  .lesson-date-box {
+    min-height: 56px;
+  }
+
+  .lesson-date-box strong {
+    font-size: 18px;
+  }
+
+  .lesson-info strong {
+    font-size: 12px;
+  }
+
+  .member-feedback-item {
+    grid-template-columns: 54px 1fr;
+
+    gap: 10px;
+  }
+
+  .member-bottom-nav {
+    height: 62px;
+  }
+
+  .member-nav-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .member-nav-item {
+    font-size: 9px;
+  }
+}
