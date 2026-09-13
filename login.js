@@ -91,6 +91,10 @@ function isAdminLogin(loginId, email) {
   );
 }
 
+function isMemberAuthUser(user) {
+  return user?.user_metadata?.role === 'member';
+}
+
 function isPhoneLogin(loginId) {
   return normalizePhone(loginId).length >= 10;
 }
@@ -211,7 +215,10 @@ function setupLogin() {
     }
 
     try {
-      if (isAdminLogin(rawLoginId, data.user.email || email)) {
+      if (
+        !isMemberAuthUser(data.user) ||
+        isAdminLogin(rawLoginId, data.user.email || email)
+      ) {
         const loginData = {
           role: 'admin',
           loginId: data.user.email || email,
