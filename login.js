@@ -67,11 +67,28 @@ function getAdminLoginEmail(loginId) {
   const configuredAdminId = window.SWIM_CONFIG?.ADMIN_ID || 'admin';
   const configuredAdminEmail = window.SWIM_CONFIG?.ADMIN_EMAIL;
 
-  if (configuredAdminEmail && loginId === configuredAdminId) {
+  if (configuredAdminEmail && loginId.toLowerCase() === configuredAdminId.toLowerCase()) {
     return configuredAdminEmail;
   }
 
   return `${loginId}@admins.leeswimlesson.com`;
+}
+
+function getConfiguredAdminEmail() {
+  return window.SWIM_CONFIG?.ADMIN_EMAIL || 'admin@admins.leeswimlesson.com';
+}
+
+function isAdminLogin(loginId, email) {
+  const configuredAdminId = window.SWIM_CONFIG?.ADMIN_ID || 'admin';
+  const normalizedLoginId = String(loginId || '').trim().toLowerCase();
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const adminEmail = getConfiguredAdminEmail().toLowerCase();
+
+  return (
+    normalizedLoginId === configuredAdminId.toLowerCase() ||
+    normalizedEmail === adminEmail ||
+    normalizedEmail.endsWith('@admins.leeswimlesson.com')
+  );
 }
 
 function isPhoneLogin(loginId) {
@@ -187,13 +204,36 @@ function setupLogin() {
 
     if (error) {
       if (loginError) {
-        loginError.textContent = '아이디 또는 비밀번호가 틀렸습니다.';
+        loginError.textContent = `로그인 실패: ${error.message || '아이디 또는 비밀번호를 확인해주세요.'}`;
       }
 
       return;
     }
 
     try {
+      if (isAdminLogin(rawLoginId, data.user.email || email)) {
+        const loginData = {
+          role: 'admin',
+          loginId: data.user.email || email,
+          memberId: null,
+          loginAt: new Date().toISOString(),
+        };
+
+        localStorage.removeItem('loginSession');
+
+        sessionStorage.removeItem('loginSession');
+
+        if (rememberLogin?.checked) {
+          localStorage.setItem('loginSession', JSON.stringify(loginData));
+        } else {
+          sessionStorage.setItem('loginSession', JSON.stringify(loginData));
+        }
+
+        window.location.href = 'home.html';
+
+        return;
+      }
+
       const signupRequest = await getSignupRequest(data.user.id);
       const member = await getMemberByAuthUserId(data.user.id);
 
