@@ -207,6 +207,37 @@
 
     if (memberId) {
       query = query.eq('id', memberId).limit(1);
+    } else if (user?.id) {
+      const { data, error } = await client
+        .from('members')
+        .select('*')
+        .eq('auth_user_id', user.id)
+        .limit(1);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.[0]) {
+        return mapMember(data[0]);
+      }
+
+      if (phone) {
+        const { data: phoneData, error: phoneError } = await client
+          .from('members')
+          .select('*');
+
+        if (phoneError) {
+          throw phoneError;
+        }
+
+        const normalizedPhone = normalizePhone(phone);
+        const matchedMember = (phoneData || []).find(
+          (member) => normalizePhone(member.phone) === normalizedPhone
+        );
+
+        return matchedMember ? mapMember(matchedMember) : null;
+      }
     } else if (phone) {
       const { data, error } = await client.from('members').select('*');
 
@@ -262,6 +293,12 @@
 
   async function loadCurrentMember() {
     const user = await getCurrentUser();
+
+    if (getClient() && !user) {
+      window.location.href = 'index.html';
+
+      throw new Error('로그인이 필요합니다.');
+    }
 
     if (getClient()) {
       const member = await loadMemberFromSupabase(user);

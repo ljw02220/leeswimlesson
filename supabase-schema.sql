@@ -4,6 +4,7 @@
 
 create table if not exists public.members (
   id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid,
 
   name text not null,
   phone text,
@@ -39,6 +40,9 @@ add column if not exists personal_reported_payment_date date;
 
 alter table public.members
 add column if not exists lesson_start_date date;
+
+alter table public.members
+add column if not exists auth_user_id uuid;
 
 -- =========================================
 -- 2. 수업 테이블
@@ -93,7 +97,28 @@ create table if not exists public.personal_lesson_reports (
 );
 
 -- =========================================
--- 4. 재무 테이블
+-- 4. 회원가입 신청 테이블
+-- =========================================
+
+create table if not exists public.signup_requests (
+  id uuid primary key default gen_random_uuid(),
+
+  auth_user_id uuid,
+  login_email text not null,
+
+  name text not null,
+  phone text not null,
+
+  status text not null default 'pending',
+  requested_at timestamptz not null default now(),
+  approved_at timestamptz,
+  rejected_at timestamptz,
+
+  memo text
+);
+
+-- =========================================
+-- 5. 재무 테이블
 -- =========================================
 
 create table if not exists public.transactions (
@@ -113,7 +138,7 @@ create table if not exists public.transactions (
 );
 
 -- =========================================
--- 5. RLS 활성화
+-- 6. RLS 활성화
 -- =========================================
 
 alter table public.members
@@ -125,30 +150,32 @@ enable row level security;
 alter table public.personal_lesson_reports
 enable row level security;
 
+alter table public.signup_requests
+enable row level security;
+
 alter table public.transactions
 enable row level security;
 
 -- =========================================
--- 6. API 역할 권한 부여
+-- 7. API 역할 권한 부여
 -- =========================================
 
-grant select, insert, update, delete on public.members to anon;
-grant select, insert, update, delete on public.lessons to anon;
-grant select, insert, update, delete on public.personal_lesson_reports to anon;
-grant select, insert, update, delete on public.transactions to anon;
+grant insert on public.signup_requests to anon;
 
 grant select, insert, update, delete on public.members to authenticated;
 grant select, insert, update, delete on public.lessons to authenticated;
 grant select, insert, update, delete on public.personal_lesson_reports to authenticated;
+grant select, insert, update, delete on public.signup_requests to authenticated;
 grant select, insert, update, delete on public.transactions to authenticated;
 
 -- =========================================
--- 7. 로그인한 사용자만 접근 허용
+-- 8. 로그인한 사용자만 접근 허용
 -- =========================================
 
 drop policy if exists "authenticated members access" on public.members;
 drop policy if exists "authenticated lessons access" on public.lessons;
 drop policy if exists "authenticated personal lesson reports access" on public.personal_lesson_reports;
+drop policy if exists "authenticated signup requests access" on public.signup_requests;
 drop policy if exists "authenticated transactions access" on public.transactions;
 
 create policy "authenticated members access"
@@ -172,6 +199,13 @@ to authenticated
 using (true)
 with check (true);
 
+create policy "authenticated signup requests access"
+on public.signup_requests
+for all
+to authenticated
+using (true)
+with check (true);
+
 create policy "authenticated transactions access"
 on public.transactions
 for all
@@ -180,21 +214,19 @@ using (true)
 with check (true);
 
 -- =========================================
--- 8. 개발 테스트용 익명 접근 허용
---    Supabase Auth 전환 후에는 아래 정책과 anon grant를 제거하세요.
+-- 9. 회원가입 신청 저장 허용
 -- =========================================
 
-drop policy if exists "anon members access" on public.members;
+drop policy if exists "anon signup requests insert" on public.signup_requests;
 
-create policy "anon members access"
-on public.members
-for all
+create policy "anon signup requests insert"
+on public.signup_requests
+for insert
 to anon
-using (true)
 with check (true);
 
 -- =========================================
--- 9. 초기 회원 데이터
+-- 10. 초기 회원 데이터
 --    이미 같은 이름/전화번호가 있으면 다시 넣지 않습니다.
 -- =========================================
 

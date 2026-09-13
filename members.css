@@ -1,5 +1,5 @@
 /* ======================================================
-   회원 목록
+  회원 목록
 ====================================================== */
 
 .members-page .member-row {
@@ -11,20 +11,107 @@
 }
 
 .members-page .empty-member-row {
-  text-align: center;
   padding: 50px 20px !important;
+
   color: #8b8b8b;
+
+  text-align: center;
+}
+
+.members-page .signup-request-card {
+  margin-bottom: 18px;
+}
+
+.members-page .signup-request-count {
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  background: #eef5ff;
+  color: #3976d1;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.members-page .signup-request-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.members-page .signup-request-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+  padding: 12px;
+
+  border: 1px solid #e3ebf4;
+  border-radius: 10px;
+
+  background: #fbfdff;
+}
+
+.members-page .signup-request-item strong,
+.members-page .signup-request-item span {
+  display: block;
+}
+
+.members-page .signup-request-item strong {
+  margin-bottom: 4px;
+
+  color: #26364d;
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.members-page .signup-request-item span {
+  color: #7b8ca3;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.members-page .signup-request-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+}
+
+.members-page .signup-request-actions button {
+  min-width: 54px;
+  height: 30px;
+
+  padding: 0 10px;
+
+  border: none;
+  border-radius: 8px;
+
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.members-page .signup-approve-button {
+  background: #15935a;
+}
+
+.members-page .signup-reject-button {
+  background: #d84f4f;
 }
 
 .members-page .member-name-cell strong {
   display: block;
-  margin-bottom: 4px;
-}
 
-.members-page .member-name-cell span {
-  display: block;
-  font-size: 11px;
-  color: #7a8699;
+  margin-bottom: 4px;
 }
 
 .members-page .schedule-cell {
@@ -37,16 +124,111 @@
 }
 
 .members-page .remaining-cell {
-  font-weight: 400;
   color: #344054;
+
+  font-weight: 400;
 }
 
 /* ======================================================
-     회원 테이블
-  ====================================================== */
+  회원 목록 상단
+====================================================== */
+
+.members-page .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+}
+
+.members-page .card-header h2 {
+  margin: 0;
+}
+
+.members-page .filter-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+
+  gap: 6px;
+}
+
+.members-page .filter-chip {
+  min-height: 32px;
+
+  padding: 0 12px;
+
+  border: 1px solid #dce5ef;
+  border-radius: 999px;
+
+  background: #ffffff;
+
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.members-page .filter-chip:hover {
+  border-color: #b9c8d8;
+
+  background: #f8fafc;
+}
+
+.members-page .filter-chip.active {
+  border-color: #1f2937;
+
+  background: #1f2937;
+
+  color: #ffffff;
+}
+
+/* ======================================================
+  회원 정렬
+====================================================== */
+
+.members-page .member-sort {
+  height: 32px;
+
+  padding: 0 30px 0 10px;
+
+  border: 1px solid #dce5ef;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  outline: none;
+
+  cursor: pointer;
+}
+
+.members-page .member-sort:hover {
+  border-color: #b9c8d8;
+}
+
+.members-page .member-sort:focus {
+  border-color: #94a3b8;
+}
+
+/* ======================================================
+  회원 테이블
+====================================================== */
 
 .members-page .data-table {
   width: 100%;
+
   table-layout: fixed;
 }
 
@@ -63,30 +245,34 @@
 .members-page .data-table th:nth-child(3),
 .members-page .data-table td:nth-child(3) {
   width: 10%;
+
   text-align: center;
 }
 
 .members-page .data-table th:nth-child(4),
 .members-page .data-table td:nth-child(4) {
   width: 10%;
+
   text-align: center;
 }
 
 .members-page .data-table th:nth-child(5),
 .members-page .data-table td:nth-child(5) {
   width: 14%;
+
   text-align: center;
 }
 
 .members-page .data-table th:nth-child(6),
 .members-page .data-table td:nth-child(6) {
   width: 16%;
+
   text-align: center;
 }
 
 /* ======================================================
-     수업 형태 뱃지
-  ====================================================== */
+  수업 형태 뱃지
+====================================================== */
 
 .members-page .data-table td .format-badge {
   display: inline-flex;
@@ -101,9 +287,11 @@
   margin: 0 auto;
 
   box-sizing: border-box;
+
   border-radius: 999px;
 
   background: #eef4ff;
+
   color: #3366cc;
 
   font-size: 13px;
@@ -114,68 +302,11 @@
 }
 
 /* ======================================================
-     결제 뱃지
-  ====================================================== */
-
-.members-page .data-table td .status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  width: fit-content;
-  min-width: 48px;
-  height: 28px;
-
-  padding: 0 10px;
-  margin: 0 auto;
-
-  box-sizing: border-box;
-  border-radius: 999px;
-
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-
-  white-space: nowrap;
-}
-
-.members-page .status.paid {
-  background: #e7f7ee;
-  color: #16a05d;
-}
-
-.members-page .status.overdue {
-  background: #fff0f0;
-  color: #d64545;
-}
-
-.members-page .status.pending {
-  background: #fff6df;
-  color: #c88700;
-}
-
-.members-page .payment-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  gap: 5px;
-}
-
-.members-page .payment-cell small {
-  font-size: 11px;
-  font-weight: 700;
-
-  color: #64748b;
-  white-space: nowrap;
-}
-
-/* ======================================================
-     보고 버튼
-  ====================================================== */
+  보고 버튼
+====================================================== */
 
 .members-page .report-button {
-  min-width: 72px;
+  min-width: 60px;
   height: 28px;
 
   padding: 0 9px;
@@ -184,6 +315,7 @@
   border-radius: 999px;
 
   background: #ffffff;
+
   color: #45627f;
 
   font-size: 12px;
@@ -191,29 +323,35 @@
   line-height: 1;
 
   cursor: pointer;
+
   white-space: nowrap;
 }
 
 .members-page .report-button:hover {
-  background: #eef5ff;
   border-color: #bad0ec;
+
+  background: #eef5ff;
 }
 
 .members-page .report-button.reported {
-  background: #e9f8f1;
   border-color: #bee8d2;
+
+  background: #e9f8f1;
+
   color: #15935a;
 }
 
 .members-page .report-button.reported:hover {
-  background: #fff0f0;
   border-color: #f3c2c2;
+
+  background: #fff0f0;
+
   color: #cf3d3d;
 }
 
 /* ======================================================
-     회원 모달 배경
-  ====================================================== */
+  회원 모달 배경
+====================================================== */
 
 .members-page .member-modal-overlay {
   position: fixed;
@@ -226,6 +364,7 @@
   padding: 20px;
 
   background: rgba(16, 24, 40, 0.45);
+
   backdrop-filter: blur(4px);
 
   z-index: 9999;
@@ -236,27 +375,29 @@
 }
 
 /* ======================================================
-     회원 모달
-  ====================================================== */
+  회원 모달
+====================================================== */
 
 .members-page .member-modal {
   width: min(680px, 100%);
   max-height: 90vh;
+
   overflow-y: auto;
 
   box-sizing: border-box;
 
   padding: 28px;
 
-  background: #ffffff;
   border-radius: 22px;
+
+  background: #ffffff;
 
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
 }
 
 /* ======================================================
-     모달 상단
-  ====================================================== */
+  모달 상단
+====================================================== */
 
 .members-page .member-modal-header {
   display: flex;
@@ -268,13 +409,15 @@
 
 .members-page .member-modal-header h2 {
   margin: 4px 0 0;
+
   font-size: 24px;
 }
 
 .members-page .modal-kicker {
+  color: #777777;
+
   font-size: 12px;
   font-weight: 700;
-  color: #777777;
 
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -294,12 +437,13 @@
   border-radius: 50%;
 
   background: #f2f4f7;
-  color: #344054;
 
-  cursor: pointer;
+  color: #344054;
 
   font-size: 24px;
   line-height: 1;
+
+  cursor: pointer;
 }
 
 .members-page .modal-close-button:hover {
@@ -307,18 +451,20 @@
 }
 
 /* ======================================================
-     폼
-  ====================================================== */
+  회원 폼
+====================================================== */
 
 .members-page .member-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+
   gap: 20px;
 }
 
 .members-page .member-modal .form-group {
   display: flex;
   flex-direction: column;
+
   gap: 8px;
 }
 
@@ -327,9 +473,10 @@
 }
 
 .members-page .member-modal .form-group > label {
+  color: #344054;
+
   font-size: 13px;
   font-weight: 700;
-  color: #344054;
 }
 
 .members-page .member-modal .form-group input,
@@ -345,9 +492,11 @@
   border-radius: 10px;
 
   background: #ffffff;
+
   color: #101828;
 
   font: inherit;
+
   outline: none;
 }
 
@@ -355,21 +504,24 @@
 .members-page .member-modal .form-group select:focus,
 .members-page .member-modal .form-group textarea:focus {
   border-color: #4f8df7;
+
   box-shadow: 0 0 0 3px rgba(79, 141, 247, 0.12);
 }
 
 .members-page .member-modal .form-group textarea {
   min-height: 90px;
+
   resize: vertical;
 }
 
 /* ======================================================
-     요일 선택
-  ====================================================== */
+  요일 선택
+====================================================== */
 
 .members-page .weekday-group {
   display: flex;
   flex-wrap: wrap;
+
   gap: 8px;
 }
 
@@ -390,20 +542,21 @@
 
   background: #ffffff;
 
-  cursor: pointer;
-
   font-size: 13px;
   font-weight: 600;
+
+  cursor: pointer;
 }
 
 .members-page .weekday-group input {
   width: auto;
+
   margin: 0 5px 0 0;
 }
 
 /* ======================================================
-     잔여 횟수 미리보기
-  ====================================================== */
+  잔여 횟수
+====================================================== */
 
 .members-page .remaining-preview {
   display: flex;
@@ -423,8 +576,8 @@
 }
 
 /* ======================================================
-    모달 하단 버튼
-  ====================================================== */
+  모달 하단 버튼
+====================================================== */
 
 .members-page .member-modal-actions {
   display: flex;
@@ -441,7 +594,9 @@
 
 .members-page .modal-action-right {
   display: flex;
+
   gap: 10px;
+
   margin-left: auto;
 }
 
@@ -452,14 +607,15 @@
   border: none;
   border-radius: 10px;
 
-  cursor: pointer;
-
   font: inherit;
   font-weight: 700;
+
+  cursor: pointer;
 }
 
 .members-page .secondary-button {
   background: #f2f4f7;
+
   color: #344054;
 }
 
@@ -469,6 +625,7 @@
 
 .members-page .danger-button {
   background: #fff1f1;
+
   color: #c62828;
 }
 
@@ -477,8 +634,8 @@
 }
 
 /* ======================================================
-    개인레슨 일정
-  ====================================================== */
+  개인레슨 일정
+====================================================== */
 
 .members-page .lesson-period-list {
   display: flex;
@@ -500,6 +657,7 @@
 
 .members-page .lesson-period-item:hover {
   border-color: #c7d8ef;
+
   background: #f5f9ff;
 }
 
@@ -514,10 +672,10 @@
 .members-page .lesson-period-top strong {
   min-width: 0;
 
+  color: #26364d;
+
   font-size: 14px;
   font-weight: 900;
-
-  color: #26364d;
 }
 
 .members-page .lesson-period-top span {
@@ -528,6 +686,7 @@
   border-radius: 999px;
 
   background: #eef4ff;
+
   color: #3366cc;
 
   font-size: 11px;
@@ -537,10 +696,10 @@
 .members-page .lesson-period-item p {
   margin-top: 8px;
 
+  color: #526174;
+
   font-size: 12px;
   font-weight: 700;
-
-  color: #526174;
 }
 
 .members-page .lesson-period-item small,
@@ -549,69 +708,71 @@
 
   margin-top: 6px;
 
+  color: #8290a3;
+
   font-size: 11px;
   font-weight: 700;
   line-height: 1.45;
-
-  color: #8290a3;
 }
 
 .members-page .lesson-period-empty {
   margin-top: 0;
   padding: 22px 14px;
 
-  text-align: center;
-
   border-radius: 8px;
 
   background: #f8fafc;
+
+  text-align: center;
 }
 
-/* ==================================================
+/* ======================================================
   모바일
-================================================== */
+====================================================== */
 
 @media (max-width: 430px) {
-  /* 회원 목록 카드 헤더 */
   .members-page .card-header {
     flex-direction: column;
     align-items: stretch;
 
-    gap: 10px;
+    gap: 7px;
   }
 
   .members-page .card-header h2 {
-    font-size: 17px;
+    margin: 0;
+
+    font-size: 15px;
   }
 
-  .members-page .card-header p {
-    margin-top: 3px;
-
-    font-size: 10px;
-  }
-
-  /* 필터 */
   .members-page .filter-group {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns:
+      0.7fr
+      0.9fr
+      1.2fr
+      1.2fr
+      0.9fr;
 
     width: 100%;
 
-    gap: 5px;
+    gap: 3px;
   }
 
-  .members-page .filter-chip {
+  .members-page .member-sort {
+    grid-column: auto;
+
     width: 100%;
-    height: 30px;
+    min-width: 0;
+    height: 25px;
 
-    padding: 0;
+    padding: 0 1px;
 
-    font-size: 9px;
+    border-radius: 7px;
 
-    white-space: nowrap;
+    font-size: 6.5px;
+    font-weight: 700;
   }
 
-  /* 회원 테이블 */
   .members-page .data-table {
     width: 100%;
 
@@ -620,7 +781,7 @@
 
   .members-page .data-table th,
   .members-page .data-table td {
-    padding: 10px 3px;
+    padding: 9px 3px;
 
     font-size: 9px;
 
@@ -643,59 +804,120 @@
     width: 24%;
   }
 
-  /* 잔여 */
+  /* 예정 */
   .members-page .data-table th:nth-child(3),
   .members-page .data-table td:nth-child(3) {
-    width: 12%;
+    display: none;
+  }
+
+  /* 잔여 */
+  .members-page .data-table th:nth-child(4),
+  .members-page .data-table td:nth-child(4) {
+    width: 14%;
 
     text-align: center;
   }
 
   /* 수업 형태 */
-  .members-page .data-table th:nth-child(4),
-  .members-page .data-table td:nth-child(4) {
+  .members-page .data-table th:nth-child(5),
+  .members-page .data-table td:nth-child(5) {
     width: 16%;
 
     text-align: center;
   }
 
   /* 보고 */
-  .members-page .data-table th:nth-child(5),
-  .members-page .data-table td:nth-child(5) {
-    width: 20%;
+  .members-page .data-table th:nth-child(6),
+  .members-page .data-table td:nth-child(6) {
+    width: 18%;
 
     text-align: center;
   }
 
-  /* 회원명 */
-  .members-page .member-name {
-    font-size: 10px;
-    line-height: 1.3;
+  .members-page .data-table td .format-badge {
+    min-width: 32px;
+    height: 24px;
 
-    white-space: normal;
-    word-break: keep-all;
-  }
-
-  /* 요일 & 시간 */
-  .members-page .member-schedule {
-    font-size: 9px;
-
-    white-space: nowrap;
-  }
-
-  /* 수업형태 / 보고 배지 */
-  .members-page .format-badge,
-  .members-page .status {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    min-width: 34px;
-
-    padding: 4px 5px;
+    padding: 0 5px;
 
     font-size: 8px;
+  }
 
-    white-space: nowrap;
+  .members-page .report-button {
+    min-width: 38px;
+    height: 24px;
+
+    padding: 0 5px;
+
+    font-size: 8px;
+  }
+
+  .members-page .member-modal-overlay {
+    align-items: flex-start;
+
+    padding: 12px;
+  }
+
+  .members-page .member-modal {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+
+    padding: 20px;
+
+    border-radius: 16px;
+  }
+
+  .members-page .member-form-grid {
+    grid-template-columns: 1fr;
+
+    gap: 15px;
+  }
+
+  .members-page .member-modal .form-group.full-width {
+    grid-column: auto;
+  }
+
+  .members-page .weekday-group {
+    gap: 6px;
+  }
+
+  .members-page .weekday-group label {
+    flex: 1;
+
+    min-width: 42px;
+
+    padding: 0 5px;
+  }
+
+  .members-page .member-modal-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .members-page .modal-action-right {
+    width: 100%;
+
+    margin-left: 0;
+  }
+
+  .members-page .modal-action-right button {
+    flex: 1;
+  }
+
+  .members-page .danger-button {
+    width: 100%;
+  }
+
+  .members-page .signup-request-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .members-page .signup-request-actions {
+    width: 100%;
+  }
+
+  .members-page .signup-request-actions button {
+    flex: 1;
   }
 }

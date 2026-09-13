@@ -27,12 +27,14 @@ const DAY_INDEX_BY_NAME = {
 };
 
 const OPTIONAL_MEMBER_COLUMNS = [
+  'auth_user_id',
   'lesson_start_date',
   'personal_reported_at',
   'personal_reported_payment_date',
 ];
 
 let members = [];
+let signupRequests = [];
 let currentFilter = '전체';
 let editingMemberId = null;
 let memberLoadError = '';
@@ -113,6 +115,10 @@ function hasSupabaseConnection() {
 
 function normalizeDateValue(value) {
   return value || null;
+}
+
+function normalizePhone(value) {
+  return String(value || '').replace(/[^\d]/g, '');
 }
 
 function getErrorText(error) {
@@ -199,6 +205,7 @@ async function updateMemberPayload(memberId, payload) {
 function mapMemberFromDatabase(row) {
   return {
     id: row.id,
+    authUserId: row.auth_user_id || '',
     name: row.name || '',
     phone: row.phone || '',
     lessonFormat: row.lesson_format || '1:1',
@@ -220,6 +227,7 @@ function mapMemberFromDatabase(row) {
 
 function mapMemberToDatabase(member) {
   return {
+    auth_user_id: member.authUserId || null,
     name: member.name,
     phone: member.phone || null,
     lesson_format: member.lessonFormat || '1:1',
@@ -284,6 +292,131 @@ async function loadMembers() {
   members = data.map(mapMemberFromDatabase);
 
   saveLocalMembers();
+}
+
+async function loadSignupRequests() {
+  if (!hasSupabaseConnection()) {
+    signupRequests = [];
+
+    return;
+  }
+
+  const { data, error } = await window.swimDb.client
+    .from('signup_requests')
+    .select('*')
+    .eq('status', 'pending')
+    .order('requested_at', { ascending: true });
+
+  if (error) {
+    console.error('가입 신청을 불러오지 못했습니다.', error);
+
+    signupRequests = [];
+
+    return;
+  }
+
+  signupRequests = data || [];
+}
+
+async function approveSignupRequest(requestId) {
+  const request = signupRequests.find(
+    (item) => String(item.id) === String(requestId)
+  );
+
+  if (!request || !hasSupabaseConnection()) {
+    return;
+  }
+
+  const matchedMember = members.find(
+    (member) => normalizePhone(member.phone) === normalizePhone(request.phone)
+  );
+
+  try {
+    if (matchedMember) {
+      const savedMember = await saveMember(matchedMember.id, {
+        ...matchedMember,
+        authUserId: request.auth_user_id,
+      });
+      const index = members.findIndex(
+        (member) => String(member.id) === String(savedMember.id)
+      );
+
+      if (index !== -1) {
+        members[index] = savedMember;
+      }
+    } else {
+      const savedMember = await createMember({
+        authUserId: request.auth_user_id,
+        name: request.name,
+        phone: request.phone,
+        lessonFormat: '1:1',
+        days: [],
+        time: '',
+        lessonStartDate: '',
+        totalLessons: 0,
+        usedLessons: 0,
+        paymentAmount: 0,
+        paymentDate: '',
+        paymentStatus: '확인필요',
+        personalReportedAt: '',
+        status: '수강중',
+        lastLessonDate: '',
+        memo: '가입 승인 후 생성된 회원입니다.',
+      });
+
+      members.unshift(savedMember);
+    }
+
+    const { error } = await window.swimDb.client
+      .from('signup_requests')
+      .update({
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+      })
+      .eq('id', request.id);
+
+    if (error) {
+      throw error;
+    }
+
+    await loadSignupRequests();
+    renderAll();
+  } catch (error) {
+    console.error('가입 신청 승인 실패:', error);
+
+    alert(`가입 신청을 승인하지 못했습니다.\n${getDisplayErrorMessage(error)}`);
+  }
+}
+
+async function rejectSignupRequest(requestId) {
+  if (!hasSupabaseConnection()) {
+    return;
+  }
+
+  const shouldReject = confirm('이 가입 신청을 거절할까요?');
+
+  if (!shouldReject) {
+    return;
+  }
+
+  const { error } = await window.swimDb.client
+    .from('signup_requests')
+    .update({
+      status: 'rejected',
+      rejected_at: new Date().toISOString(),
+    })
+    .eq('id', requestId);
+
+  if (error) {
+    console.error('가입 신청 거절 실패:', error);
+
+    alert(`가입 신청을 거절하지 못했습니다.\n${getDisplayErrorMessage(error)}`);
+
+    return;
+  }
+
+  await loadSignupRequests();
+  renderAll();
 }
 
 async function createMember(memberData) {
@@ -622,6 +755,62 @@ function escapeHTML(value) {
   return element.innerHTML;
 }
 
+function renderSignupRequests() {
+  const container = document.getElementById('signupRequestList');
+  const count = document.getElementById('signupRequestCount');
+
+  if (count) {
+    count.textContent = `${signupRequests.length}건`;
+  }
+
+  if (!container) {
+    return;
+  }
+
+  if (signupRequests.length === 0) {
+    container.innerHTML = `
+      <p class="empty-member-row">대기 중인 가입 신청이 없습니다.</p>
+    `;
+
+    return;
+  }
+
+  container.innerHTML = signupRequests
+    .map((request) => {
+      const requestedAt = request.requested_at
+        ? formatKoreanDate(request.requested_at.slice(0, 10))
+        : '신청일 없음';
+
+      return `
+        <article class="signup-request-item">
+          <div>
+            <strong>${escapeHTML(request.name)}</strong>
+            <span>${escapeHTML(request.phone)} · ${requestedAt}</span>
+          </div>
+
+          <div class="signup-request-actions">
+            <button
+              type="button"
+              class="signup-approve-button"
+              data-request-id="${escapeHTML(request.id)}"
+            >
+              승인
+            </button>
+
+            <button
+              type="button"
+              class="signup-reject-button"
+              data-request-id="${escapeHTML(request.id)}"
+            >
+              거절
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+}
+
 function getSchedule(member) {
   const days = Array.isArray(member.days) ? member.days.join('·') : '';
 
@@ -690,16 +879,58 @@ function getFilteredMembers() {
           member.status === '수강중' && getRemainingLessons(member) <= 2
       );
 
-    case '미납':
-      return members.filter(
-        (member) =>
-          member.paymentStatus === '미납' || member.paymentStatus === '확인필요'
-      );
+    case '미완료':
+      return members.filter((member) => !isCurrentPaymentReported(member));
 
     case '전체':
     default:
       return members;
   }
+}
+
+// ======================================================
+// 회원 정렬
+// ======================================================
+
+function sortMembers(memberList) {
+  const sortType = document.getElementById('memberSort')?.value || 'name-asc';
+
+  const sortedMembers = [...memberList];
+
+  sortedMembers.sort((a, b) => {
+    const aRemaining = getRemainingLessons(a);
+
+    const bRemaining = getRemainingLessons(b);
+
+    const aTime = formatTime(a.time);
+
+    const bTime = formatTime(b.time);
+
+    switch (sortType) {
+      case 'name-asc':
+        return String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+
+      case 'name-desc':
+        return String(b.name || '').localeCompare(String(a.name || ''), 'ko');
+
+      case 'remaining-asc':
+        return aRemaining - bRemaining;
+
+      case 'remaining-desc':
+        return bRemaining - aRemaining;
+
+      case 'time-asc':
+        return aTime.localeCompare(bTime);
+
+      case 'time-desc':
+        return bTime.localeCompare(aTime);
+
+      default:
+        return 0;
+    }
+  });
+
+  return sortedMembers;
 }
 
 // ======================================================
@@ -722,10 +953,11 @@ function renderMembers() {
   }
 
   const filteredMembers = getFilteredMembers();
+  const sortedMembers = sortMembers(filteredMembers);
 
   tbody.innerHTML = '';
 
-  if (filteredMembers.length === 0) {
+  if (sortedMembers.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td
@@ -740,7 +972,7 @@ function renderMembers() {
     return;
   }
 
-  filteredMembers.forEach((member) => {
+  sortedMembers.forEach((member) => {
     const remaining = getRemainingLessons(member);
 
     const row = document.createElement('tr');
@@ -1006,25 +1238,13 @@ function renderMetrics() {
 }
 
 // ======================================================
-// 필터 버튼
+// 필터 / 정렬
 // ======================================================
 
 function setupFilters() {
   const buttons = document.querySelectorAll('.filter-chip');
 
-  const filterNames = ['전체', '수강중', '재등록 예정', '미납'];
-
-  buttons.forEach((button, index) => {
-    if (!filterNames[index]) {
-      button.style.display = 'none';
-
-      return;
-    }
-
-    button.textContent = filterNames[index];
-
-    button.dataset.filter = filterNames[index];
-
+  buttons.forEach((button) => {
     button.addEventListener('click', () => {
       currentFilter = button.dataset.filter;
 
@@ -1037,6 +1257,14 @@ function setupFilters() {
       renderMembers();
     });
   });
+
+  const memberSort = document.getElementById('memberSort');
+
+  if (memberSort) {
+    memberSort.addEventListener('change', () => {
+      renderMembers();
+    });
+  }
 }
 
 // ======================================================
@@ -1096,7 +1324,9 @@ async function addMember(memberData) {
   } catch (error) {
     console.error('회원을 저장하지 못했습니다.', error);
 
-    alert(`회원 저장 중 오류가 발생했습니다.\n${getDisplayErrorMessage(error)}`);
+    alert(
+      `회원 저장 중 오류가 발생했습니다.\n${getDisplayErrorMessage(error)}`
+    );
   }
 }
 
@@ -1146,7 +1376,9 @@ async function updateMember(memberId, updatedData) {
   } catch (error) {
     console.error('회원 정보를 수정하지 못했습니다.', error);
 
-    alert(`회원 수정 중 오류가 발생했습니다.\n${getDisplayErrorMessage(error)}`);
+    alert(
+      `회원 수정 중 오류가 발생했습니다.\n${getDisplayErrorMessage(error)}`
+    );
   }
 }
 
@@ -1644,9 +1876,33 @@ async function renderLessonPeriods() {
 // ======================================================
 
 function renderAll() {
+  renderSignupRequests();
   renderMembers();
   renderMetrics();
   renderLessonPeriods();
+}
+
+function setupSignupRequestActions() {
+  const container = document.getElementById('signupRequestList');
+
+  if (!container) {
+    return;
+  }
+
+  container.addEventListener('click', (event) => {
+    const approveButton = event.target.closest('.signup-approve-button');
+    const rejectButton = event.target.closest('.signup-reject-button');
+
+    if (approveButton) {
+      approveSignupRequest(approveButton.dataset.requestId);
+
+      return;
+    }
+
+    if (rejectButton) {
+      rejectSignupRequest(rejectButton.dataset.requestId);
+    }
+  });
 }
 
 // ======================================================
@@ -1657,7 +1913,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFilters();
   setupAddButton();
   setupReportButtons();
+  setupSignupRequestActions();
   setupModalEvents();
 
-  loadMembers().then(renderAll);
+  Promise.all([loadMembers(), loadSignupRequests()]).then(renderAll);
 });

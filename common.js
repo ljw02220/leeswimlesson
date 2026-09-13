@@ -13,6 +13,23 @@ async function requireAuthSession() {
     sessionStorage.removeItem('loginSession');
 
     window.location.href = 'index.html';
+
+    return;
+  }
+
+  const savedSession =
+    sessionStorage.getItem('loginSession') || localStorage.getItem('loginSession');
+
+  if (savedSession) {
+    try {
+      const parsedSession = JSON.parse(savedSession);
+
+      if (parsedSession.role === 'member') {
+        window.location.href = 'member-home.html';
+      }
+    } catch (error) {
+      console.error('로그인 세션 정보를 확인하지 못했습니다.', error);
+    }
   }
 }
 
