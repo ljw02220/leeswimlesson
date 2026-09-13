@@ -138,12 +138,31 @@ function getSignupErrorMessage(error) {
   return `가입 신청을 저장하지 못했습니다. ${errorText || 'Supabase 설정을 확인해주세요.'}`;
 }
 
-async function getSignupRequest(userId) {
-  const { data, error } = await window.swimDb.client
+function isUserAlreadyRegisteredError(error) {
+  const errorText = getErrorText(error).toLowerCase();
+
+  return (
+    errorText.includes('user already registered') ||
+    errorText.includes('user already exists') ||
+    errorText.includes('already registered')
+  );
+}
+
+async function getSignupRequest(userId, loginEmail) {
+  let query = window.swimDb.client
     .from('signup_requests')
     .select('*')
-    .eq('auth_user_id', userId)
     .limit(1);
+
+  if (userId && loginEmail) {
+    query = query.or(`auth_user_id.eq.${userId},login_email.eq.${loginEmail}`);
+  } else if (userId) {
+    query = query.eq('auth_user_id', userId);
+  } else if (loginEmail) {
+    query = query.eq('login_email', loginEmail);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -164,6 +183,48 @@ async function getMemberByAuthUserId(userId) {
   }
 
   return data?.[0] || null;
+}
+
+async function getMemberByPhone(phone) {
+  const normalizedPhone = normalizePhone(phone);
+
+  if (!normalizedPhone) {
+    return null;
+  }
+
+  const { data, error } = await window.swimDb.client
+    .from('members')
+    .select('id, name, phone, auth_user_id')
+    .limit(1000);
+
+  if (error) {
+    throw error;
+  }
+
+  return (
+    (data || []).find(
+      (member) => normalizePhone(member.phone) === normalizedPhone
+    ) || null
+  );
+}
+
+async function linkMemberAuthUser(member, userId) {
+  if (!member?.id || !userId || member.auth_user_id === userId) {
+    return member;
+  }
+
+  const { data, error } = await window.swimDb.client
+    .from('members')
+    .update({ auth_user_id: userId })
+    .eq('id', member.id)
+    .select('id, name, phone, auth_user_id')
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data || member;
 }
 
 function setupLogin() {
@@ -241,8 +302,8 @@ function setupLogin() {
         return;
       }
 
-      const signupRequest = await getSignupRequest(data.user.id);
-      const member = await getMemberByAuthUserId(data.user.id);
+      const signupRequest = await getSignupRequest(data.user.id, data.user.email || email);
+      let member = await getMemberByAuthUserId(data.user.id);
 
       if (signupRequest && signupRequest.status !== 'approved') {
         await window.swimDb.client.auth.signOut();
@@ -257,8 +318,13 @@ function setupLogin() {
         return;
       }
 
+      if (!member && signupRequest?.status === 'approved') {
+        member = await getMemberByPhone(signupRequest.phone);
+        member = await linkMemberAuthUser(member, data.user.id);
+      }
+
       const loginData = {
-        role: member ? 'member' : 'admin',
+        role: member || isMemberAuthUser(data.user) ? 'member' : 'admin',
         loginId: data.user.email || email,
         memberId: member?.id || null,
         loginAt: new Date().toISOString(),
@@ -274,7 +340,8 @@ function setupLogin() {
         sessionStorage.setItem('loginSession', JSON.stringify(loginData));
       }
 
-      window.location.href = member ? 'member-home.html' : 'home.html';
+      window.location.href =
+        member || isMemberAuthUser(data.user) ? 'member-home.html' : 'home.html';
     } catch (approvalError) {
       console.error('승인 상태 확인 실패:', approvalError);
 
@@ -376,18 +443,21 @@ function setupSignup() {
         },
       });
 
-      if (error) {
+      if (error && !isUserAlreadyRegisteredError(error)) {
         throw error;
       }
 
       const { error: requestError } = await window.swimDb.client
         .from('signup_requests')
         .insert({
-          auth_user_id: data.user?.id || null,
+          auth_user_id: data?.user?.id || null,
           login_email: loginEmail,
           name,
           phone,
           status: 'pending',
+          memo: error
+            ? '이미 생성된 Auth 계정에서 다시 접수된 가입 신청입니다.'
+            : null,
         });
 
       if (requestError) {
