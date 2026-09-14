@@ -495,6 +495,12 @@ button {
   background: #f7faff;
 }
 
+.lesson-detail-item.holiday {
+  border: 1px solid #ffd4d4;
+
+  background: #fff7f7;
+}
+
 .lesson-date-box {
   display: flex;
   align-items: center;
@@ -508,11 +514,21 @@ button {
   background: #eaf3ff;
 }
 
+.lesson-date-box.holiday {
+  background: #ffe7e7;
+}
+
 .lesson-date-box span {
   color: var(--blue);
 
   font-size: 8px;
   font-weight: 800;
+}
+
+.lesson-date-box.holiday span,
+.lesson-date-box.holiday strong,
+.lesson-date-box.holiday small {
+  color: #d64141;
 }
 
 .lesson-date-box strong {
@@ -606,6 +622,11 @@ button {
 .lesson-status.completed {
   background: var(--green-soft);
   color: var(--green);
+}
+
+.lesson-status.holiday {
+  background: #ffe1e1;
+  color: #d64141;
 }
 
 .member-empty {

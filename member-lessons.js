@@ -15,12 +15,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function renderDateBox(dateKey) {
+  function renderDateBox(dateKey, options = {}) {
     const date = new Date(`${dateKey}T00:00:00`);
     const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const className = options.isHoliday
+      ? 'lesson-date-box holiday'
+      : 'lesson-date-box';
 
     return `
-      <div class="lesson-date-box">
+      <div class="${className}">
         <span>${date.getMonth() + 1}월</span>
         <strong>${date.getDate()}</strong>
         <small>${days[date.getDay()]}</small>
@@ -29,6 +32,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderScheduledLesson(lesson) {
+    if (lesson.status === 'holiday') {
+      return `
+        <article class="lesson-detail-item holiday">
+          ${renderDateBox(lesson.date, { isHoliday: true })}
+
+          <div class="lesson-detail-content">
+            <div class="lesson-detail-top">
+              <div>
+                <span>${portal.formatLessonTime(lesson.time)}</span>
+                <strong>${lesson.holidayName || lesson.title || '휴일'}</strong>
+              </div>
+
+              <span class="lesson-status holiday">휴일</span>
+            </div>
+
+            <p>${lesson.memo || '휴일이라 수업이 없습니다.'}</p>
+          </div>
+        </article>
+      `;
+    }
+
     return `
       <article class="lesson-detail-item">
         ${renderDateBox(lesson.date)}
@@ -74,9 +98,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const used = Number(member.used_lessons || 0);
     const remaining = portal.getRemainingLessons(member);
     const progressRate = total > 0 ? Math.round((used / total) * 100) : 0;
-    const upcomingLessons = portal.getUpcomingLessons(member, remaining || 4);
+    const upcomingLessons = portal.getUpcomingLessonsWithHolidays(
+      member,
+      remaining || 4
+    );
     const completedLessons = portal.getCompletedLessons(member, 6);
-    const nextLesson = upcomingLessons[0];
+    const nextLesson = upcomingLessons.find(
+      (lesson) => lesson.status === 'scheduled'
+    );
 
     setText(
       'nextLessonDate',
@@ -112,7 +141,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lessonCount = document.querySelector('.lesson-count');
 
     if (lessonCount) {
-      lessonCount.textContent = `${upcomingLessons.length}건`;
+      const scheduledCount = upcomingLessons.filter(
+        (lesson) => lesson.status === 'scheduled'
+      ).length;
+
+      lessonCount.textContent = `${scheduledCount}건`;
     }
 
     const scheduledList = document.getElementById('scheduledLessonList');
