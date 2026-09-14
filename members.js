@@ -327,9 +327,18 @@ async function approveSignupRequest(requestId) {
     return;
   }
 
-  const matchedMember = members.find(
-    (member) => normalizePhone(member.phone) === normalizePhone(request.phone)
-  );
+  const requestPhone = normalizePhone(request.phone);
+  const requestName = String(request.name || '').trim();
+  const matchedMember = members.find((member) => {
+    const memberPhone = normalizePhone(member.phone);
+    const memberName = String(member.name || '').trim();
+
+    if (requestPhone && memberPhone === requestPhone) {
+      return true;
+    }
+
+    return requestName && memberName === requestName;
+  });
 
   try {
     if (matchedMember) {

@@ -185,10 +185,11 @@ async function getMemberByAuthUserId(userId) {
   return data?.[0] || null;
 }
 
-async function getMemberByPhone(phone) {
-  const normalizedPhone = normalizePhone(phone);
+async function getMemberBySignupRequest(signupRequest) {
+  const normalizedPhone = normalizePhone(signupRequest?.phone);
+  const requestName = String(signupRequest?.name || '').trim();
 
-  if (!normalizedPhone) {
+  if (!normalizedPhone && !requestName) {
     return null;
   }
 
@@ -202,9 +203,16 @@ async function getMemberByPhone(phone) {
   }
 
   return (
-    (data || []).find(
-      (member) => normalizePhone(member.phone) === normalizedPhone
-    ) || null
+    (data || []).find((member) => {
+      const memberPhone = normalizePhone(member.phone);
+      const memberName = String(member.name || '').trim();
+
+      if (normalizedPhone && memberPhone === normalizedPhone) {
+        return true;
+      }
+
+      return requestName && memberName === requestName;
+    }) || null
   );
 }
 
@@ -319,7 +327,7 @@ function setupLogin() {
       }
 
       if (!member && signupRequest?.status === 'approved') {
-        member = await getMemberByPhone(signupRequest.phone);
+        member = await getMemberBySignupRequest(signupRequest);
         member = await linkMemberAuthUser(member, data.user.id);
       }
 
