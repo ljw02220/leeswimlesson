@@ -191,8 +191,24 @@ function normalizeTimeValue(value) {
   return value ? String(value).slice(0, 5) : '';
 }
 
+function normalizeLessonDays(days) {
+  if (Array.isArray(days)) {
+    return days;
+  }
+
+  if (typeof days === 'string') {
+    return days
+      .replace(/[{}"]/g, '')
+      .split(',')
+      .map((day) => day.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 function getMemberLessonDayIndexes(days) {
-  return (Array.isArray(days) ? days : [])
+  return normalizeLessonDays(days)
     .map((day) => DAY_INDEX_BY_NAME[day])
     .filter((day) => Number.isInteger(day));
 }
@@ -200,7 +216,7 @@ function getMemberLessonDayIndexes(days) {
 function mapDatabaseMemberToPersonalSchedule(member) {
   const dayIndexes = getMemberLessonDayIndexes(member.days);
   const time = normalizeTimeValue(member.lesson_time);
-  const totalCount = Number(member.total_lessons || 0);
+  const totalCount = Number(member.total_lessons || 0) || 8;
   const startDate =
     member.lesson_start_date ||
     member.payment_date ||
@@ -211,7 +227,7 @@ function mapDatabaseMemberToPersonalSchedule(member) {
     return null;
   }
 
-  if (member.status === '종료' || totalCount <= 0) {
+  if (member.status === '종료') {
     return null;
   }
 
@@ -247,9 +263,7 @@ async function loadPersonalSchedule() {
   if (hasSupabaseConnection()) {
     const { data, error } = await window.swimDb.client
       .from('members')
-      .select(
-        'id, name, days, lesson_time, lesson_start_date, payment_date, last_lesson_date, total_lessons, status'
-      );
+      .select('*');
 
     if (error) {
       throw error;
@@ -258,6 +272,10 @@ async function loadPersonalSchedule() {
     personalSchedule = (data || [])
       .map(mapDatabaseMemberToPersonalSchedule)
       .filter(Boolean);
+
+    console.info(
+      `회원관리 개인레슨 ${personalSchedule.length}건을 수업관리 달력에 반영했습니다.`
+    );
     personalScheduleLoaded = true;
 
     return personalSchedule;
@@ -859,6 +877,9 @@ async function renderCalendar() {
               <div class="schedule-text">
                 <span class="schedule-time">
                   ${escapeHTML(item.time)}
+                </span>
+                <span class="schedule-name">
+                  ${escapeHTML(getLessonName(item))}
                 </span>
               </div>
             </div>

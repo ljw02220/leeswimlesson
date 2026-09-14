@@ -448,6 +448,22 @@ body {
   white-space: nowrap;
 }
 
+.schedule-name {
+  display: block;
+
+  overflow: hidden;
+
+  margin-top: 1px;
+
+  color: #5d6c80;
+
+  font-size: 7px;
+  font-weight: 700;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 /* ==================================================
   12. 달력 아래 색상 안내
 ================================================== */
