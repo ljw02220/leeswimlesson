@@ -59,6 +59,23 @@ function normalizePhone(value) {
   return String(value || '').replace(/[^\d]/g, '');
 }
 
+function getNameParts(value) {
+  return String(value || '')
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function isMatchingMemberName(memberName, requestName) {
+  const normalizedRequestName = String(requestName || '').trim();
+
+  if (!normalizedRequestName) {
+    return false;
+  }
+
+  return getNameParts(memberName).includes(normalizedRequestName);
+}
+
 function getMemberLoginEmail(phone) {
   return `${normalizePhone(phone)}@members.leeswimlesson.com`;
 }
@@ -205,19 +222,21 @@ async function getMemberBySignupRequest(signupRequest) {
   return (
     (data || []).find((member) => {
       const memberPhone = normalizePhone(member.phone);
-      const memberName = String(member.name || '').trim();
-
       if (normalizedPhone && memberPhone === normalizedPhone) {
         return true;
       }
 
-      return requestName && memberName === requestName;
+      return isMatchingMemberName(member.name, requestName);
     }) || null
   );
 }
 
 async function linkMemberAuthUser(member, userId) {
   if (!member?.id || !userId || member.auth_user_id === userId) {
+    return member;
+  }
+
+  if (member.auth_user_id && member.auth_user_id !== userId) {
     return member;
   }
 

@@ -69,6 +69,23 @@
     return String(value || '').replace(/[^\d]/g, '');
   }
 
+  function getNameParts(value) {
+    return String(value || '')
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean);
+  }
+
+  function isMatchingMemberName(memberName, requestName) {
+    const normalizedRequestName = String(requestName || '').trim();
+
+    if (!normalizedRequestName) {
+      return false;
+    }
+
+    return getNameParts(memberName).includes(normalizedRequestName);
+  }
+
   function formatMoney(value) {
     return `${Number(value || 0).toLocaleString('ko-KR')}원`;
   }
@@ -221,6 +238,10 @@
       return member;
     }
 
+    if (member.auth_user_id && member.auth_user_id !== user.id) {
+      return member;
+    }
+
     const client = getClient();
     const { data, error } = await client
       .from('members')
@@ -245,13 +266,11 @@
     return (
       (rows || []).find((member) => {
         const memberPhone = normalizePhone(member.phone);
-        const memberName = String(member.name || '').trim();
-
         if (requestPhone && memberPhone === requestPhone) {
           return true;
         }
 
-        return requestName && memberName === requestName;
+        return isMatchingMemberName(member.name, requestName);
       }) || null
     );
   }

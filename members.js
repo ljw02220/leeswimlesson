@@ -121,6 +121,23 @@ function normalizePhone(value) {
   return String(value || '').replace(/[^\d]/g, '');
 }
 
+function getNameParts(value) {
+  return String(value || '')
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function isMatchingMemberName(memberName, requestName) {
+  const normalizedRequestName = String(requestName || '').trim();
+
+  if (!normalizedRequestName) {
+    return false;
+  }
+
+  return getNameParts(memberName).includes(normalizedRequestName);
+}
+
 function getErrorText(error) {
   return [error?.code, error?.message, error?.details, error?.hint]
     .filter(Boolean)
@@ -331,20 +348,19 @@ async function approveSignupRequest(requestId) {
   const requestName = String(request.name || '').trim();
   const matchedMember = members.find((member) => {
     const memberPhone = normalizePhone(member.phone);
-    const memberName = String(member.name || '').trim();
 
     if (requestPhone && memberPhone === requestPhone) {
       return true;
     }
 
-    return requestName && memberName === requestName;
+    return isMatchingMemberName(member.name, requestName);
   });
 
   try {
     if (matchedMember) {
       const savedMember = await saveMember(matchedMember.id, {
         ...matchedMember,
-        authUserId: request.auth_user_id,
+        authUserId: matchedMember.authUserId || request.auth_user_id,
       });
       const index = members.findIndex(
         (member) => String(member.id) === String(savedMember.id)
