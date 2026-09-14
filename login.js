@@ -235,6 +235,25 @@ async function linkMemberAuthUser(member, userId) {
   return data || member;
 }
 
+async function createPendingSignupRequestFromUser(user, loginEmail) {
+  const metadata = user?.user_metadata || {};
+  const name = metadata.name || metadata.full_name || '이름 미등록';
+  const phone = metadata.phone || '';
+
+  const { error } = await window.swimDb.client.from('signup_requests').insert({
+    auth_user_id: user.id,
+    login_email: loginEmail,
+    name,
+    phone,
+    status: 'pending',
+    memo: '이미 생성된 Auth 계정에서 로그인 중 자동 접수된 가입 신청입니다.',
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 function setupLogin() {
   const loginForm = document.getElementById('loginForm');
 
@@ -312,6 +331,22 @@ function setupLogin() {
 
       const signupRequest = await getSignupRequest(data.user.id, data.user.email || email);
       let member = await getMemberByAuthUserId(data.user.id);
+
+      if (!signupRequest && isMemberAuthUser(data.user) && !member) {
+        await createPendingSignupRequestFromUser(
+          data.user,
+          data.user.email || email
+        );
+
+        await window.swimDb.client.auth.signOut();
+
+        if (loginError) {
+          loginError.textContent =
+            '가입 신청이 접수되었습니다. 관리자 승인 후 로그인할 수 있습니다.';
+        }
+
+        return;
+      }
 
       if (signupRequest && signupRequest.status !== 'approved') {
         await window.swimDb.client.auth.signOut();
