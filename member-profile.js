@@ -110,6 +110,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  const paymentReportAmount = document.getElementById('paymentReportAmount');
+
+  if (paymentReportAmount) {
+    paymentReportAmount.addEventListener('input', (event) => {
+      const numbersOnly = event.target.value.replace(/[^0-9]/g, '');
+
+      if (!numbersOnly) {
+        event.target.value = '';
+
+        return;
+      }
+
+      event.target.value = Number(numbersOnly).toLocaleString('ko-KR');
+    });
+  }
+
   const messageForm = document.getElementById('memberMessageForm');
 
   if (messageForm) {

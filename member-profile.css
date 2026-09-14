@@ -477,6 +477,16 @@ button {
 
 .amount-input-wrap input {
   padding-right: 34px;
+
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.amount-input-wrap input::-webkit-outer-spin-button,
+.amount-input-wrap input::-webkit-inner-spin-button {
+  margin: 0;
+
+  -webkit-appearance: none;
 }
 
 .amount-input-wrap > span {
@@ -603,27 +613,34 @@ button {
 }
 
 /* ==================================================
-  13. 하단 메뉴
+  하단 메뉴
 ================================================== */
 
 .member-bottom-nav {
   position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  left: 50%;
+  bottom: 12px;
+
+  transform: translateX(-50%);
 
   display: grid;
   grid-template-columns: repeat(3, 1fr);
 
-  width: 100%;
+  width: calc(100% - 24px);
+  max-width: 496px;
   height: 64px;
 
-  border-top: 1px solid #dfe7f0;
+  border: 1px solid #dfe7f0;
+  border-radius: 18px;
 
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.98);
 
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
+
+  box-shadow: 0 8px 24px rgba(38, 66, 104, 0.1);
+
+  overflow: hidden;
 
   z-index: 100;
 }
@@ -636,29 +653,77 @@ button {
 
   gap: 3px;
 
-  color: var(--nav);
+  min-width: 0;
+
+  color: #8a97a8;
 
   font-size: 9px;
   font-weight: 700;
+  line-height: 1;
+
+  text-align: center;
 }
 
 .member-nav-item.active {
-  color: var(--blue-strong);
+  color: #3478f6;
 }
 
 .member-nav-icon {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  width: 22px;
+  height: 22px;
 }
 
 .member-nav-icon svg {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
 
   stroke-width: 2.2;
 }
 
+.member-nav-item > span:last-child {
+  display: block;
+
+  min-height: 10px;
+
+  line-height: 10px;
+}
+
+/* 아주 작은 모바일 */
+
+@media (max-width: 360px) {
+  .member-bottom-nav {
+    bottom: 8px;
+
+    width: calc(100% - 20px);
+    height: 60px;
+
+    border-radius: 16px;
+  }
+
+  .member-nav-item {
+    font-size: 8px;
+  }
+
+  .member-nav-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+/* 태블릿 / PC */
+
+@media (min-width: 700px) {
+  .member-bottom-nav {
+    bottom: 18px;
+
+    width: 472px;
+    height: 64px;
+  }
+}
 /* ==================================================
   14. 아주 작은 모바일
 ================================================== */
