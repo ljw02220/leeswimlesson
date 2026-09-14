@@ -195,6 +195,95 @@
     return data?.user || null;
   }
 
+  async function linkMemberAuthUser(member, user) {
+    if (!member?.id || !user?.id || member.auth_user_id === user.id) {
+      return member;
+    }
+
+    const client = getClient();
+    const { data, error } = await client
+      .from('members')
+      .update({ auth_user_id: user.id })
+      .eq('id', member.id)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data || member;
+  }
+
+  function findMatchingMember(rows, request) {
+    const requestPhone = normalizePhone(request?.phone);
+    const requestName = String(request?.name || '').trim();
+
+    return (
+      (rows || []).find((member) => {
+        const memberPhone = normalizePhone(member.phone);
+        const memberName = String(member.name || '').trim();
+
+        if (requestPhone && memberPhone === requestPhone) {
+          return true;
+        }
+
+        return requestName && memberName === requestName;
+      }) || null
+    );
+  }
+
+  async function loadApprovedSignupMember(user) {
+    const client = getClient();
+    const userEmail = user?.email || '';
+
+    if (!user?.id && !userEmail) {
+      return null;
+    }
+
+    let requestQuery = client
+      .from('signup_requests')
+      .select('*')
+      .eq('status', 'approved')
+      .limit(1);
+
+    if (user?.id && userEmail) {
+      requestQuery = requestQuery.or(
+        `auth_user_id.eq.${user.id},login_email.eq.${userEmail}`
+      );
+    } else if (user?.id) {
+      requestQuery = requestQuery.eq('auth_user_id', user.id);
+    } else {
+      requestQuery = requestQuery.eq('login_email', userEmail);
+    }
+
+    const { data: requestData, error: requestError } = await requestQuery;
+
+    if (requestError) {
+      throw requestError;
+    }
+
+    const signupRequest = requestData?.[0];
+
+    if (!signupRequest) {
+      return null;
+    }
+
+    const { data: membersData, error: membersError } = await client
+      .from('members')
+      .select('*')
+      .limit(1000);
+
+    if (membersError) {
+      throw membersError;
+    }
+
+    const matchedMember = findMatchingMember(membersData, signupRequest);
+    const linkedMember = await linkMemberAuthUser(matchedMember, user);
+
+    return linkedMember ? mapMember(linkedMember) : null;
+  }
+
   async function loadMemberFromSupabase(user) {
     const client = getClient();
     const params = new URLSearchParams(window.location.search);
@@ -220,6 +309,12 @@
 
       if (data?.[0]) {
         return mapMember(data[0]);
+      }
+
+      const approvedSignupMember = await loadApprovedSignupMember(user);
+
+      if (approvedSignupMember) {
+        return approvedSignupMember;
       }
 
       if (phone) {
