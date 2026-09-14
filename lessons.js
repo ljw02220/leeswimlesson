@@ -202,13 +202,16 @@ function mapDatabaseMemberToPersonalSchedule(member) {
   const time = normalizeTimeValue(member.lesson_time);
   const totalCount = Number(member.total_lessons || 0);
   const startDate =
-    member.lesson_start_date || member.payment_date || member.last_lesson_date;
+    member.lesson_start_date ||
+    member.payment_date ||
+    member.last_lesson_date ||
+    getDateKey(today);
 
   if (!member.id || !member.name || dayIndexes.length === 0 || !time) {
     return null;
   }
 
-  if (!startDate || totalCount <= 0) {
+  if (member.status === '종료' || totalCount <= 0) {
     return null;
   }
 
@@ -245,9 +248,8 @@ async function loadPersonalSchedule() {
     const { data, error } = await window.swimDb.client
       .from('members')
       .select(
-        'id, name, days, lesson_time, lesson_start_date, payment_date, last_lesson_date, total_lessons'
-      )
-      .eq('status', '수강중');
+        'id, name, days, lesson_time, lesson_start_date, payment_date, last_lesson_date, total_lessons, status'
+      );
 
     if (error) {
       throw error;
