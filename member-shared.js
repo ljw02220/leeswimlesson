@@ -146,6 +146,7 @@
   function mapMember(row) {
     return {
       id: row.id,
+      auth_user_id: row.auth_user_id || '',
       name: row.name || '',
       phone: row.phone || '',
       lesson_format: row.lesson_format || '1:1',
@@ -209,7 +210,9 @@
       .single();
 
     if (error) {
-      throw error;
+      console.warn('회원 로그인 계정 연결을 저장하지 못했습니다.', error);
+
+      return member;
     }
 
     return data || member;
