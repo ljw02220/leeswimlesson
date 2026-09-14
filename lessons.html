@@ -6,7 +6,7 @@
 
     <title>수업관리</title>
 
-    <link rel="stylesheet" href="common.css?v=20260914-schedule-name" />
+    <link rel="stylesheet" href="common.css?v=20260914-lesson-feedback" />
   </head>
 
   <body>
@@ -211,6 +211,16 @@
               <option value="cancelled">취소</option>
             </select>
           </div>
+
+          <div class="detail-memo-row">
+            <label class="detail-label" for="detail-memo"> 수업 내용 </label>
+
+            <textarea
+              id="detail-memo"
+              rows="4"
+              placeholder="회원에게 보여줄 수업 내용을 입력하세요."
+            ></textarea>
+          </div>
         </div>
 
         <div class="detail-actions">
@@ -238,6 +248,6 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260913-role-guard"></script>
-    <script src="lessons.js?v=20260914-member-schedule-visible"></script>
+    <script src="lessons.js?v=20260914-lesson-feedback"></script>
   </body>
 </html>

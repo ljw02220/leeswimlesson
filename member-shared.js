@@ -147,6 +147,22 @@
     return Math.max(total - used, 0);
   }
 
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function getLessonFeedback(member, dateKey, timeValue) {
+    const key = `${dateKey}_${formatTime(timeValue)}`;
+    const startMarker = `[수업내용|${key}]`;
+    const endMarker = '[/수업내용]';
+    const pattern = new RegExp(
+      `${escapeRegExp(startMarker)}\\s*([\\s\\S]*?)\\s*${escapeRegExp(endMarker)}`
+    );
+    const match = String(member.memo || '').match(pattern);
+
+    return match?.[1]?.trim() || '';
+  }
+
   function mapMember(row) {
     return {
       id: row.id,
@@ -460,7 +476,8 @@
       title: member.lesson_format || '개인레슨',
       memo:
         index < Number(member.used_lessons || 0)
-          ? member.memo || '수업을 완료했습니다.'
+          ? getLessonFeedback(member, dateKey, member.lesson_time) ||
+            '수업을 완료했습니다.'
           : '예정된 개인레슨입니다.',
     }));
   }
@@ -505,7 +522,8 @@
             title: member.lesson_format || '개인레슨',
             memo:
               lessonIndex < usedLessons
-                ? member.memo || '수업을 완료했습니다.'
+                ? getLessonFeedback(member, dateKey, member.lesson_time) ||
+                  '수업을 완료했습니다.'
                 : '예정된 개인레슨입니다.',
           });
 

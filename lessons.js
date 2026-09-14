@@ -49,6 +49,8 @@ const detailTitle = document.querySelector('#detail-title');
 
 const detailStatus = document.querySelector('#detail-status');
 
+const detailMemo = document.querySelector('#detail-memo');
+
 const confirmDetailBtn = document.querySelector('#confirm-detail-btn');
 
 const deleteLessonBtn = document.querySelector('#delete-lesson-btn');
@@ -308,6 +310,8 @@ let cancelledLessons = getStorageData('cancelledLessons', {});
 
 let addedLessons = getStorageData('addedLessons', []);
 
+let lessonFeedback = getStorageData('lessonFeedback', {});
+
 /* ==================================================
   7. 공휴일
 ================================================== */
@@ -555,6 +559,37 @@ function escapeHTML(value) {
     .replaceAll("'", '&#039;');
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getLessonFeedbackKey(lesson) {
+  return `${lesson.date}_${normalizeTimeValue(lesson.time)}`;
+}
+
+function getLessonFeedbackBlock(lesson, feedback) {
+  const key = getLessonFeedbackKey(lesson);
+
+  return `[수업내용|${key}]\n${feedback.trim()}\n[/수업내용]`;
+}
+
+function upsertLessonFeedbackMemo(currentMemo, lesson, feedback) {
+  const memo = String(currentMemo || '').trim();
+  const key = getLessonFeedbackKey(lesson);
+  const startMarker = `[수업내용|${key}]`;
+  const endMarker = '[/수업내용]';
+  const block = getLessonFeedbackBlock(lesson, feedback);
+  const pattern = new RegExp(
+    `${escapeRegExp(startMarker)}[\\s\\S]*?${escapeRegExp(endMarker)}`
+  );
+
+  if (pattern.test(memo)) {
+    return memo.replace(pattern, block);
+  }
+
+  return [memo, block].filter(Boolean).join('\n\n');
+}
+
 /* ==================================================
   15. 개인레슨 완료 횟수 반영
 ================================================== */
@@ -581,7 +616,7 @@ async function findDatabaseMembersForLesson(lesson) {
   if (lesson.memberId) {
     const { data, error } = await client
       .from('members')
-      .select('id, name, total_lessons, used_lessons, last_lesson_date')
+      .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
       .eq('id', lesson.memberId);
 
     if (error) {
@@ -596,7 +631,7 @@ async function findDatabaseMembersForLesson(lesson) {
   if (title) {
     const { data, error } = await client
       .from('members')
-      .select('id, name, total_lessons, used_lessons, last_lesson_date')
+      .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
       .eq('name', title);
 
     if (error) {
@@ -614,7 +649,7 @@ async function findDatabaseMembersForLesson(lesson) {
 
   const { data, error } = await client
     .from('members')
-    .select('id, name, total_lessons, used_lessons, last_lesson_date')
+    .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
     .in('name', memberNames);
 
   if (error) {
@@ -703,6 +738,60 @@ async function syncPersonalLessonCount(lesson, change) {
   }
 
   updateLocalMemberLessonCounts(lesson, change);
+}
+
+async function saveLessonFeedbackForMembers(lesson, feedback) {
+  const cleanFeedback = feedback.trim();
+
+  if (!lesson || lesson.type !== 'personal' || !cleanFeedback) {
+    return;
+  }
+
+  lessonFeedback[lesson.lessonKey || getLessonFeedbackKey(lesson)] = cleanFeedback;
+
+  saveStorageData('lessonFeedback', lessonFeedback);
+
+  if (hasSupabaseConnection()) {
+    const matchedMembers = await findDatabaseMembersForLesson(lesson);
+
+    await Promise.all(
+      matchedMembers.map((member) =>
+        window.swimDb.client
+          .from('members')
+          .update({
+            memo: upsertLessonFeedbackMemo(member.memo, lesson, cleanFeedback),
+          })
+          .eq('id', member.id)
+      )
+    ).then((results) => {
+      const failedResult = results.find((result) => result.error);
+
+      if (failedResult) {
+        throw failedResult.error;
+      }
+    });
+  }
+
+  const savedMembers = getStorageData('personalLessonMembers', []);
+  const title = getLessonName(lesson).trim();
+  const memberNames = getLessonMemberNames(lesson);
+  const updatedMembers = savedMembers.map((member) => {
+    const isMatched =
+      String(member.id) === String(lesson.memberId) ||
+      member.name === title ||
+      memberNames.includes(member.name);
+
+    if (!isMatched) {
+      return member;
+    }
+
+    return {
+      ...member,
+      memo: upsertLessonFeedbackMemo(member.memo, lesson, cleanFeedback),
+    };
+  });
+
+  saveStorageData('personalLessonMembers', updatedMembers);
 }
 
 /* ==================================================
@@ -1151,6 +1240,10 @@ function openLessonDetail(dateKey, lessonKey) {
     }
   }
 
+  if (detailMemo) {
+    detailMemo.value = lessonFeedback[lessonKey] || '';
+  }
+
   if (deleteLessonBtn) {
     deleteLessonBtn.style.display =
       lesson.source === 'added' ? 'block' : 'none';
@@ -1200,6 +1293,7 @@ if (confirmDetailBtn && detailStatus) {
     const lessonKey = selectedLesson.lessonKey;
 
     const status = detailStatus.value;
+    const feedback = detailMemo?.value.trim() || '';
     const wasCompleted = completedLessons[lessonKey] === true;
     const previousCompletedLessons = { ...completedLessons };
     const previousCancelledLessons = { ...cancelledLessons };
@@ -1224,6 +1318,10 @@ if (confirmDetailBtn && detailStatus) {
     try {
       if (wasCompleted !== isCompleted) {
         await syncPersonalLessonCount(selectedLesson, isCompleted ? 1 : -1);
+      }
+
+      if (isCompleted && feedback) {
+        await saveLessonFeedbackForMembers(selectedLesson, feedback);
       }
 
       saveStorageData('completedLessons', completedLessons);
