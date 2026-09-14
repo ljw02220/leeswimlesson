@@ -89,6 +89,16 @@ const weekdays = [
   '토요일',
 ];
 
+const DAY_INDEX_BY_NAME = {
+  일: 0,
+  월: 1,
+  화: 2,
+  수: 3,
+  목: 4,
+  금: 5,
+  토: 6,
+};
+
 /* ==================================================
   3. 공공데이터 API
 ================================================== */
@@ -126,34 +136,8 @@ const HOLIDAY_OVERRIDES = {
   4. 기본 개인레슨
 ================================================== */
 
-const personalSchedule = [
-  {
-    id: 1,
-    name: '이은하, 최예서',
-    day: 6,
-    time: '08:00',
-    startDate: '2026-09-05',
-    totalCount: 4,
-  },
-
-  {
-    id: 2,
-    name: '김혜민',
-    day: 6,
-    time: '09:00',
-    startDate: '2026-09-12',
-    totalCount: 4,
-  },
-
-  {
-    id: 3,
-    name: '문지영, 전효원',
-    day: 6,
-    time: '10:00',
-    startDate: '2026-09-05',
-    totalCount: 4,
-  },
-];
+let personalSchedule = [];
+let personalScheduleLoaded = false;
 
 /* ==================================================
   5. 반복 단체강습
@@ -201,6 +185,88 @@ function saveStorageData(key, data) {
 
 function hasSupabaseConnection() {
   return Boolean(window.swimDb?.isConfigured() && window.swimDb?.client);
+}
+
+function normalizeTimeValue(value) {
+  return value ? String(value).slice(0, 5) : '';
+}
+
+function getMemberLessonDayIndexes(days) {
+  return (Array.isArray(days) ? days : [])
+    .map((day) => DAY_INDEX_BY_NAME[day])
+    .filter((day) => Number.isInteger(day));
+}
+
+function mapDatabaseMemberToPersonalSchedule(member) {
+  const dayIndexes = getMemberLessonDayIndexes(member.days);
+  const time = normalizeTimeValue(member.lesson_time);
+  const totalCount = Number(member.total_lessons || 0);
+  const startDate =
+    member.lesson_start_date || member.payment_date || member.last_lesson_date;
+
+  if (!member.id || !member.name || dayIndexes.length === 0 || !time) {
+    return null;
+  }
+
+  if (!startDate || totalCount <= 0) {
+    return null;
+  }
+
+  return {
+    id: member.id,
+    memberId: member.id,
+    name: member.name,
+    days: dayIndexes,
+    time,
+    startDate,
+    totalCount,
+  };
+}
+
+function mapLocalMemberToPersonalSchedule(member) {
+  return mapDatabaseMemberToPersonalSchedule({
+    id: member.id,
+    name: member.name,
+    days: member.days || [],
+    lesson_time: member.time || member.lesson_time,
+    lesson_start_date: member.lessonStartDate || member.lesson_start_date,
+    payment_date: member.paymentDate || member.payment_date,
+    last_lesson_date: member.lastLessonDate || member.last_lesson_date,
+    total_lessons: member.totalLessons ?? member.total_lessons,
+  });
+}
+
+async function loadPersonalSchedule() {
+  if (personalScheduleLoaded) {
+    return personalSchedule;
+  }
+
+  if (hasSupabaseConnection()) {
+    const { data, error } = await window.swimDb.client
+      .from('members')
+      .select(
+        'id, name, days, lesson_time, lesson_start_date, payment_date, last_lesson_date, total_lessons'
+      )
+      .eq('status', '수강중');
+
+    if (error) {
+      throw error;
+    }
+
+    personalSchedule = (data || [])
+      .map(mapDatabaseMemberToPersonalSchedule)
+      .filter(Boolean);
+    personalScheduleLoaded = true;
+
+    return personalSchedule;
+  }
+
+  personalSchedule = getStorageData('personalLessonMembers', [])
+    .map(mapLocalMemberToPersonalSchedule)
+    .filter(Boolean);
+  personalScheduleLoaded = true;
+
+  return personalSchedule;
 }
 
 function getLessonMemberNames(lesson) {
@@ -346,19 +412,18 @@ function getPersonalLessonDates(lesson, holidaysByDate) {
   const startDate = new Date(`${lesson.startDate}T00:00:00`);
 
   const currentDate = new Date(startDate);
+  const dayIndexes = Array.isArray(lesson.days) ? lesson.days : [lesson.day];
+  let guard = 0;
 
-  while (currentDate.getDay() !== lesson.day) {
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  while (lessonDates.length < lesson.totalCount) {
+  while (lessonDates.length < lesson.totalCount && guard < 700) {
     const dateKey = getDateKey(currentDate);
 
-    if (!holidaysByDate[dateKey]) {
+    if (dayIndexes.includes(currentDate.getDay()) && !holidaysByDate[dateKey]) {
       lessonDates.push(dateKey);
     }
 
-    currentDate.setDate(currentDate.getDate() + 7);
+    currentDate.setDate(currentDate.getDate() + 1);
+    guard += 1;
   }
 
   return lessonDates;
@@ -381,6 +446,7 @@ function createPersonalLessonsByDate(holidaysByDate) {
 
       personalLessonsByDate[dateKey].push({
         id: lesson.id,
+        memberId: lesson.memberId,
         time: lesson.time,
         title: lesson.name,
         type: 'personal',
@@ -491,6 +557,21 @@ async function findDatabaseMembersForLesson(lesson) {
   const title = getLessonName(lesson).trim();
   const memberNames = getLessonMemberNames(lesson);
   const client = window.swimDb.client;
+
+  if (lesson.memberId) {
+    const { data, error } = await client
+      .from('members')
+      .select('id, name, total_lessons, used_lessons, last_lesson_date')
+      .eq('id', lesson.memberId);
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.length > 0) {
+      return data;
+    }
+  }
 
   if (title) {
     const { data, error } = await client
@@ -645,6 +726,8 @@ function getDaySchedule(date, dateKey, holidayName, personalLessonsByDate) {
 ================================================== */
 
 async function getTodaySchedule() {
+  await loadPersonalSchedule();
+
   const year = today.getFullYear();
 
   const month = today.getMonth();
@@ -667,6 +750,13 @@ async function getTodaySchedule() {
 async function renderCalendar() {
   if (!currentDate || !daysTag) {
     return;
+  }
+
+  try {
+    personalScheduleLoaded = false;
+    await loadPersonalSchedule();
+  } catch (error) {
+    console.error('회원관리 개인레슨 일정을 불러오지 못했습니다.', error);
   }
 
   const firstDayOfMonth = new Date(currYear, currMonth, 1).getDay();
@@ -957,6 +1047,7 @@ function findLesson(dateKey, lessonKey) {
     if (personalLesson) {
       return {
         id: personalLesson.id,
+        memberId: personalLesson.memberId,
         date: dateKey,
         time: personalLesson.time,
         title: personalLesson.name,
