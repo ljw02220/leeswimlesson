@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
+  let allCompletedLessons = [];
 
   function setText(id, value) {
     const element = document.getElementById(id);
@@ -77,9 +78,53 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
   }
 
-  function renderFeedbackItem(lesson) {
+  function getLessonItemKey(lesson) {
+    return [lesson.id, lesson.date, lesson.time, lesson.title]
+      .filter(Boolean)
+      .join('-')
+      .replace(/[^a-zA-Z0-9가-힣_-]/g, '-');
+  }
+
+  function renderFeedbackItem(lesson, options = {}) {
+    const shouldShowNote = Boolean(options.showNote);
+    const noteId = `home-lesson-note-${getLessonItemKey(lesson)}`;
+    const noteText = lesson.memo || '수업 노트가 아직 없습니다.';
+
+    if (shouldShowNote) {
+      return `
+        <article class="member-feedback-item expandable">
+          <button
+            type="button"
+            class="lesson-note-toggle"
+            aria-expanded="false"
+            aria-controls="${noteId}"
+          >
+            <span class="lesson-note-summary">
+              <span class="feedback-date">
+                ${portal.formatShortDate(lesson.date)}
+              </span>
+
+              <span class="feedback-content">
+                <strong>
+                  ${formatLessonTitle(lesson.title)}
+                </strong>
+              </span>
+
+              <span class="lesson-note-chevron" aria-hidden="true">⌄</span>
+            </span>
+          </button>
+
+          <div id="${noteId}" class="lesson-note-panel" hidden>
+            <div class="lesson-content-box">
+              <p>${noteText}</p>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
     return `
-        <article class="member-feedback-item">
+        <article class="member-feedback-item compact">
           <div class="feedback-date">
             ${portal.formatShortDate(lesson.date)}
           </div>
@@ -88,10 +133,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             <strong>
               ${formatLessonTitle(lesson.title)}
             </strong>
-
-            <p>
-              ${lesson.memo || '수업을 완료했습니다.'}
-            </p>
           </div>
         </article>
       `;
@@ -146,6 +187,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     container.innerHTML = completedLessons.map(renderFeedbackItem).join('');
   }
 
+  function closeCompletedLessonModal() {
+    const modal = document.getElementById('completedLessonModal');
+
+    if (!modal) {
+      return;
+    }
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function openCompletedLessonModal() {
+    const modal = document.getElementById('completedLessonModal');
+    const body = document.getElementById('completedLessonModalBody');
+
+    if (!modal || !body) {
+      return;
+    }
+
+    if (allCompletedLessons.length === 0) {
+      renderEmpty(body, '완료된 수업 기록이 없습니다.');
+    } else {
+      body.innerHTML = allCompletedLessons
+        .map((lesson) => renderFeedbackItem(lesson, { showNote: true }))
+        .join('');
+    }
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  document
+    .getElementById('completedLessonModalOpen')
+    ?.addEventListener('click', openCompletedLessonModal);
+
+  document
+    .getElementById('completedLessonModalClose')
+    ?.addEventListener('click', closeCompletedLessonModal);
+
+  document
+    .getElementById('completedLessonModal')
+    ?.addEventListener('click', (event) => {
+      if (event.target.id === 'completedLessonModal') {
+        closeCompletedLessonModal();
+      }
+    });
+
+  document
+    .getElementById('completedLessonModalBody')
+    ?.addEventListener('click', (event) => {
+      const toggle = event.target.closest('.lesson-note-toggle');
+
+      if (!toggle) {
+        return;
+      }
+
+      const panelId = toggle.getAttribute('aria-controls');
+      const panel = panelId ? document.getElementById(panelId) : null;
+      const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+
+      toggle.setAttribute('aria-expanded', String(!isExpanded));
+
+      if (panel) {
+        panel.hidden = isExpanded;
+      }
+    });
+
   try {
     const { member } = await portal.loadCurrentMember();
 
@@ -153,7 +263,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const upcomingLessons = portal.getUpcomingLessons(member, 2);
 
-    const completedLessons = await portal.getCompletedLessons(member, 2);
+    allCompletedLessons = await portal.getCompletedLessons(member, 100);
+
+    const completedLessons = allCompletedLessons.slice(0, 2);
 
     const nextLesson = upcomingLessons[0];
 

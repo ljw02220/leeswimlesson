@@ -518,8 +518,7 @@
       title: member.lesson_format || '개인레슨',
       memo:
         index < Number(member.used_lessons || 0)
-          ? getLessonFeedback(member, dateKey, member.lesson_time) ||
-            '수업을 완료했습니다.'
+          ? '수업을 완료했습니다.'
           : '예정된 개인레슨입니다.',
     }));
   }
@@ -564,8 +563,7 @@
             title: member.lesson_format || '개인레슨',
             memo:
               lessonIndex < usedLessons
-                ? getLessonFeedback(member, dateKey, member.lesson_time) ||
-                  '수업을 완료했습니다.'
+                ? '수업을 완료했습니다.'
                 : '예정된 개인레슨입니다.',
           });
 
@@ -670,6 +668,10 @@
     });
   }
 
+  function getLessonRecordKey(row) {
+    return `${row.lesson_date}_${formatTime(row.lesson_time)}`;
+  }
+
   function mapCompletedGroupLesson(row) {
     return {
       id: row.id,
@@ -680,6 +682,81 @@
       title: row.title || '단체수업',
       memo: row.memo || '단체수업을 완료했습니다.',
     };
+  }
+
+  function mapCompletedPersonalLesson(row) {
+    return {
+      id: row.id,
+      date: row.lesson_date,
+      time: row.lesson_time,
+      type: 'personal',
+      status: 'completed',
+      title: row.title || '개인레슨',
+      memo: row.memo || '',
+    };
+  }
+
+  function applyLessonRecordMemo(lessons, records) {
+    const recordByKey = new Map(
+      records.map((record) => [getLessonRecordKey(record), record])
+    );
+
+    return lessons.map((lesson) => {
+      const record = recordByKey.get(`${lesson.date}_${formatTime(lesson.time)}`);
+
+      if (!record) {
+        return lesson;
+      }
+
+      return {
+        ...lesson,
+        id: record.id || lesson.id,
+        title: record.title || lesson.title,
+        memo: record.memo || lesson.memo,
+      };
+    });
+  }
+
+  async function loadCompletedPersonalLessonRecords(member) {
+    const client = getClient();
+
+    if (!client || !member.id) {
+      return [];
+    }
+
+    async function runQuery(selectColumns) {
+      return client
+        .from('lessons')
+        .select(selectColumns)
+        .eq('member_id', member.id)
+        .eq('lesson_type', 'personal')
+        .eq('status', 'completed')
+        .lte('lesson_date', getTodayKey())
+        .order('lesson_date', { ascending: false })
+        .order('lesson_time', { ascending: false })
+        .limit(100);
+    }
+
+    let { data, error } = await runQuery(
+      'id, lesson_date, lesson_time, title, lesson_type, status, memo'
+    );
+
+    if (error && String(error.message || '').includes('memo')) {
+      const fallbackResult = await runQuery(
+        'id, lesson_date, lesson_time, title, lesson_type, status'
+      );
+
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    }
+
+    if (error) {
+      console.warn('개인레슨 완료 기록을 불러오지 못했습니다.', error);
+
+      return [];
+    }
+
+    return data || [];
   }
 
   async function loadCompletedGroupLessons(member, limit = 6) {
@@ -779,12 +856,32 @@
   }
 
   async function getCompletedLessons(member, limit = 4) {
+    const personalRecords = await loadCompletedPersonalLessonRecords(member);
     const personalLessons = createLessonDatePlan(member)
       .filter((lesson) => lesson.status === 'completed')
       .reverse();
+    const personalRecordLessons = personalRecords.map(mapCompletedPersonalLesson);
+    const enrichedPersonalLessons = applyLessonRecordMemo(
+      personalLessons,
+      personalRecords
+    );
+    const mergedPersonalLessons =
+      personalRecords.length > 0
+        ? [
+            ...enrichedPersonalLessons,
+            ...personalRecordLessons.filter((recordLesson) => {
+              return !personalLessons.some((lesson) => {
+                return (
+                  lesson.date === recordLesson.date &&
+                  formatTime(lesson.time) === formatTime(recordLesson.time)
+                );
+              });
+            }),
+          ]
+        : personalLessons;
     const groupLessons = await loadCompletedGroupLessons(member, limit);
 
-    return sortLessonsByDateTimeDesc([...personalLessons, ...groupLessons])
+    return sortLessonsByDateTimeDesc([...mergedPersonalLessons, ...groupLessons])
       .slice(0, limit);
   }
 

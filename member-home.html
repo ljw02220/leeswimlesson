@@ -6,7 +6,7 @@
 
     <title>회원 홈</title>
 
-    <link rel="stylesheet" href="member-home.css" />
+    <link rel="stylesheet" href="member-home.css?v=20260916-lesson-records" />
   </head>
 
   <body class="member-page">
@@ -123,7 +123,13 @@
             <h2>다가오는 수업</h2>
           </div>
 
-          <a href="member-lessons.html" class="member-card-link"> 전체 보기 </a>
+          <button
+            type="button"
+            id="completedLessonModalOpen"
+            class="member-card-link member-card-button"
+          >
+            전체 보기
+          </button>
         </div>
 
         <div id="upcomingLessonList" class="member-lesson-list">
@@ -147,6 +153,33 @@
           <p class="member-empty">수업 내용을 불러오는 중입니다.</p>
         </div>
       </section>
+
+      <div
+        id="completedLessonModal"
+        class="member-modal-overlay"
+        aria-hidden="true"
+      >
+        <div class="member-modal" role="dialog" aria-modal="true">
+          <div class="member-modal-header">
+            <div>
+              <span>Completed</span>
+
+              <h2>완료한 전체 수업</h2>
+            </div>
+
+            <button
+              type="button"
+              id="completedLessonModalClose"
+              class="member-modal-close"
+              aria-label="닫기"
+            >
+              ×
+            </button>
+          </div>
+
+          <div id="completedLessonModalBody" class="member-modal-body"></div>
+        </div>
+      </div>
     </main>
 
     <!-- 하단 메뉴 -->
@@ -181,8 +214,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
-    <script src="member-shared.js?v=20260916-group-feedback"></script>
-    <script src="member-home.js?v=20260916-group-feedback"></script>
+    <script src="member-shared.js?v=20260916-lesson-records"></script>
+    <script src="member-home.js?v=20260916-lesson-records"></script>
 
     <script>
       lucide.createIcons();

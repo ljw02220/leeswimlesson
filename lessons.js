@@ -813,88 +813,19 @@ async function syncPersonalLessonCount(lesson, change) {
   updateLocalMemberLessonCounts(lesson, change);
 }
 
-async function saveLessonFeedbackForMembers(lesson, feedback) {
-  const cleanFeedback = feedback.trim();
-
-  if (!lesson || lesson.type !== 'personal' || !cleanFeedback) {
-    return;
-  }
-
-  lessonFeedback[lesson.lessonKey || getLessonFeedbackKey(lesson)] = cleanFeedback;
-
-  saveStorageData('lessonFeedback', lessonFeedback);
-
-  if (hasSupabaseConnection()) {
-    const matchedMembers = await findDatabaseMembersForLesson(lesson);
-
-    await Promise.all(
-      matchedMembers.map((member) =>
-        window.swimDb.client
-          .from('members')
-          .update({
-            memo: upsertLessonFeedbackMemo(member.memo, lesson, cleanFeedback),
-          })
-          .eq('id', member.id)
-      )
-    ).then((results) => {
-      const failedResult = results.find((result) => result.error);
-
-      if (failedResult) {
-        throw failedResult.error;
-      }
-    });
-  }
-
-  const savedMembers = getStorageData('personalLessonMembers', []);
-  const title = getLessonName(lesson).trim();
-  const memberNames = getLessonMemberNames(lesson);
-  const lessonMemberIds = Array.isArray(lesson.memberIds)
-    ? lesson.memberIds.map(String)
-    : [lesson.memberId].filter(Boolean).map(String);
-  const updatedMembers = savedMembers.map((member) => {
-    const isMatched =
-      lessonMemberIds.includes(String(member.id)) ||
-      String(member.id) === String(lesson.memberId) ||
-      member.name === title ||
-      memberNames.includes(member.name);
-
-    if (!isMatched) {
-      return member;
-    }
-
-    return {
-      ...member,
-      memo: upsertLessonFeedbackMemo(member.memo, lesson, cleanFeedback),
-    };
-  });
-
-  saveStorageData('personalLessonMembers', updatedMembers);
-}
-
-async function saveGroupLessonRecord(lesson, status, feedback) {
-  if (!hasSupabaseConnection() || !lesson || lesson.type !== 'group') {
-    return;
-  }
-
+async function upsertLessonRecord(payload, match) {
   const basePayload = {
-    lesson_date: lesson.date,
-    lesson_time: lesson.time,
-    title: '단체수업',
-    lesson_type: 'group',
-    status,
-    source: 'recurring',
-    memo: feedback.trim() || null,
+    ...payload,
     updated_at: new Date().toISOString(),
   };
 
-  const { data: existingRows, error: selectError } = await window.swimDb.client
-    .from('lessons')
-    .select('id')
-    .eq('lesson_date', lesson.date)
-    .eq('lesson_time', lesson.time)
-    .eq('lesson_type', 'group')
-    .eq('source', 'recurring')
-    .limit(1);
+  let query = window.swimDb.client.from('lessons').select('id');
+
+  Object.entries(match).forEach(([key, value]) => {
+    query = value === null ? query.is(key, null) : query.eq(key, value);
+  });
+
+  const { data: existingRows, error: selectError } = await query.limit(1);
 
   if (selectError) {
     throw selectError;
@@ -902,15 +833,15 @@ async function saveGroupLessonRecord(lesson, status, feedback) {
 
   const existingId = existingRows?.[0]?.id;
 
-  async function writePayload(payload) {
+  async function writePayload(nextPayload) {
     if (existingId) {
       return window.swimDb.client
         .from('lessons')
-        .update(payload)
+        .update(nextPayload)
         .eq('id', existingId);
     }
 
-    return window.swimDb.client.from('lessons').insert(payload);
+    return window.swimDb.client.from('lessons').insert(nextPayload);
   }
 
   let result = await writePayload(basePayload);
@@ -923,6 +854,94 @@ async function saveGroupLessonRecord(lesson, status, feedback) {
 
   if (result.error) {
     throw result.error;
+  }
+}
+
+async function savePersonalLessonRecord(lesson, status, feedback) {
+  if (!hasSupabaseConnection() || !lesson || lesson.type !== 'personal') {
+    return;
+  }
+
+  const matchedMembers = await findDatabaseMembersForLesson(lesson);
+
+  if (matchedMembers.length === 0) {
+    return;
+  }
+
+  const cleanFeedback = feedback.trim();
+
+  await Promise.all(
+    matchedMembers.map((member) =>
+      upsertLessonRecord(
+        {
+          member_id: member.id,
+          lesson_date: lesson.date,
+          lesson_time: lesson.time,
+          title: getLessonName(lesson),
+          lesson_type: 'personal',
+          status,
+          source: lesson.source || 'personal',
+          memo: cleanFeedback || null,
+        },
+        {
+          member_id: member.id,
+          lesson_date: lesson.date,
+          lesson_time: lesson.time,
+          lesson_type: 'personal',
+        }
+      )
+    )
+  );
+}
+
+async function saveGroupLessonRecord(lesson, status, feedback) {
+  if (!hasSupabaseConnection() || !lesson || lesson.type !== 'group') {
+    return;
+  }
+
+  await upsertLessonRecord(
+    {
+      member_id: null,
+      lesson_date: lesson.date,
+      lesson_time: lesson.time,
+      title: '단체수업',
+      lesson_type: 'group',
+      status,
+      source: 'recurring',
+      memo: feedback.trim() || null,
+    },
+    {
+      member_id: null,
+      lesson_date: lesson.date,
+      lesson_time: lesson.time,
+      lesson_type: 'group',
+      source: 'recurring',
+    }
+  );
+}
+
+async function saveLessonRecord(lesson, status, feedback) {
+  const cleanFeedback = feedback.trim();
+
+  if (!lesson) {
+    return;
+  }
+
+  if (cleanFeedback) {
+    lessonFeedback[lesson.lessonKey || getLessonFeedbackKey(lesson)] =
+      cleanFeedback;
+
+    saveStorageData('lessonFeedback', lessonFeedback);
+  }
+
+  if (lesson.type === 'personal') {
+    await savePersonalLessonRecord(lesson, status, cleanFeedback);
+
+    return;
+  }
+
+  if (lesson.type === 'group') {
+    await saveGroupLessonRecord(lesson, status, cleanFeedback);
   }
 }
 
@@ -1454,11 +1473,13 @@ if (confirmDetailBtn && detailStatus) {
         await syncPersonalLessonCount(selectedLesson, isCompleted ? 1 : -1);
       }
 
-      if (isCompleted && feedback) {
-        await saveLessonFeedbackForMembers(selectedLesson, feedback);
+      if (
+        wasCompleted !== isCompleted ||
+        feedback ||
+        selectedLesson.type === 'group'
+      ) {
+        await saveLessonRecord(selectedLesson, status, feedback);
       }
-
-      await saveGroupLessonRecord(selectedLesson, status, feedback);
 
       saveStorageData('completedLessons', completedLessons);
 
@@ -1555,7 +1576,7 @@ async function toggleComplete(event, lessonKey) {
   try {
     await syncPersonalLessonCount(lesson, isCompleted ? -1 : 1);
 
-    await saveGroupLessonRecord(
+    await saveLessonRecord(
       lesson,
       isCompleted ? 'scheduled' : 'completed',
       lessonFeedback[lessonKey] || ''
