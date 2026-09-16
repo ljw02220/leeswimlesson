@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
+  let allUpcomingLessons = [];
+  let allCompletedLessons = [];
 
   function setText(id, value) {
     const element = document.getElementById(id);
@@ -13,6 +15,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (container) {
       container.innerHTML = `<p class="member-empty">${message}</p>`;
     }
+  }
+
+  function formatLessonTitle(title) {
+    if (!title) {
+      return '개인레슨';
+    }
+
+    if (title === '1:1' || title === '개인' || title === 'personal') {
+      return '개인레슨';
+    }
+
+    return title;
   }
 
   function renderDateBox(dateKey, options = {}) {
@@ -61,13 +75,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="lesson-detail-top">
             <div>
               <span>${portal.formatLessonTime(lesson.time)}</span>
-              <strong>${lesson.title || '개인레슨'}</strong>
+              <strong>${formatLessonTitle(lesson.title)}</strong>
             </div>
 
             <span class="lesson-status scheduled">예정</span>
           </div>
-
-          <p>${lesson.memo || '예정된 개인레슨입니다.'}</p>
         </div>
       </article>
     `;
@@ -79,18 +91,101 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="lesson-history-header">
           <div>
             <span>${portal.formatShortDate(lesson.date)}</span>
-            <strong>${lesson.title || '개인레슨'}</strong>
+            <strong>${formatLessonTitle(lesson.title)}</strong>
           </div>
 
           <span class="lesson-status completed">완료</span>
         </div>
-
-        <div class="lesson-content-box">
-          <p>${lesson.memo || '수업을 완료했습니다.'}</p>
-        </div>
       </article>
     `;
   }
+
+  function renderLessonList(container, lessons, renderer, emptyMessage) {
+    if (!container) {
+      return;
+    }
+
+    if (lessons.length > 0) {
+      container.innerHTML = lessons.map(renderer).join('');
+    } else {
+      renderEmpty(container, emptyMessage);
+    }
+  }
+
+  function setViewAllButtonState(type, isEnabled) {
+    const button = document.querySelector(
+      `[data-lesson-modal-open="${type}"]`
+    );
+
+    if (button) {
+      button.disabled = !isEnabled;
+    }
+  }
+
+  function closeLessonListModal() {
+    const modal = document.getElementById('lessonListModal');
+
+    if (!modal) {
+      return;
+    }
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function openLessonListModal(type) {
+    const modal = document.getElementById('lessonListModal');
+    const title = document.getElementById('lessonListModalTitle');
+    const kicker = document.getElementById('lessonListModalKicker');
+    const body = document.getElementById('lessonListModalBody');
+
+    if (!modal || !title || !kicker || !body) {
+      return;
+    }
+
+    if (type === 'completed') {
+      kicker.textContent = 'Completed';
+      title.textContent = '완료한 전체 수업';
+      renderLessonList(
+        body,
+        allCompletedLessons,
+        renderCompletedLesson,
+        '완료된 수업 기록이 없습니다.'
+      );
+    } else {
+      kicker.textContent = 'Upcoming';
+      title.textContent = '나의 예정된 수업';
+      renderLessonList(
+        body,
+        allUpcomingLessons,
+        renderScheduledLesson,
+        '예정된 수업이 없습니다.'
+      );
+    }
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  document
+    .querySelectorAll('[data-lesson-modal-open]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        openLessonListModal(button.dataset.lessonModalOpen);
+      });
+    });
+
+  document
+    .getElementById('lessonListModalClose')
+    ?.addEventListener('click', closeLessonListModal);
+
+  document.getElementById('lessonListModal')?.addEventListener('click', (event) => {
+    if (event.target.id === 'lessonListModal') {
+      closeLessonListModal();
+    }
+  });
 
   try {
     const { member } = await portal.loadCurrentMember();
@@ -98,12 +193,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const used = Number(member.used_lessons || 0);
     const remaining = portal.getRemainingLessons(member);
     const progressRate = total > 0 ? Math.round((used / total) * 100) : 0;
-    const upcomingLessons = portal.getUpcomingLessonsWithHolidays(
+    allUpcomingLessons = portal.getUpcomingLessonsWithHolidays(
       member,
-      remaining || 4
+      Math.max(remaining, 12)
     );
-    const completedLessons = await portal.getCompletedLessons(member, 6);
-    const nextLesson = upcomingLessons.find(
+    allCompletedLessons = await portal.getCompletedLessons(member, 100);
+
+    const previewUpcomingLessons = allUpcomingLessons.slice(0, 2);
+    const previewCompletedLessons = allCompletedLessons.slice(0, 2);
+    const nextLesson = allUpcomingLessons.find(
       (lesson) => lesson.status === 'scheduled'
     );
 
@@ -141,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lessonCount = document.querySelector('.lesson-count');
 
     if (lessonCount) {
-      const scheduledCount = upcomingLessons.filter(
+      const scheduledCount = allUpcomingLessons.filter(
         (lesson) => lesson.status === 'scheduled'
       ).length;
 
@@ -150,21 +248,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const scheduledList = document.getElementById('scheduledLessonList');
 
-    if (upcomingLessons.length > 0) {
-      scheduledList.innerHTML = upcomingLessons
-        .map(renderScheduledLesson)
-        .join('');
-    } else {
-      renderEmpty(scheduledList, '예정된 수업이 없습니다.');
-    }
+    renderLessonList(
+      scheduledList,
+      previewUpcomingLessons,
+      renderScheduledLesson,
+      '예정된 수업이 없습니다.'
+    );
+
+    setViewAllButtonState('scheduled', allUpcomingLessons.length > 0);
 
     const historyList = document.querySelector('.lesson-history-list');
 
-    if (completedLessons.length > 0) {
-      historyList.innerHTML = completedLessons.map(renderCompletedLesson).join('');
-    } else {
-      renderEmpty(historyList, '완료된 수업 기록이 없습니다.');
-    }
+    renderLessonList(
+      historyList,
+      previewCompletedLessons,
+      renderCompletedLesson,
+      '완료된 수업 기록이 없습니다.'
+    );
+
+    setViewAllButtonState('completed', allCompletedLessons.length > 0);
   } catch (error) {
     console.error('내 수업 정보를 불러오지 못했습니다.', error);
 

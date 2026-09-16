@@ -470,6 +470,37 @@ button {
   font-weight: 800;
 }
 
+.lesson-header-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  flex-shrink: 0;
+}
+
+.lesson-view-all-button {
+  min-height: 26px;
+  padding: 0 9px;
+
+  border: 1px solid #d7e4f6;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: var(--blue-strong);
+
+  font-size: 8px;
+  font-weight: 900;
+
+  cursor: pointer;
+}
+
+.lesson-view-all-button:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
 /* ==================================================
   10. 예정된 수업
 ================================================== */
@@ -669,7 +700,7 @@ button {
 
   gap: 8px;
 
-  margin-bottom: 9px;
+  margin-bottom: 0;
 }
 
 .lesson-history-header > div {
@@ -744,7 +775,111 @@ button {
 }
 
 /* ==================================================
-  13. 안내
+  13. 전체보기 팝업
+================================================== */
+
+.lesson-list-modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+
+  padding: 18px 12px;
+
+  background: rgba(20, 31, 48, 0.45);
+
+  z-index: 200;
+}
+
+.lesson-list-modal-overlay.open {
+  display: flex;
+}
+
+.lesson-list-modal {
+  width: 100%;
+  max-width: 496px;
+  max-height: min(78vh, 680px);
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+
+  background: #ffffff;
+
+  box-shadow: 0 22px 60px rgba(23, 36, 56, 0.22);
+}
+
+.lesson-list-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 18px 18px 14px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.lesson-list-modal-header span {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: var(--blue);
+
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.lesson-list-modal-header h2 {
+  color: var(--text);
+
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.lesson-list-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f1f5fa;
+  color: #6f7f92;
+
+  font-size: 20px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.lesson-list-modal-body {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+
+  min-height: 0;
+  padding: 14px;
+
+  overflow-y: auto;
+}
+
+/* ==================================================
+  14. 안내
 ================================================== */
 
 .lesson-guide-card {
