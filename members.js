@@ -139,6 +139,13 @@ function getNameParts(value) {
     .filter(Boolean);
 }
 
+function removeLessonFeedbackBlocks(value) {
+  return String(value || '')
+    .replace(/\[수업내용\|[^\]]+\][\s\S]*?\[\/수업내용\]/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function normalizeGroupLessons(value) {
   const lessons = Array.isArray(value) ? value : [];
 
@@ -304,7 +311,7 @@ function mapMemberFromDatabase(row) {
     personalReportedPaymentDate: row.personal_reported_payment_date || '',
     lastLessonDate: row.last_lesson_date || '',
     status: row.status || '수강중',
-    memo: row.memo || '',
+    memo: removeLessonFeedbackBlocks(row.memo),
   };
 }
 
@@ -329,7 +336,7 @@ function mapMemberToDatabase(member) {
       : null,
     last_lesson_date: normalizeDateValue(member.lastLessonDate),
     status: member.status || '수강중',
-    memo: member.memo || null,
+    memo: removeLessonFeedbackBlocks(member.memo) || null,
   };
 }
 
@@ -345,7 +352,7 @@ function mapMemberToReport(member, reportedAt) {
     payment_date: normalizeDateValue(member.paymentDate),
     payment_status: member.paymentStatus || '완납',
     reported_at: normalizeDateValue(reportedAt),
-    memo: member.memo || null,
+    memo: removeLessonFeedbackBlocks(member.memo) || null,
   };
 }
 
