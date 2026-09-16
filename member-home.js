@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { member } = await portal.loadCurrentMember();
     const remaining = portal.getRemainingLessons(member);
     const upcomingLessons = portal.getUpcomingLessons(member, 3);
-    const completedLessons = portal.getCompletedLessons(member, 2);
+    const completedLessons = await portal.getCompletedLessons(member, 2);
     const nextLesson = upcomingLessons[0];
 
     setText('memberGreetingName', member.name || '회원');

@@ -63,6 +63,7 @@ create table if not exists public.lessons (
   lesson_time time not null,
 
   title text,
+  memo text,
 
   lesson_type text not null,
   status text not null default 'scheduled',
@@ -72,6 +73,9 @@ create table if not exists public.lessons (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.lessons
+add column if not exists memo text;
 
 -- =========================================
 -- 3. 개인레슨 보고 내역 테이블

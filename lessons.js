@@ -189,6 +189,12 @@ function hasSupabaseConnection() {
   return Boolean(window.swimDb?.isConfigured() && window.swimDb?.client);
 }
 
+function getErrorText(error) {
+  return [error?.code, error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .join(' ');
+}
+
 function normalizeTimeValue(value) {
   return value ? String(value).slice(0, 5) : '';
 }
@@ -865,6 +871,61 @@ async function saveLessonFeedbackForMembers(lesson, feedback) {
   saveStorageData('personalLessonMembers', updatedMembers);
 }
 
+async function saveGroupLessonRecord(lesson, status, feedback) {
+  if (!hasSupabaseConnection() || !lesson || lesson.type !== 'group') {
+    return;
+  }
+
+  const basePayload = {
+    lesson_date: lesson.date,
+    lesson_time: lesson.time,
+    title: '단체수업',
+    lesson_type: 'group',
+    status,
+    source: 'recurring',
+    memo: feedback.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: existingRows, error: selectError } = await window.swimDb.client
+    .from('lessons')
+    .select('id')
+    .eq('lesson_date', lesson.date)
+    .eq('lesson_time', lesson.time)
+    .eq('lesson_type', 'group')
+    .eq('source', 'recurring')
+    .limit(1);
+
+  if (selectError) {
+    throw selectError;
+  }
+
+  const existingId = existingRows?.[0]?.id;
+
+  async function writePayload(payload) {
+    if (existingId) {
+      return window.swimDb.client
+        .from('lessons')
+        .update(payload)
+        .eq('id', existingId);
+    }
+
+    return window.swimDb.client.from('lessons').insert(payload);
+  }
+
+  let result = await writePayload(basePayload);
+
+  if (result.error && getErrorText(result.error).includes('memo')) {
+    const { memo, ...fallbackPayload } = basePayload;
+
+    result = await writePayload(fallbackPayload);
+  }
+
+  if (result.error) {
+    throw result.error;
+  }
+}
+
 /* ==================================================
   16. 날짜별 수업 만들기
 ================================================== */
@@ -1397,6 +1458,8 @@ if (confirmDetailBtn && detailStatus) {
         await saveLessonFeedbackForMembers(selectedLesson, feedback);
       }
 
+      await saveGroupLessonRecord(selectedLesson, status, feedback);
+
       saveStorageData('completedLessons', completedLessons);
 
       saveStorageData('cancelledLessons', cancelledLessons);
@@ -1491,6 +1554,12 @@ async function toggleComplete(event, lessonKey) {
 
   try {
     await syncPersonalLessonCount(lesson, isCompleted ? -1 : 1);
+
+    await saveGroupLessonRecord(
+      lesson,
+      isCompleted ? 'scheduled' : 'completed',
+      lessonFeedback[lessonKey] || ''
+    );
 
     saveStorageData('completedLessons', completedLessons);
 

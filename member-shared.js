@@ -655,6 +655,77 @@
     });
   }
 
+  function sortLessonsByDateTimeDesc(lessons) {
+    return sortLessonsByDateTime(lessons).reverse();
+  }
+
+  function isMatchingGroupLesson(member, row) {
+    const groupLessons = normalizeGroupLessons(member.group_lessons);
+    const date = new Date(`${row.lesson_date}T00:00:00`);
+    const rowDay = date.getDay();
+    const rowTime = formatTime(row.lesson_time);
+
+    return groupLessons.some((lesson) => {
+      return lesson.day === rowDay && lesson.time === rowTime;
+    });
+  }
+
+  function mapCompletedGroupLesson(row) {
+    return {
+      id: row.id,
+      date: row.lesson_date,
+      time: row.lesson_time,
+      type: 'group',
+      status: 'completed',
+      title: row.title || '단체수업',
+      memo: row.memo || '단체수업을 완료했습니다.',
+    };
+  }
+
+  async function loadCompletedGroupLessons(member, limit = 6) {
+    const client = getClient();
+
+    if (!client || normalizeGroupLessons(member.group_lessons).length === 0) {
+      return [];
+    }
+
+    async function runQuery(selectColumns) {
+      return client
+        .from('lessons')
+        .select(selectColumns)
+        .eq('lesson_type', 'group')
+        .eq('status', 'completed')
+        .lte('lesson_date', getTodayKey())
+        .order('lesson_date', { ascending: false })
+        .order('lesson_time', { ascending: false })
+        .limit(100);
+    }
+
+    let { data, error } = await runQuery(
+      'id, lesson_date, lesson_time, title, lesson_type, status, memo'
+    );
+
+    if (error && String(error.message || '').includes('memo')) {
+      const fallbackResult = await runQuery(
+        'id, lesson_date, lesson_time, title, lesson_type, status'
+      );
+
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    }
+
+    if (error) {
+      console.warn('단체수업 완료 기록을 불러오지 못했습니다.', error);
+
+      return [];
+    }
+
+    return (data || [])
+      .filter((row) => isMatchingGroupLesson(member, row))
+      .map(mapCompletedGroupLesson)
+      .slice(0, limit);
+  }
+
   function getMergedUpcomingLessons(member, options = {}) {
     const todayKey = getTodayKey();
     const includeHolidays = Boolean(options.includeHolidays);
@@ -707,10 +778,13 @@
     });
   }
 
-  function getCompletedLessons(member, limit = 4) {
-    return createLessonDatePlan(member)
+  async function getCompletedLessons(member, limit = 4) {
+    const personalLessons = createLessonDatePlan(member)
       .filter((lesson) => lesson.status === 'completed')
-      .reverse()
+      .reverse();
+    const groupLessons = await loadCompletedGroupLessons(member, limit);
+
+    return sortLessonsByDateTimeDesc([...personalLessons, ...groupLessons])
       .slice(0, limit);
   }
 

@@ -6,6 +6,9 @@ add column if not exists auth_user_id uuid;
 alter table public.members
 add column if not exists group_lessons jsonb not null default '[]'::jsonb;
 
+alter table public.lessons
+add column if not exists memo text;
+
 revoke select, insert, update, delete
 on public.members
 from anon;

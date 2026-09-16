@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       member,
       remaining || 4
     );
-    const completedLessons = portal.getCompletedLessons(member, 6);
+    const completedLessons = await portal.getCompletedLessons(member, 6);
     const nextLesson = upcomingLessons.find(
       (lesson) => lesson.status === 'scheduled'
     );
