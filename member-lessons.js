@@ -85,7 +85,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
-  function renderCompletedLesson(lesson) {
+  function getLessonItemKey(lesson) {
+    return [lesson.id, lesson.date, lesson.time, lesson.title]
+      .filter(Boolean)
+      .join('-')
+      .replace(/[^a-zA-Z0-9가-힣_-]/g, '-');
+  }
+
+  function renderCompletedLesson(lesson, options = {}) {
+    const shouldShowNote = Boolean(options.showNote);
+    const noteId = `lesson-note-${getLessonItemKey(lesson)}`;
+    const noteText = lesson.memo || '수업 노트가 아직 없습니다.';
+
+    if (shouldShowNote) {
+      return `
+        <article class="lesson-history-item lesson-history-item-expandable">
+          <button
+            type="button"
+            class="lesson-note-toggle"
+            aria-expanded="false"
+            aria-controls="${noteId}"
+          >
+            <span class="lesson-history-header">
+              <span>
+                <span>${portal.formatShortDate(lesson.date)}</span>
+                <strong>${formatLessonTitle(lesson.title)}</strong>
+              </span>
+
+              <span class="lesson-history-actions">
+                <span class="lesson-status completed">완료</span>
+                <span class="lesson-note-chevron" aria-hidden="true">⌄</span>
+              </span>
+            </span>
+          </button>
+
+          <div id="${noteId}" class="lesson-note-panel" hidden>
+            <div class="lesson-content-box">
+              <p>${noteText}</p>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
     return `
       <article class="lesson-history-item">
         <div class="lesson-history-header">
@@ -150,7 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderLessonList(
         body,
         allCompletedLessons,
-        renderCompletedLesson,
+        (lesson) => renderCompletedLesson(lesson, { showNote: true }),
         '완료된 수업 기록이 없습니다.'
       );
     } else {
@@ -184,6 +226,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('lessonListModal')?.addEventListener('click', (event) => {
     if (event.target.id === 'lessonListModal') {
       closeLessonListModal();
+    }
+  });
+
+  document.getElementById('lessonListModalBody')?.addEventListener('click', (event) => {
+    const toggle = event.target.closest('.lesson-note-toggle');
+
+    if (!toggle) {
+      return;
+    }
+
+    const panelId = toggle.getAttribute('aria-controls');
+    const panel = panelId ? document.getElementById(panelId) : null;
+    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+
+    toggle.setAttribute('aria-expanded', String(!isExpanded));
+
+    if (panel) {
+      panel.hidden = isExpanded;
     }
   });
 
