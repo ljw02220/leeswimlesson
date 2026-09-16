@@ -26,11 +26,22 @@ const DAY_INDEX_BY_NAME = {
   토: 6,
 };
 
+const DAY_NAME_BY_INDEX = {
+  0: '일',
+  1: '월',
+  2: '화',
+  3: '수',
+  4: '목',
+  5: '금',
+  6: '토',
+};
+
 const OPTIONAL_MEMBER_COLUMNS = [
   'auth_user_id',
   'lesson_start_date',
   'personal_reported_at',
   'personal_reported_payment_date',
+  'group_lessons',
 ];
 
 let members = [];
@@ -126,6 +137,60 @@ function getNameParts(value) {
     .split(',')
     .map((name) => name.trim())
     .filter(Boolean);
+}
+
+function normalizeGroupLessons(value) {
+  const lessons = Array.isArray(value) ? value : [];
+
+  return lessons
+    .map((lesson) => {
+      const day = Number(lesson?.day);
+      const time = String(lesson?.time || '').slice(0, 5);
+
+      if (!Number.isInteger(day) || !DAY_NAME_BY_INDEX[day] || !time) {
+        return null;
+      }
+
+      return {
+        day,
+        dayName: lesson.dayName || DAY_NAME_BY_INDEX[day],
+        time,
+      };
+    })
+    .filter(Boolean);
+}
+
+function readSelectedGroupLessons() {
+  return Array.from(
+    document.querySelectorAll('input[name="groupLesson"]:checked')
+  )
+    .map((checkbox) => {
+      const [dayText, time] = checkbox.value.split('|');
+      const day = Number(dayText);
+
+      if (!Number.isInteger(day) || !time) {
+        return null;
+      }
+
+      return {
+        day,
+        dayName: DAY_NAME_BY_INDEX[day],
+        time,
+      };
+    })
+    .filter(Boolean);
+}
+
+function setSelectedGroupLessons(groupLessons) {
+  const selectedKeys = new Set(
+    normalizeGroupLessons(groupLessons).map((lesson) => {
+      return `${lesson.day}|${lesson.time}`;
+    })
+  );
+
+  document.querySelectorAll('input[name="groupLesson"]').forEach((checkbox) => {
+    checkbox.checked = selectedKeys.has(checkbox.value);
+  });
 }
 
 function isMatchingMemberName(memberName, requestName) {
@@ -229,6 +294,7 @@ function mapMemberFromDatabase(row) {
     days: row.days || [],
     time: row.lesson_time || '',
     lessonStartDate: row.lesson_start_date || '',
+    groupLessons: normalizeGroupLessons(row.group_lessons),
     totalLessons: Number(row.total_lessons || 0),
     usedLessons: Number(row.used_lessons || 0),
     paymentAmount: Number(row.payment_amount || 0),
@@ -251,6 +317,7 @@ function mapMemberToDatabase(member) {
     days: member.days || [],
     lesson_time: normalizeDateValue(member.time),
     lesson_start_date: normalizeDateValue(member.lessonStartDate),
+    group_lessons: normalizeGroupLessons(member.groupLessons),
     total_lessons: Number(member.totalLessons || 0),
     used_lessons: Number(member.usedLessons || 0),
     payment_amount: Number(member.paymentAmount || 0),
@@ -378,6 +445,7 @@ async function approveSignupRequest(requestId) {
         days: [],
         time: '',
         lessonStartDate: '',
+        groupLessons: [],
         totalLessons: 0,
         usedLessons: 0,
         paymentAmount: 0,
@@ -1601,6 +1669,8 @@ function openAddMemberModal() {
 
   document.getElementById('memberStatus').value = '수강중';
 
+  setSelectedGroupLessons([]);
+
   document.getElementById('deleteMemberButton').style.display = 'none';
 
   updateRemainingPreview();
@@ -1642,6 +1712,8 @@ function openMemberDetail(memberId) {
 
   document.getElementById('lessonStartDate').value =
     member.lessonStartDate || '';
+
+  setSelectedGroupLessons(member.groupLessons);
 
   document.getElementById('lessonFormat').value = member.lessonFormat || '1:1';
 
@@ -1752,6 +1824,8 @@ async function handleMemberSubmit(event) {
     time: document.getElementById('memberTime').value,
 
     lessonStartDate: document.getElementById('lessonStartDate').value,
+
+    groupLessons: readSelectedGroupLessons(),
 
     totalLessons,
 

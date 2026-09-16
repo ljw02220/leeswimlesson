@@ -76,6 +76,27 @@
       .filter(Boolean);
   }
 
+  function normalizeGroupLessons(value) {
+    const lessons = Array.isArray(value) ? value : [];
+
+    return lessons
+      .map((lesson) => {
+        const day = Number(lesson?.day);
+        const time = String(lesson?.time || '').slice(0, 5);
+
+        if (!Number.isInteger(day) || !DAY_LABELS[day] || !time) {
+          return null;
+        }
+
+        return {
+          day,
+          dayName: lesson.dayName || DAY_LABELS[day],
+          time,
+        };
+      })
+      .filter(Boolean);
+  }
+
   function isMatchingMemberName(memberName, requestName) {
     const normalizedRequestName = String(requestName || '').trim();
 
@@ -190,6 +211,7 @@
       days: row.days || [],
       lesson_time: row.lesson_time || '',
       lesson_start_date: row.lesson_start_date || '',
+      group_lessons: normalizeGroupLessons(row.group_lessons),
       total_lessons: Number(row.total_lessons || 0),
       used_lessons: Number(row.used_lessons || 0),
       payment_amount: Number(row.payment_amount || 0),
@@ -210,6 +232,7 @@
       days: row.days,
       lesson_time: row.time || row.lesson_time,
       lesson_start_date: row.lessonStartDate || row.lesson_start_date,
+      group_lessons: row.groupLessons || row.group_lessons,
       total_lessons: row.totalLessons ?? row.total_lessons,
       used_lessons: row.usedLessons ?? row.used_lessons,
       payment_amount: row.paymentAmount ?? row.payment_amount,
@@ -557,36 +580,131 @@
     return lessons;
   }
 
-  function getUpcomingLessons(member, limit = 4) {
-    const todayKey = getTodayKey();
+  function createGroupLessonSchedule(member, options = {}) {
+    const groupLessons = normalizeGroupLessons(member.group_lessons);
 
-    return createLessonDatePlan(member)
-      .filter((lesson) => lesson.status !== 'completed' && lesson.date >= todayKey)
-      .slice(0, limit);
+    if (groupLessons.length === 0) {
+      return [];
+    }
+
+    const includeHolidays = Boolean(options.includeHolidays);
+    const maxScheduled = Number(options.maxScheduled || 12);
+    const lessons = [];
+    const currentDate = new Date(`${getTodayKey()}T00:00:00`);
+    let scheduledCount = 0;
+    let guard = 0;
+
+    while (scheduledCount < maxScheduled && guard < 240) {
+      const dateKey = toDateKey(currentDate);
+      const day = currentDate.getDay();
+      const holidayName = getHolidayName(dateKey);
+      const lessonsForDay = groupLessons
+        .filter((lesson) => lesson.day === day)
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+      lessonsForDay.forEach((lesson) => {
+        if (scheduledCount >= maxScheduled) {
+          return;
+        }
+
+        if (holidayName) {
+          if (includeHolidays) {
+            lessons.push({
+              id: `${member.id}-group-${dateKey}-${lesson.time}-holiday`,
+              date: dateKey,
+              time: lesson.time,
+              type: 'group',
+              status: 'holiday',
+              title: holidayName,
+              memo: '휴일이라 단체수업이 없습니다.',
+              holidayName,
+            });
+          }
+
+          return;
+        }
+
+        lessons.push({
+          id: `${member.id}-group-${dateKey}-${lesson.time}`,
+          date: dateKey,
+          time: lesson.time,
+          type: 'group',
+          status: 'scheduled',
+          title: '단체수업',
+          memo: `${lesson.dayName}요일 ${formatLessonTime(lesson.time)} 단체수업입니다.`,
+        });
+        scheduledCount += 1;
+      });
+
+      currentDate.setDate(currentDate.getDate() + 1);
+      guard += 1;
+    }
+
+    return lessons;
   }
 
-  function getUpcomingLessonsWithHolidays(member, limit = 4) {
+  function sortLessonsByDateTime(lessons) {
+    return [...lessons].sort((a, b) => {
+      const dateCompare = String(a.date).localeCompare(String(b.date));
+
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+
+      return formatTime(a.time).localeCompare(formatTime(b.time));
+    });
+  }
+
+  function getMergedUpcomingLessons(member, options = {}) {
     const todayKey = getTodayKey();
-    const lessons = [];
+    const includeHolidays = Boolean(options.includeHolidays);
+    const limit = Number(options.limit || 4);
+    const personalLessons = (includeHolidays
+      ? createLessonSchedule(member)
+      : createLessonDatePlan(member)
+    ).filter(
+      (lesson) => lesson.date >= todayKey && lesson.status !== 'completed'
+    );
+    const groupLessons = createGroupLessonSchedule(member, {
+      includeHolidays,
+      maxScheduled: Math.max(limit, 6),
+    });
+    const mergedLessons = sortLessonsByDateTime([
+      ...personalLessons,
+      ...groupLessons,
+    ]);
+
+    if (!includeHolidays) {
+      return mergedLessons.slice(0, limit);
+    }
+
+    const limitedLessons = [];
     let scheduledCount = 0;
 
-    for (const lesson of createLessonSchedule(member)) {
-      if (lesson.date < todayKey || lesson.status === 'completed') {
-        continue;
-      }
-
-      if (scheduledCount >= limit) {
+    for (const lesson of mergedLessons) {
+      if (lesson.status === 'scheduled' && scheduledCount >= limit) {
         break;
       }
+
+      limitedLessons.push(lesson);
 
       if (lesson.status === 'scheduled') {
         scheduledCount += 1;
       }
-
-      lessons.push(lesson);
     }
 
-    return lessons;
+    return limitedLessons;
+  }
+
+  function getUpcomingLessons(member, limit = 4) {
+    return getMergedUpcomingLessons(member, { limit });
+  }
+
+  function getUpcomingLessonsWithHolidays(member, limit = 4) {
+    return getMergedUpcomingLessons(member, {
+      includeHolidays: true,
+      limit,
+    });
   }
 
   function getCompletedLessons(member, limit = 4) {

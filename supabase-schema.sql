@@ -13,6 +13,7 @@ create table if not exists public.members (
   days text[],
   lesson_time time,
   lesson_start_date date,
+  group_lessons jsonb not null default '[]'::jsonb,
 
   total_lessons integer not null default 0,
   used_lessons integer not null default 0,
@@ -43,6 +44,9 @@ add column if not exists lesson_start_date date;
 
 alter table public.members
 add column if not exists auth_user_id uuid;
+
+alter table public.members
+add column if not exists group_lessons jsonb not null default '[]'::jsonb;
 
 -- =========================================
 -- 2. 수업 테이블

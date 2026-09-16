@@ -236,12 +236,55 @@ function mapDatabaseMemberToPersonalSchedule(member) {
   return {
     id: member.id,
     memberId: member.id,
+    memberIds: [member.id],
     name: member.name,
+    names: [member.name],
     days: dayIndexes,
     time,
     startDate,
     totalCount,
   };
+}
+
+function getPersonalScheduleGroupKey(lesson) {
+  return [
+    lesson.startDate,
+    lesson.time,
+    lesson.totalCount,
+    lesson.days.join(','),
+  ].join('|');
+}
+
+function mergePersonalScheduleEntries(entries) {
+  const grouped = new Map();
+
+  entries.forEach((lesson) => {
+    const key = getPersonalScheduleGroupKey(lesson);
+    const existing = grouped.get(key);
+
+    if (!existing) {
+      grouped.set(key, {
+        ...lesson,
+        memberIds: [...lesson.memberIds],
+        names: [...lesson.names],
+      });
+
+      return;
+    }
+
+    existing.memberIds.push(...lesson.memberIds);
+    existing.names.push(...lesson.names);
+    existing.id = existing.memberIds.join('+');
+    existing.memberId = existing.memberIds[0];
+    existing.name = existing.names.join(', ');
+  });
+
+  return Array.from(grouped.values()).map((lesson) => ({
+    ...lesson,
+    id: lesson.memberIds.join('+'),
+    memberId: lesson.memberIds[0],
+    name: lesson.names.join(', '),
+  }));
 }
 
 function mapLocalMemberToPersonalSchedule(member) {
@@ -271,9 +314,9 @@ async function loadPersonalSchedule() {
       throw error;
     }
 
-    personalSchedule = (data || [])
+    personalSchedule = mergePersonalScheduleEntries((data || [])
       .map(mapDatabaseMemberToPersonalSchedule)
-      .filter(Boolean);
+      .filter(Boolean));
 
     console.info(
       `회원관리 개인레슨 ${personalSchedule.length}건을 수업관리 달력에 반영했습니다.`
@@ -283,9 +326,9 @@ async function loadPersonalSchedule() {
     return personalSchedule;
   }
 
-  personalSchedule = getStorageData('personalLessonMembers', [])
+  personalSchedule = mergePersonalScheduleEntries(getStorageData('personalLessonMembers', [])
     .map(mapLocalMemberToPersonalSchedule)
-    .filter(Boolean);
+    .filter(Boolean));
   personalScheduleLoaded = true;
 
   return personalSchedule;
@@ -471,6 +514,7 @@ function createPersonalLessonsByDate(holidaysByDate) {
       personalLessonsByDate[dateKey].push({
         id: lesson.id,
         memberId: lesson.memberId,
+        memberIds: lesson.memberIds || [lesson.memberId].filter(Boolean),
         time: lesson.time,
         title: lesson.name,
         type: 'personal',
@@ -613,6 +657,21 @@ async function findDatabaseMembersForLesson(lesson) {
   const memberNames = getLessonMemberNames(lesson);
   const client = window.swimDb.client;
 
+  if (Array.isArray(lesson.memberIds) && lesson.memberIds.length > 0) {
+    const { data, error } = await client
+      .from('members')
+      .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
+      .in('id', lesson.memberIds);
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.length > 0) {
+      return data;
+    }
+  }
+
   if (lesson.memberId) {
     const { data, error } = await client
       .from('members')
@@ -700,8 +759,16 @@ function updateLocalMemberLessonCounts(lesson, change) {
   const title = getLessonName(lesson).trim();
   const memberNames = getLessonMemberNames(lesson);
   const exactMatches = savedMembers.filter((member) => member.name === title);
+  const lessonMemberIds = Array.isArray(lesson.memberIds)
+    ? lesson.memberIds.map(String)
+    : [lesson.memberId].filter(Boolean).map(String);
+  const idMatches = savedMembers.filter((member) =>
+    lessonMemberIds.includes(String(member.id))
+  );
   const matchedMembers =
-    exactMatches.length > 0
+    idMatches.length > 0
+      ? idMatches
+      : exactMatches.length > 0
       ? exactMatches
       : savedMembers.filter((member) => memberNames.includes(member.name));
 
@@ -775,8 +842,12 @@ async function saveLessonFeedbackForMembers(lesson, feedback) {
   const savedMembers = getStorageData('personalLessonMembers', []);
   const title = getLessonName(lesson).trim();
   const memberNames = getLessonMemberNames(lesson);
+  const lessonMemberIds = Array.isArray(lesson.memberIds)
+    ? lesson.memberIds.map(String)
+    : [lesson.memberId].filter(Boolean).map(String);
   const updatedMembers = savedMembers.map((member) => {
     const isMatched =
+      lessonMemberIds.includes(String(member.id)) ||
       String(member.id) === String(lesson.memberId) ||
       member.name === title ||
       memberNames.includes(member.name);
@@ -1160,6 +1231,8 @@ function findLesson(dateKey, lessonKey) {
       return {
         id: personalLesson.id,
         memberId: personalLesson.memberId,
+        memberIds:
+          personalLesson.memberIds || [personalLesson.memberId].filter(Boolean),
         date: dateKey,
         time: personalLesson.time,
         title: personalLesson.name,
