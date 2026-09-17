@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
+  let allUpcomingLessons = [];
   let allCompletedLessons = [];
 
   function setText(id, value) {
@@ -187,6 +188,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     container.innerHTML = completedLessons.map(renderFeedbackItem).join('');
   }
 
+  function closeUpcomingLessonModal() {
+    const modal = document.getElementById('upcomingLessonModal');
+
+    if (!modal) {
+      return;
+    }
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function openUpcomingLessonModal() {
+    const modal = document.getElementById('upcomingLessonModal');
+    const body = document.getElementById('upcomingLessonModalBody');
+
+    if (!modal || !body) {
+      return;
+    }
+
+    if (allUpcomingLessons.length === 0) {
+      renderEmpty(body, '예정된 수업이 없습니다.');
+    } else {
+      body.innerHTML = allUpcomingLessons.map(renderLessonItem).join('');
+    }
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
   function closeCompletedLessonModal() {
     const modal = document.getElementById('completedLessonModal');
 
@@ -219,6 +251,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
   }
+
+  document
+    .getElementById('upcomingLessonModalOpen')
+    ?.addEventListener('click', openUpcomingLessonModal);
+
+  document
+    .getElementById('upcomingLessonModalClose')
+    ?.addEventListener('click', closeUpcomingLessonModal);
+
+  document
+    .getElementById('upcomingLessonModal')
+    ?.addEventListener('click', (event) => {
+      if (event.target.id === 'upcomingLessonModal') {
+        closeUpcomingLessonModal();
+      }
+    });
 
   document
     .getElementById('completedLessonModalOpen')
@@ -261,7 +309,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const remaining = portal.getRemainingLessons(member);
 
-    const upcomingLessons = portal.getUpcomingLessons(member, 2);
+    allUpcomingLessons = portal.getUpcomingLessons(member, 100);
+
+    const upcomingLessons = allUpcomingLessons.slice(0, 2);
 
     allCompletedLessons = await portal.getCompletedLessons(member, 100);
 

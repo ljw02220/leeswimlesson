@@ -125,7 +125,7 @@
 
           <button
             type="button"
-            id="completedLessonModalOpen"
+            id="upcomingLessonModalOpen"
             class="member-card-link member-card-button"
           >
             전체 보기
@@ -146,13 +146,46 @@
             <h2>최근 수업 내용</h2>
           </div>
 
-          <a href="member-lessons.html" class="member-card-link"> 전체 보기 </a>
+          <button
+            type="button"
+            id="completedLessonModalOpen"
+            class="member-card-link member-card-button"
+          >
+            전체 보기
+          </button>
         </div>
 
         <div class="member-feedback-list">
           <p class="member-empty">수업 내용을 불러오는 중입니다.</p>
         </div>
       </section>
+
+      <div
+        id="upcomingLessonModal"
+        class="member-modal-overlay"
+        aria-hidden="true"
+      >
+        <div class="member-modal" role="dialog" aria-modal="true">
+          <div class="member-modal-header">
+            <div>
+              <span>Upcoming</span>
+
+              <h2>다가오는 전체 수업</h2>
+            </div>
+
+            <button
+              type="button"
+              id="upcomingLessonModalClose"
+              class="member-modal-close"
+              aria-label="닫기"
+            >
+              ×
+            </button>
+          </div>
+
+          <div id="upcomingLessonModalBody" class="member-modal-body"></div>
+        </div>
+      </div>
 
       <div
         id="completedLessonModal"
@@ -215,7 +248,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="member-shared.js?v=20260916-lesson-records"></script>
-    <script src="member-home.js?v=20260916-lesson-records"></script>
+    <script src="member-home.js?v=20260917-modal-fix"></script>
 
     <script>
       lucide.createIcons();
