@@ -223,12 +223,30 @@ function getMemberLessonDayIndexes(days) {
     .filter((day) => Number.isInteger(day));
 }
 
+function isNewPersonalLessonCycle(member) {
+  const startDate = member.lesson_start_date || member.lessonStartDate || '';
+  const lastLessonDate =
+    member.last_lesson_date || member.lastLessonDate || '';
+
+  return Boolean(
+    startDate && lastLessonDate && startDate > lastLessonDate
+  );
+}
+
+function getEffectiveUsedLessonCount(member) {
+  if (isNewPersonalLessonCycle(member)) {
+    return 0;
+  }
+
+  return Number(member.used_lessons || member.usedLessons || 0);
+}
+
 function mapDatabaseMemberToPersonalSchedule(member) {
   const dayIndexes = getMemberLessonDayIndexes(member.days);
   const time = normalizeTimeValue(member.lesson_time);
   const registeredCount = Number(member.total_lessons || 0) || 8;
   const usedCount = Math.min(
-    Number(member.used_lessons || 0),
+    getEffectiveUsedLessonCount(member),
     registeredCount
   );
   const remainingCount = Math.max(registeredCount - usedCount, 0);
@@ -756,7 +774,7 @@ function upsertLessonFeedbackMemo(currentMemo, lesson, feedback) {
 
 function getNextUsedLessonCount(member, change) {
   const totalLessons = Number(member.total_lessons || member.totalLessons || 0);
-  const usedLessons = Number(member.used_lessons || member.usedLessons || 0);
+  const usedLessons = getEffectiveUsedLessonCount(member);
   const nextUsedLessons = Math.max(usedLessons + change, 0);
 
   return totalLessons > 0

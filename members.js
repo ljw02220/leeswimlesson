@@ -690,9 +690,23 @@ async function deletePersonalLessonReport(member) {
 
 function getRemainingLessons(member) {
   const total = Number(member.totalLessons || 0);
-  const used = Number(member.usedLessons || 0);
+  const used = getEffectiveUsedLessons(member);
 
   return Math.max(total - used, 0);
+}
+
+function isNewPersonalLessonCycle(member) {
+  return Boolean(
+    member.lessonStartDate &&
+      member.lastLessonDate &&
+      member.lessonStartDate > member.lastLessonDate
+  );
+}
+
+function getEffectiveUsedLessons(member) {
+  return isNewPersonalLessonCycle(member)
+    ? 0
+    : Number(member.usedLessons || 0);
 }
 
 function formatMoney(amount) {
@@ -725,6 +739,14 @@ function getDateKey(date) {
     String(date.getMonth() + 1).padStart(2, '0'),
     String(date.getDate()).padStart(2, '0'),
   ].join('-');
+}
+
+function getNextDateKey(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00`);
+
+  date.setDate(date.getDate() + 1);
+
+  return getDateKey(date);
 }
 
 function formatShortDate(dateValue) {
@@ -815,21 +837,31 @@ async function getHolidays(year, month) {
 
 async function getPersonalLessonDates(member) {
   const totalLessons = Number(member.totalLessons || 0);
-  const startDate = member.lessonStartDate || member.lastLessonDate || '';
+  const usedLessons = Math.min(
+    getEffectiveUsedLessons(member),
+    totalLessons
+  );
+  const remainingLessons = Math.max(totalLessons - usedLessons, 0);
+  const startDate =
+    (usedLessons > 0 && member.lastLessonDate
+      ? getNextDateKey(member.lastLessonDate)
+      : member.lessonStartDate) ||
+    member.lastLessonDate ||
+    '';
   const lessonDays = Array.isArray(member.days) ? member.days : [];
   const dayIndexes = lessonDays
     .map((day) => DAY_INDEX_BY_NAME[day])
     .filter((day) => day !== undefined);
   const lessonDates = [];
 
-  if (!startDate || totalLessons <= 0 || dayIndexes.length === 0) {
+  if (!startDate || remainingLessons <= 0 || dayIndexes.length === 0) {
     return lessonDates;
   }
 
   const currentDate = new Date(`${startDate}T00:00:00`);
   let guard = 0;
 
-  while (lessonDates.length < totalLessons && guard < 500) {
+  while (lessonDates.length < remainingLessons && guard < 500) {
     const dateKey = getDateKey(currentDate);
     const holidays = await getHolidays(
       currentDate.getFullYear(),
@@ -1898,8 +1930,7 @@ async function renderLessonPeriods() {
       .filter((member) => member.status !== '종료')
       .map(async (member) => {
         const lessonDates = await getPersonalLessonDates(member);
-        const usedLessons = Number(member.usedLessons || 0);
-        const upcomingDates = lessonDates.slice(usedLessons);
+        const upcomingDates = lessonDates;
 
         return {
           member,

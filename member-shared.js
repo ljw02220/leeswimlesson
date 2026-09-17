@@ -177,9 +177,26 @@
     return Array.isArray(days) ? days.join(', ') : String(days);
   }
 
+  function isNewPersonalLessonCycle(member) {
+    const startDate = member.lesson_start_date || '';
+    const lastLessonDate = member.last_lesson_date || '';
+
+    return Boolean(
+      startDate && lastLessonDate && startDate > lastLessonDate
+    );
+  }
+
+  function getEffectiveUsedLessons(member) {
+    if (isNewPersonalLessonCycle(member)) {
+      return 0;
+    }
+
+    return Number(member.used_lessons || 0);
+  }
+
   function getRemainingLessons(member) {
     const total = Number(member.total_lessons || 0);
-    const used = Number(member.used_lessons || 0);
+    const used = getEffectiveUsedLessons(member);
 
     return Math.max(total - used, 0);
   }
@@ -528,7 +545,7 @@
   function getPersonalScheduleWindow(member) {
     const totalLessons = Number(member.total_lessons || 0);
     const usedLessons = Math.min(
-      Number(member.used_lessons || 0),
+      getEffectiveUsedLessons(member),
       totalLessons
     );
     const remainingLessons = Math.max(totalLessons - usedLessons, 0);
@@ -988,6 +1005,7 @@
     formatMoney,
     formatShortDate,
     getCompletedLessons,
+    getEffectiveUsedLessons,
     getHolidayName,
     getRemainingLessons,
     getThisMonthCompletedCount,

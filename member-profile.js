@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderMember(member) {
     const total = Number(member.total_lessons || 0);
-    const used = Number(member.used_lessons || 0);
+    const used = portal.getEffectiveUsedLessons(member);
     const remaining = portal.getRemainingLessons(member);
 
     setText('profileName', member.name || '-');

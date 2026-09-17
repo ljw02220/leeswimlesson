@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const { member } = await portal.loadCurrentMember();
     const total = Number(member.total_lessons || 0);
-    const used = Number(member.used_lessons || 0);
+    const used = portal.getEffectiveUsedLessons(member);
     const remaining = portal.getRemainingLessons(member);
     const progressRate = total > 0 ? Math.round((used / total) * 100) : 0;
     const upcomingLessonPool = portal.getUpcomingLessonsWithHolidays(
