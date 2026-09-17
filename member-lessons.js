@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allUpcomingLessons = [];
   let allCompletedLessons = [];
   let calendarWeekOffset = 0;
+  let selectedCalendarDateKey = formatDateKey(new Date());
 
   function setText(id, value) {
     const element = document.getElementById(id);
@@ -119,6 +120,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const todayKey = formatDateKey(today);
     const startKey = formatDateKey(start);
     const endKey = formatDateKey(end);
+
+    if (
+      selectedCalendarDateKey < startKey ||
+      selectedCalendarDateKey > endKey
+    ) {
+      selectedCalendarDateKey = startKey;
+    }
     const visibleLessons = allUpcomingLessons.filter(
       (lesson) => lesson.date >= startKey && lesson.date <= endKey
     );
@@ -154,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const dayClass = date.getDay() === 0 ? ' sunday' : date.getDay() === 6 ? ' saturday' : '';
       const stateClass = `${isPast ? ' past' : ''}${isToday ? ' today' : ''}${
         holidayName ? ' holiday' : ''
-      }`;
+      }${dateKey === selectedCalendarDateKey ? ' selected' : ''}`;
       const holidayEvent = holidayName
         ? `<span class="calendar-lesson holiday">${holidayName}</span>`
         : '';
@@ -170,10 +178,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         .join('');
 
       cells.push(`
-        <article class="lesson-calendar-day${dayClass}${stateClass}">
+        <button
+          type="button"
+          class="lesson-calendar-day${dayClass}${stateClass}"
+          data-calendar-date="${dateKey}"
+          aria-label="${date.getMonth() + 1}월 ${date.getDate()}일 일정 보기"
+        >
           <span class="calendar-date-number">${date.getDate()}</span>
           <div class="calendar-day-lessons">${holidayEvent}${lessonEvents}</div>
-        </article>
+        </button>
       `);
     }
 
@@ -189,6 +202,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (todayButton) {
       todayButton.disabled = calendarWeekOffset === 0;
     }
+
+    renderSelectedCalendarDay();
+  }
+
+  function renderSelectedCalendarDay() {
+    const dateLabel = document.getElementById('selectedCalendarDate');
+    const countLabel = document.getElementById('selectedCalendarCount');
+    const detail = document.getElementById('selectedCalendarDetail');
+
+    if (!dateLabel || !countLabel || !detail) {
+      return;
+    }
+
+    const date = new Date(`${selectedCalendarDateKey}T00:00:00`);
+    const holidayName = portal.getHolidayName(selectedCalendarDateKey);
+    const lessons = allUpcomingLessons.filter(
+      (lesson) =>
+        lesson.date === selectedCalendarDateKey && lesson.status !== 'holiday'
+    );
+
+    dateLabel.textContent = portal.formatDateWithDay(selectedCalendarDateKey);
+    countLabel.textContent = `${lessons.length}건`;
+
+    const holidayHTML = holidayName
+      ? `<div class="member-day-notice holiday">${holidayName}</div>`
+      : '';
+    const lessonsHTML = lessons
+      .map(
+        (lesson) => `
+          <div class="member-day-lesson">
+            <span>${portal.formatLessonTime(lesson.time)}</span>
+            <strong>${formatLessonTitle(lesson.title)}</strong>
+            <small>${lesson.type === 'group' ? '단체수업' : '개인레슨'}</small>
+          </div>
+        `
+      )
+      .join('');
+
+    if (!holidayHTML && !lessonsHTML) {
+      detail.innerHTML = '<p class="member-empty">예정된 수업이 없습니다.</p>';
+      return;
+    }
+
+    detail.innerHTML = `${holidayHTML}${lessonsHTML}`;
   }
 
   function getLessonItemKey(lesson) {
@@ -371,6 +428,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     .getElementById('calendarNextButton')
     ?.addEventListener('click', () => {
       calendarWeekOffset += 1;
+      renderTwoWeekCalendar();
+    });
+
+  document
+    .getElementById('twoWeekCalendar')
+    ?.addEventListener('click', (event) => {
+      const day = event.target.closest('[data-calendar-date]');
+
+      if (!day) {
+        return;
+      }
+
+      selectedCalendarDateKey = day.dataset.calendarDate;
       renderTwoWeekCalendar();
     });
 

@@ -63,6 +63,8 @@ let selectedLesson = null;
 
 const today = new Date();
 
+let selectedCalendarDateKey = getDateKey(today);
+
 let currYear = today.getFullYear();
 let currMonth = today.getMonth();
 
@@ -1028,6 +1030,8 @@ async function renderCalendar() {
 
   const personalLessonsByDate = createPersonalLessonsByDate(holidaysByDate);
 
+  const scheduleByDate = {};
+
   let calendarHTML = '';
 
   // 이전 달 날짜
@@ -1069,12 +1073,18 @@ async function renderCalendar() {
       classes.push('holiday');
     }
 
+    if (dateKey === selectedCalendarDateKey) {
+      classes.push('selected');
+    }
+
     const daySchedule = getDaySchedule(
       date,
       dateKey,
       holidayName,
       personalLessonsByDate
     );
+
+    scheduleByDate[dateKey] = daySchedule;
 
     const scheduleHTML = daySchedule
       .map((item) => {
@@ -1127,7 +1137,7 @@ async function renderCalendar() {
       .join('');
 
     calendarHTML += `
-      <li class="${classes.join(' ')}">
+      <li class="${classes.join(' ')}" data-date-key="${dateKey}">
         <span class="day-number">
           ${day}
         </span>
@@ -1168,36 +1178,60 @@ async function renderCalendar() {
 
   daysTag.innerHTML = calendarHTML;
 
-  const todaySchedule = await getTodaySchedule();
+  const monthPrefix = `${currYear}-${String(currMonth + 1).padStart(2, '0')}`;
 
-  renderTodayLessons(todaySchedule);
+  if (!selectedCalendarDateKey.startsWith(monthPrefix)) {
+    selectedCalendarDateKey = `${monthPrefix}-01`;
+    return renderCalendar();
+  }
+
+  daysTag.querySelectorAll('[data-date-key]').forEach((dayElement) => {
+    dayElement.addEventListener('click', () => {
+      selectedCalendarDateKey = dayElement.dataset.dateKey;
+
+      daysTag.querySelectorAll('[data-date-key]').forEach((element) => {
+        element.classList.toggle(
+          'selected',
+          element.dataset.dateKey === selectedCalendarDateKey
+        );
+      });
+
+      const selectedDate = new Date(`${selectedCalendarDateKey}T00:00:00`);
+
+      renderTodayLessons(
+        scheduleByDate[selectedCalendarDateKey] || [],
+        selectedDate,
+        holidaysByDate[selectedCalendarDateKey]
+      );
+    });
+  });
+
+  const selectedDate = new Date(`${selectedCalendarDateKey}T00:00:00`);
+  const selectedSchedule = scheduleByDate[selectedCalendarDateKey] || [];
+
+  renderTodayLessons(
+    selectedSchedule,
+    selectedDate,
+    holidaysByDate[selectedCalendarDateKey]
+  );
+
+  if (selectedCalendarDateKey !== getDateKey(today)) {
+    const todaySchedule = await getTodaySchedule();
+
+    saveHomeTodaySchedule(todaySchedule);
+  }
 }
 
 /* ==================================================
   18. 오늘 수업
 ================================================== */
 
-function renderTodayLessons(schedule) {
-  if (todayDate) {
-    todayDate.textContent =
-      `${today.getMonth() + 1}월 ` +
-      `${today.getDate()}일 ` +
-      `${weekdays[today.getDay()]}`;
-  }
-
-  if (todayCount) {
-    todayCount.textContent = `${schedule.length}건`;
-  }
-
+function saveHomeTodaySchedule(schedule) {
   const dateKey = getDateKey(today);
-
   const homeTodaySchedule = schedule.map((item) => {
     const lessonKey = getLessonKey(dateKey, item);
-
     const isCompleted = completedLessons[lessonKey] === true;
-
     const isCancelled = cancelledLessons[lessonKey] === true;
-
     const displayType = isCancelled ? 'cancelled' : item.type;
 
     return {
@@ -1212,8 +1246,26 @@ function renderTodayLessons(schedule) {
   });
 
   saveStorageData('homeTodayLessons', homeTodaySchedule);
-
   localStorage.setItem('todayLessonCount', String(schedule.length));
+}
+
+function renderTodayLessons(schedule, targetDate = today, holidayName = '') {
+  if (todayDate) {
+    todayDate.textContent =
+      `${targetDate.getMonth() + 1}월 ` +
+      `${targetDate.getDate()}일 ` +
+      `${weekdays[targetDate.getDay()]}`;
+  }
+
+  if (todayCount) {
+    todayCount.textContent = `${schedule.length}건`;
+  }
+
+  const dateKey = getDateKey(targetDate);
+
+  if (dateKey === getDateKey(today)) {
+    saveHomeTodaySchedule(schedule);
+  }
 
   if (!todayLessonList) {
     return;
@@ -1222,7 +1274,11 @@ function renderTodayLessons(schedule) {
   if (schedule.length === 0) {
     todayLessonList.innerHTML = `
       <p class="today-empty">
-        오늘 예정된 수업이 없습니다.
+        ${
+          holidayName
+            ? `<strong>${escapeHTML(holidayName)}</strong><br />공휴일이라 예정된 수업이 없습니다.`
+            : '예정된 수업이 없습니다.'
+        }
       </p>
     `;
 
@@ -1251,6 +1307,7 @@ function renderTodayLessons(schedule) {
               ${isCompleted ? 'completed' : ''}
             "
             data-lesson-key="${lessonKey}"
+            onclick="openLessonDetail('${dateKey}', '${lessonKey}')"
           >
             <span
               class="today-lesson-check"

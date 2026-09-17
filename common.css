@@ -306,6 +306,18 @@ body {
   box-shadow: inset 0 0 0 2px #4c8df6;
 }
 
+.days li.selected {
+  position: relative;
+
+  z-index: 1;
+
+  box-shadow: inset 0 0 0 3px #173d75;
+}
+
+.days li[data-date-key] {
+  cursor: pointer;
+}
+
 .days li.active .day-number {
   background: #4c8df6;
   color: #ffffff;

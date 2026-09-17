@@ -7,7 +7,7 @@
     <title>내 수업</title>
     <link
       rel="stylesheet"
-      href="member-lessons.css?v=20260917-all-holidays"
+      href="member-lessons.css?v=20260917-day-selection"
     />
   </head>
 
@@ -158,6 +158,17 @@
         <div id="twoWeekCalendar" class="lesson-calendar-grid">
           <p class="member-empty">수업 일정을 불러오는 중입니다.</p>
         </div>
+
+        <section class="member-calendar-detail" aria-live="polite">
+          <div class="member-calendar-detail-header">
+            <strong id="selectedCalendarDate">선택한 날짜</strong>
+            <span id="selectedCalendarCount">0건</span>
+          </div>
+
+          <div id="selectedCalendarDetail">
+            <p class="member-empty">날짜를 선택해주세요.</p>
+          </div>
+        </section>
       </section>
 
       <!-- 최근 수업 -->
@@ -244,7 +255,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="member-shared.js?v=20260917-holiday-correction"></script>
-    <script src="member-lessons.js?v=20260917-all-holidays"></script>
+    <script src="member-lessons.js?v=20260917-day-selection"></script>
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {
