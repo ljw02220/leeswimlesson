@@ -86,59 +86,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/[^a-zA-Z0-9가-힣_-]/g, '-');
   }
 
-  function renderFeedbackItem(lesson, options = {}) {
-    const shouldShowNote = Boolean(options.showNote);
-    const noteId = `home-lesson-note-${getLessonItemKey(lesson)}`;
-    const noteText = lesson.memo || '수업 노트가 아직 없습니다.';
-
-    if (shouldShowNote) {
-      return `
-        <article class="member-feedback-item expandable">
-          <button
-            type="button"
-            class="lesson-note-toggle"
-            aria-expanded="false"
-            aria-controls="${noteId}"
-          >
-            <span class="lesson-note-summary">
-              <span class="feedback-date">
-                ${portal.formatShortDate(lesson.date)}
-              </span>
-
-              <span class="feedback-content">
-                <strong>
-                  ${formatLessonTitle(lesson.title)}
-                </strong>
-              </span>
-
-              <span class="lesson-note-chevron" aria-hidden="true">⌄</span>
-            </span>
-          </button>
-
-          <div id="${noteId}" class="lesson-note-panel" hidden>
-            <div class="lesson-content-box">
-              <p>${noteText}</p>
-            </div>
-          </div>
-        </article>
-      `;
-    }
-
-    return `
-        <article class="member-feedback-item compact">
-          <div class="feedback-date">
-            ${portal.formatShortDate(lesson.date)}
-          </div>
-
-          <div class="feedback-content">
-            <strong>
-              ${formatLessonTitle(lesson.title)}
-            </strong>
-          </div>
-        </article>
-      `;
-  }
-
   function renderPaymentStatus(member) {
     const paymentStatus = document.getElementById('paymentStatus');
 
@@ -186,6 +133,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     container.innerHTML = completedLessons.map(renderFeedbackItem).join('');
+  }
+
+  function renderFeedbackItem(lesson, options = {}) {
+    const isExpandable = Boolean(options.showNote);
+
+    const noteId = `home-lesson-note-${getLessonItemKey(lesson)}`;
+
+    const noteText = lesson.memo || '수업 노트가 아직 없습니다.';
+
+    if (isExpandable) {
+      return `
+        <article class="member-feedback-item expandable">
+          <button
+            type="button"
+            class="lesson-note-toggle"
+            aria-expanded="false"
+            aria-controls="${noteId}"
+          >
+            <span class="lesson-note-summary">
+              <span class="feedback-date">
+                ${portal.formatShortDate(lesson.date)}
+              </span>
+
+              <span class="feedback-content">
+                <strong>
+                  ${formatLessonTitle(lesson.title)}
+                </strong>
+              </span>
+
+              <span
+                class="lesson-note-chevron"
+                aria-hidden="true"
+              >
+                ⌄
+              </span>
+            </span>
+          </button>
+
+          <div
+            id="${noteId}"
+            class="lesson-note-panel"
+            hidden
+          >
+            <div class="lesson-content-box">
+              <p>${noteText}</p>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    return `
+      <article class="member-feedback-item">
+        <div class="feedback-date">
+          ${portal.formatShortDate(lesson.date)}
+        </div>
+
+        <div class="feedback-content">
+          <strong>
+            ${formatLessonTitle(lesson.title)}
+          </strong>
+
+          <p>
+            ${noteText}
+          </p>
+        </div>
+      </article>
+    `;
   }
 
   function closeUpcomingLessonModal() {
@@ -315,7 +330,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     allCompletedLessons = await portal.getCompletedLessons(member, 100);
 
-    const completedLessons = allCompletedLessons.slice(0, 2);
+    const completedLessons = allCompletedLessons.slice(0, 1);
 
     const nextLesson = upcomingLessons[0];
 
