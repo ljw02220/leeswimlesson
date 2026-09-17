@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderCompletedLesson(lesson, options = {}) {
     const shouldShowNote = Boolean(options.showNote);
     const noteId = `lesson-note-${getLessonItemKey(lesson)}`;
-    const noteText = lesson.memo || '수업 노트가 아직 없습니다.';
+    const noteText = lesson.memo || '수업 내용이 없습니다.';
 
     if (shouldShowNote) {
       return `

@@ -677,7 +677,7 @@
       time: row.lesson_time,
       type: 'group',
       status: 'completed',
-      title: row.title || '단체수업',
+      title: '단체수업',
       memo: row.memo || '',
     };
   }
@@ -689,7 +689,7 @@
       time: row.lesson_time,
       type: 'personal',
       status: 'completed',
-      title: row.title || '개인레슨',
+      title: '개인레슨',
       memo: row.memo || '',
     };
   }
@@ -832,20 +832,19 @@
     });
   }
 
-  async function getCompletedLessons(member, limit = 4) {
+  async function getCompletedLessons(member, limit = 4, options = {}) {
     const personalRecords = await loadCompletedPersonalLessonRecords(member);
-    const personalLessons = personalRecords
-      .map(mapCompletedPersonalLesson)
-      .filter((lesson) => String(lesson.memo || '').trim());
+    const personalLessons = personalRecords.map(mapCompletedPersonalLesson);
     const groupLessons = await loadCompletedGroupLessons(member, limit);
-    const groupLessonsWithNotes = groupLessons.filter((lesson) =>
-      String(lesson.memo || '').trim()
-    );
-
-    return sortLessonsByDateTimeDesc([
+    const completedLessons = sortLessonsByDateTimeDesc([
       ...personalLessons,
-      ...groupLessonsWithNotes,
-    ]).slice(0, limit);
+      ...groupLessons,
+    ]);
+    const visibleLessons = options.onlyWithMemo
+      ? completedLessons.filter((lesson) => String(lesson.memo || '').trim())
+      : completedLessons;
+
+    return visibleLessons.slice(0, limit);
   }
 
   function getThisMonthCompletedCount(member) {

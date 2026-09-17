@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const noteId = `home-lesson-note-${getLessonItemKey(lesson)}`;
 
-    const noteText = lesson.memo || '수업 노트가 아직 없습니다.';
+    const noteText = lesson.memo || '수업 내용이 없습니다.';
 
     if (isExpandable) {
       return `
@@ -328,7 +328,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const upcomingLessons = allUpcomingLessons.slice(0, 2);
 
-    allCompletedLessons = await portal.getCompletedLessons(member, 100);
+    allCompletedLessons = await portal.getCompletedLessons(member, 100, {
+      onlyWithMemo: true,
+    });
 
     const completedLessons = allCompletedLessons.slice(0, 1);
 
