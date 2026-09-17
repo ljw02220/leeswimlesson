@@ -508,18 +508,21 @@
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    return dates.map((dateKey, index) => ({
-      id: `${member.id}-${dateKey}-${member.lesson_time || index}`,
-      date: dateKey,
-      time: member.lesson_time,
-      status:
-        index < Number(member.used_lessons || 0) ? 'completed' : 'scheduled',
-      title: member.lesson_format || '개인레슨',
-      memo:
-        index < Number(member.used_lessons || 0)
-          ? '수업을 완료했습니다.'
-          : '예정된 개인레슨입니다.',
-    }));
+    const todayKey = getTodayKey();
+
+    return dates.map((dateKey, index) => {
+      const isCompleted =
+        dateKey < todayKey && index < Number(member.used_lessons || 0);
+
+      return {
+        id: `${member.id}-${dateKey}-${member.lesson_time || index}`,
+        date: dateKey,
+        time: member.lesson_time,
+        status: isCompleted ? 'completed' : 'scheduled',
+        title: member.lesson_format || '개인레슨',
+        memo: isCompleted ? '' : '예정된 개인레슨입니다.',
+      };
+    });
   }
 
   function createLessonSchedule(member) {
@@ -554,16 +557,16 @@
             holidayName,
           });
         } else {
+          const isCompleted =
+            dateKey < getTodayKey() && lessonIndex < usedLessons;
+
           lessons.push({
             id: `${member.id}-${dateKey}-${member.lesson_time || lessonIndex}`,
             date: dateKey,
             time: member.lesson_time,
-            status: lessonIndex < usedLessons ? 'completed' : 'scheduled',
+            status: isCompleted ? 'completed' : 'scheduled',
             title: member.lesson_format || '개인레슨',
-            memo:
-              lessonIndex < usedLessons
-                ? '수업을 완료했습니다.'
-                : '예정된 개인레슨입니다.',
+            memo: isCompleted ? '' : '예정된 개인레슨입니다.',
           });
 
           lessonIndex += 1;
@@ -667,10 +670,6 @@
     });
   }
 
-  function getLessonRecordKey(row) {
-    return `${row.lesson_date}_${formatTime(row.lesson_time)}`;
-  }
-
   function mapCompletedGroupLesson(row) {
     return {
       id: row.id,
@@ -679,7 +678,7 @@
       type: 'group',
       status: 'completed',
       title: row.title || '단체수업',
-      memo: row.memo || '단체수업을 완료했습니다.',
+      memo: row.memo || '',
     };
   }
 
@@ -693,27 +692,6 @@
       title: row.title || '개인레슨',
       memo: row.memo || '',
     };
-  }
-
-  function applyLessonRecordMemo(lessons, records) {
-    const recordByKey = new Map(
-      records.map((record) => [getLessonRecordKey(record), record])
-    );
-
-    return lessons.map((lesson) => {
-      const record = recordByKey.get(`${lesson.date}_${formatTime(lesson.time)}`);
-
-      if (!record) {
-        return lesson;
-      }
-
-      return {
-        ...lesson,
-        id: record.id || lesson.id,
-        title: record.title || lesson.title,
-        memo: record.memo || lesson.memo,
-      };
-    });
   }
 
   async function loadCompletedPersonalLessonRecords(member) {
@@ -856,32 +834,18 @@
 
   async function getCompletedLessons(member, limit = 4) {
     const personalRecords = await loadCompletedPersonalLessonRecords(member);
-    const personalLessons = createLessonDatePlan(member)
-      .filter((lesson) => lesson.status === 'completed')
-      .reverse();
-    const personalRecordLessons = personalRecords.map(mapCompletedPersonalLesson);
-    const enrichedPersonalLessons = applyLessonRecordMemo(
-      personalLessons,
-      personalRecords
-    );
-    const mergedPersonalLessons =
-      personalRecords.length > 0
-        ? [
-            ...enrichedPersonalLessons,
-            ...personalRecordLessons.filter((recordLesson) => {
-              return !personalLessons.some((lesson) => {
-                return (
-                  lesson.date === recordLesson.date &&
-                  formatTime(lesson.time) === formatTime(recordLesson.time)
-                );
-              });
-            }),
-          ]
-        : personalLessons;
+    const personalLessons = personalRecords
+      .map(mapCompletedPersonalLesson)
+      .filter((lesson) => String(lesson.memo || '').trim());
     const groupLessons = await loadCompletedGroupLessons(member, limit);
+    const groupLessonsWithNotes = groupLessons.filter((lesson) =>
+      String(lesson.memo || '').trim()
+    );
 
-    return sortLessonsByDateTimeDesc([...mergedPersonalLessons, ...groupLessons])
-      .slice(0, limit);
+    return sortLessonsByDateTimeDesc([
+      ...personalLessons,
+      ...groupLessonsWithNotes,
+    ]).slice(0, limit);
   }
 
   function getThisMonthCompletedCount(member) {
