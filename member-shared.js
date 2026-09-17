@@ -450,6 +450,41 @@
     return members[0] || null;
   }
 
+  async function attachCompletedLessonKeys(member) {
+    const client = getClient();
+
+    if (!client || !member?.id) {
+      return member;
+    }
+
+    let query = client
+      .from('lessons')
+      .select('lesson_date, lesson_time')
+      .eq('member_id', member.id)
+      .eq('lesson_type', 'personal')
+      .eq('status', 'completed');
+
+    if (member.lesson_start_date) {
+      query = query.gte('lesson_date', member.lesson_start_date);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.warn('회원 완료 수업 날짜를 불러오지 못했습니다.', error);
+
+      return member;
+    }
+
+    return {
+      ...member,
+      completed_lesson_keys: (data || []).map(
+        (lesson) =>
+          `${lesson.lesson_date}_${formatTime(lesson.lesson_time)}`
+      ),
+    };
+  }
+
   async function loadCurrentMember() {
     const user = await getCurrentUser();
 
@@ -463,7 +498,7 @@
       const member = await loadMemberFromSupabase(user);
 
       if (member) {
-        return { member, user };
+        return { member: await attachCompletedLessonKeys(member), user };
       }
     }
 
@@ -480,6 +515,19 @@
     return (member.days || [])
       .map((day) => DAY_INDEX_BY_NAME[day])
       .filter((day) => Number.isInteger(day));
+  }
+
+  function isCompletedPersonalLesson(member, dateKey, lessonIndex) {
+    if (Array.isArray(member.completed_lesson_keys)) {
+      const lessonKey = `${dateKey}_${formatTime(member.lesson_time)}`;
+
+      return member.completed_lesson_keys.includes(lessonKey);
+    }
+
+    return (
+      dateKey < getTodayKey() &&
+      lessonIndex < Number(member.used_lessons || 0)
+    );
   }
 
   function createLessonDatePlan(member) {
@@ -508,11 +556,8 @@
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    const todayKey = getTodayKey();
-
     return dates.map((dateKey, index) => {
-      const isCompleted =
-        dateKey < todayKey && index < Number(member.used_lessons || 0);
+      const isCompleted = isCompletedPersonalLesson(member, dateKey, index);
 
       return {
         id: `${member.id}-${dateKey}-${member.lesson_time || index}`,
@@ -527,7 +572,6 @@
 
   function createLessonSchedule(member) {
     const totalLessons = Number(member.total_lessons || 0);
-    const usedLessons = Number(member.used_lessons || 0);
     const dayIndexes = getLessonDayIndexes(member);
     const startKey =
       member.lesson_start_date || member.payment_date || getTodayKey();
@@ -557,8 +601,11 @@
             holidayName,
           });
         } else {
-          const isCompleted =
-            dateKey < getTodayKey() && lessonIndex < usedLessons;
+          const isCompleted = isCompletedPersonalLesson(
+            member,
+            dateKey,
+            lessonIndex
+          );
 
           lessons.push({
             id: `${member.id}-${dateKey}-${member.lesson_time || lessonIndex}`,

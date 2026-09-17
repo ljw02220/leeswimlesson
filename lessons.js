@@ -141,6 +141,7 @@ const HOLIDAY_OVERRIDES = {
 
 let personalSchedule = [];
 let personalScheduleLoaded = false;
+let lessonRecordStateLoaded = false;
 
 /* ==================================================
   5. 반복 단체강습
@@ -339,6 +340,98 @@ async function loadPersonalSchedule() {
   personalScheduleLoaded = true;
 
   return personalSchedule;
+}
+
+async function loadLessonRecordState() {
+  if (lessonRecordStateLoaded || !hasSupabaseConnection()) {
+    return;
+  }
+
+  let { data, error } = await window.swimDb.client
+    .from('lessons')
+    .select(
+      'member_id, lesson_date, lesson_time, title, lesson_type, status, source, memo'
+    )
+    .in('status', ['completed', 'cancelled']);
+
+  if (error && getErrorText(error).includes('memo')) {
+    const fallbackResult = await window.swimDb.client
+      .from('lessons')
+      .select(
+        'member_id, lesson_date, lesson_time, title, lesson_type, status, source'
+      )
+      .in('status', ['completed', 'cancelled']);
+
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+  }
+
+  if (error) {
+    throw error;
+  }
+
+  const databaseCompletedLessons = {};
+  const databaseCancelledLessons = {};
+
+  (data || []).forEach((row) => {
+    const time = normalizeTimeValue(row.lesson_time);
+    let lessonKey = '';
+
+    if (row.source === 'added') {
+      const addedLesson = addedLessons.find((item) => {
+        return (
+          item.date === row.lesson_date &&
+          item.type === row.lesson_type &&
+          normalizeTimeValue(item.time) === time &&
+          (!row.title || getLessonName(item) === row.title)
+        );
+      });
+
+      if (addedLesson) {
+        lessonKey = getLessonKey(row.lesson_date, addedLesson);
+      }
+    }
+
+    if (!lessonKey && row.lesson_type === 'group') {
+      lessonKey = `${row.lesson_date}_group_${time}`;
+    } else if (!lessonKey && row.lesson_type === 'personal') {
+      const schedule = personalSchedule.find((item) => {
+        return (
+          (item.memberIds || []).map(String).includes(String(row.member_id)) &&
+          normalizeTimeValue(item.time) === time
+        );
+      });
+
+      if (schedule) {
+        lessonKey = `${row.lesson_date}_personal_${schedule.id}_${time}`;
+      }
+    }
+
+    if (!lessonKey) {
+      return;
+    }
+
+    if (row.status === 'completed') {
+      databaseCompletedLessons[lessonKey] = true;
+    }
+
+    if (row.status === 'cancelled') {
+      databaseCancelledLessons[lessonKey] = true;
+    }
+
+    if (row.memo) {
+      lessonFeedback[lessonKey] = row.memo;
+    }
+  });
+
+  completedLessons = databaseCompletedLessons;
+  cancelledLessons = databaseCancelledLessons;
+
+  saveStorageData('completedLessons', completedLessons);
+  saveStorageData('cancelledLessons', cancelledLessons);
+  saveStorageData('lessonFeedback', lessonFeedback);
+
+  lessonRecordStateLoaded = true;
 }
 
 function getLessonMemberNames(lesson) {
@@ -667,7 +760,9 @@ async function findDatabaseMembersForLesson(lesson) {
   if (Array.isArray(lesson.memberIds) && lesson.memberIds.length > 0) {
     const { data, error } = await client
       .from('members')
-      .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
+      .select(
+        'id, name, lesson_start_date, total_lessons, used_lessons, last_lesson_date, memo'
+      )
       .in('id', lesson.memberIds);
 
     if (error) {
@@ -682,7 +777,9 @@ async function findDatabaseMembersForLesson(lesson) {
   if (lesson.memberId) {
     const { data, error } = await client
       .from('members')
-      .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
+      .select(
+        'id, name, lesson_start_date, total_lessons, used_lessons, last_lesson_date, memo'
+      )
       .eq('id', lesson.memberId);
 
     if (error) {
@@ -697,7 +794,9 @@ async function findDatabaseMembersForLesson(lesson) {
   if (title) {
     const { data, error } = await client
       .from('members')
-      .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
+      .select(
+        'id, name, lesson_start_date, total_lessons, used_lessons, last_lesson_date, memo'
+      )
       .eq('name', title);
 
     if (error) {
@@ -715,7 +814,9 @@ async function findDatabaseMembersForLesson(lesson) {
 
   const { data, error } = await client
     .from('members')
-    .select('id, name, total_lessons, used_lessons, last_lesson_date, memo')
+    .select(
+      'id, name, lesson_start_date, total_lessons, used_lessons, last_lesson_date, memo'
+    )
     .in('name', memberNames);
 
   if (error) {
@@ -725,7 +826,7 @@ async function findDatabaseMembersForLesson(lesson) {
   return data || [];
 }
 
-async function updateDatabaseMemberLessonCounts(lesson, change) {
+async function updateDatabaseMemberLessonCounts(lesson) {
   const matchedMembers = await findDatabaseMembersForLesson(lesson);
 
   if (matchedMembers.length === 0) {
@@ -733,14 +834,42 @@ async function updateDatabaseMemberLessonCounts(lesson, change) {
   }
 
   await Promise.all(
-    matchedMembers.map((member) => {
-      const updateData = {
-        used_lessons: getNextUsedLessonCount(member, change),
-      };
+    matchedMembers.map(async (member) => {
+      let query = window.swimDb.client
+        .from('lessons')
+        .select('lesson_date, lesson_time')
+        .eq('member_id', member.id)
+        .eq('lesson_type', 'personal')
+        .eq('status', 'completed');
 
-      if (change > 0 && lesson.date) {
-        updateData.last_lesson_date = lesson.date;
+      if (member.lesson_start_date) {
+        query = query.gte('lesson_date', member.lesson_start_date);
       }
+
+      const { data: completedRecords, error: countError } = await query;
+
+      if (countError) {
+        throw countError;
+      }
+
+      const completedKeys = new Set(
+        (completedRecords || []).map(
+          (record) =>
+            `${record.lesson_date}_${normalizeTimeValue(record.lesson_time)}`
+        )
+      );
+      const totalLessons = Number(member.total_lessons || 0);
+      const usedLessons = totalLessons > 0
+        ? Math.min(completedKeys.size, totalLessons)
+        : completedKeys.size;
+      const latestLessonDate = (completedRecords || [])
+        .map((record) => record.lesson_date)
+        .sort()
+        .at(-1) || null;
+      const updateData = {
+        used_lessons: usedLessons,
+        last_lesson_date: latestLessonDate,
+      };
 
       return window.swimDb.client
         .from('members')
@@ -808,7 +937,9 @@ async function syncPersonalLessonCount(lesson, change) {
   }
 
   if (hasSupabaseConnection()) {
-    await updateDatabaseMemberLessonCounts(lesson, change);
+    await updateDatabaseMemberLessonCounts(lesson);
+
+    return;
   }
 
   updateLocalMemberLessonCounts(lesson, change);
@@ -946,6 +1077,48 @@ async function saveLessonRecord(lesson, status, feedback) {
   }
 }
 
+async function deleteLessonRecord(lesson) {
+  if (!hasSupabaseConnection() || !lesson) {
+    return;
+  }
+
+  if (lesson.type === 'personal') {
+    const matchedMembers = await findDatabaseMembersForLesson(lesson);
+
+    await Promise.all(
+      matchedMembers.map(async (member) => {
+        const { error } = await window.swimDb.client
+          .from('lessons')
+          .delete()
+          .eq('member_id', member.id)
+          .eq('lesson_date', lesson.date)
+          .eq('lesson_time', lesson.time)
+          .eq('lesson_type', 'personal');
+
+        if (error) {
+          throw error;
+        }
+      })
+    );
+
+    return;
+  }
+
+  if (lesson.type === 'group') {
+    const { error } = await window.swimDb.client
+      .from('lessons')
+      .delete()
+      .is('member_id', null)
+      .eq('lesson_date', lesson.date)
+      .eq('lesson_time', lesson.time)
+      .eq('lesson_type', 'group');
+
+    if (error) {
+      throw error;
+    }
+  }
+}
+
 /* ==================================================
   16. 날짜별 수업 만들기
 ================================================== */
@@ -1016,6 +1189,7 @@ async function renderCalendar() {
   try {
     personalScheduleLoaded = false;
     await loadPersonalSchedule();
+    await loadLessonRecordState();
   } catch (error) {
     console.error('회원관리 개인레슨 일정을 불러오지 못했습니다.', error);
   }
@@ -1525,16 +1699,16 @@ if (confirmDetailBtn && detailStatus) {
     const isCompleted = completedLessons[lessonKey] === true;
 
     try {
-      if (wasCompleted !== isCompleted) {
-        await syncPersonalLessonCount(selectedLesson, isCompleted ? 1 : -1);
-      }
-
       if (
         wasCompleted !== isCompleted ||
         feedback ||
         selectedLesson.type === 'group'
       ) {
         await saveLessonRecord(selectedLesson, status, feedback);
+      }
+
+      if (wasCompleted !== isCompleted) {
+        await syncPersonalLessonCount(selectedLesson, isCompleted ? 1 : -1);
       }
 
       saveStorageData('completedLessons', completedLessons);
@@ -1579,6 +1753,8 @@ if (deleteLessonBtn) {
     const wasCompleted = completedLessons[selectedLesson.lessonKey] === true;
 
     try {
+      await deleteLessonRecord(selectedLesson);
+
       if (wasCompleted) {
         await syncPersonalLessonCount(selectedLesson, -1);
       }
@@ -1630,13 +1806,13 @@ async function toggleComplete(event, lessonKey) {
   }
 
   try {
-    await syncPersonalLessonCount(lesson, isCompleted ? -1 : 1);
-
     await saveLessonRecord(
       lesson,
       isCompleted ? 'scheduled' : 'completed',
       lessonFeedback[lessonKey] || ''
     );
+
+    await syncPersonalLessonCount(lesson, isCompleted ? -1 : 1);
 
     saveStorageData('completedLessons', completedLessons);
 
