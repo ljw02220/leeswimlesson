@@ -388,13 +388,13 @@ body {
 }
 
 .schedule-item.personal {
-  background: #e8f1ff;
-  border-left: 3px solid #4c8df6;
+  background: #e8f7ee;
+  border-left: 3px solid #2fb47c;
 }
 
 .schedule-item.group {
-  background: #e8f7ee;
-  border-left: 3px solid #2fb47c;
+  background: #e8f1ff;
+  border-left: 3px solid #4c8df6;
 }
 
 .schedule-item.makeup {
@@ -513,11 +513,11 @@ body {
 }
 
 .legend-color.personal {
-  background: #4c8df6;
+  background: #2fb47c;
 }
 
 .legend-color.group {
-  background: #2fb47c;
+  background: #4c8df6;
 }
 
 .legend-color.makeup {

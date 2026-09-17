@@ -694,9 +694,14 @@ button {
   text-align: center;
 }
 
-.calendar-lesson.scheduled {
+.calendar-lesson.scheduled.group {
   background: #eaf3ff;
   color: var(--blue-strong);
+}
+
+.calendar-lesson.scheduled.personal {
+  background: #e5f7ed;
+  color: #20845b;
 }
 
 .calendar-lesson.holiday {
@@ -778,6 +783,22 @@ button {
   gap: 8px;
 
   background: #f7faff;
+}
+
+.member-day-lesson.group,
+.lesson-detail-item.group,
+.lesson-history-item.group {
+  border-left: 3px solid #4c8df6;
+
+  background: #f2f7ff;
+}
+
+.member-day-lesson.personal,
+.lesson-detail-item.personal,
+.lesson-history-item.personal {
+  border-left: 3px solid #2fb47c;
+
+  background: #f0faf4;
 }
 
 .member-day-lesson span,

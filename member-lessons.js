@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     return `
-      <article class="lesson-detail-item">
+        <article class="lesson-detail-item ${lesson.type || 'personal'}">
         ${renderDateBox(lesson.date)}
 
         <div class="lesson-detail-content">
@@ -169,7 +169,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const lessonEvents = dayLessons
         .map((lesson) => {
           return `
-            <span class="calendar-lesson scheduled">
+            <span class="calendar-lesson scheduled ${
+              lesson.type || 'personal'
+            }">
               <strong>${portal.formatLessonTime(lesson.time)}</strong>
               <small>${formatLessonTitle(lesson.title)}</small>
             </span>
@@ -231,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lessonsHTML = lessons
       .map(
         (lesson) => `
-          <div class="member-day-lesson">
+          <div class="member-day-lesson ${lesson.type || 'personal'}">
             <span>${portal.formatLessonTime(lesson.time)}</span>
             <strong>${formatLessonTitle(lesson.title)}</strong>
             <small>${lesson.type === 'group' ? '단체수업' : '개인레슨'}</small>
@@ -262,7 +264,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (shouldShowNote) {
       return `
-        <article class="lesson-history-item lesson-history-item-expandable">
+        <article class="lesson-history-item lesson-history-item-expandable ${
+          lesson.type || 'personal'
+        }">
           <button
             type="button"
             class="lesson-note-toggle"
@@ -292,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     return `
-      <article class="lesson-history-item">
+      <article class="lesson-history-item ${lesson.type || 'personal'}">
         <div class="lesson-history-header">
           <div>
             <span>${portal.formatShortDate(lesson.date)}</span>
@@ -505,6 +509,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
 
     setViewAllButtonState('completed', allCompletedLessons.length > 0);
+
+    if (new URLSearchParams(window.location.search).get('view') === 'completed') {
+      openLessonListModal('completed');
+    }
   } catch (error) {
     console.error('내 수업 정보를 불러오지 못했습니다.', error);
 

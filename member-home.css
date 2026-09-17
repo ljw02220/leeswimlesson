@@ -419,6 +419,34 @@ button {
   background: #f7faff;
 }
 
+.member-lesson-item.group,
+.member-feedback-item.group {
+  border-left: 3px solid #4c8df6;
+
+  background: #f2f7ff;
+}
+
+.member-lesson-item.personal,
+.member-feedback-item.personal {
+  border-left: 3px solid #2fb47c;
+
+  background: #f0faf4;
+}
+
+.member-lesson-item.group .lesson-date-box {
+  background: #e8f1ff;
+}
+
+.member-lesson-item.personal .lesson-date-box {
+  background: #e5f7ed;
+}
+
+.member-lesson-item.personal .lesson-date-box span,
+.member-lesson-item.personal .lesson-info strong,
+.member-feedback-item.personal .feedback-content strong {
+  color: #20845b;
+}
+
 .lesson-date-box {
   display: flex;
   align-items: center;

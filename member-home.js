@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusText = lesson.status === 'completed' ? '완료' : '예정';
 
     return `
-        <article class="member-lesson-item">
+        <article class="member-lesson-item ${lesson.type || 'personal'}">
           <div class="lesson-date-box">
             <span>
               ${date.getMonth() + 1}월
@@ -144,7 +144,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (isExpandable) {
       return `
-        <article class="member-feedback-item expandable">
+        <article class="member-feedback-item expandable ${
+          lesson.type || 'personal'
+        }">
           <button
             type="button"
             class="lesson-note-toggle"
@@ -185,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     return `
-      <article class="member-feedback-item">
+      <article class="member-feedback-item ${lesson.type || 'personal'}">
         <div class="feedback-date">
           ${portal.formatShortDate(lesson.date)}
         </div>
