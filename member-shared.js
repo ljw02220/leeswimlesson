@@ -272,6 +272,26 @@
     return data?.user || null;
   }
 
+  function getSessionMemberId() {
+    const savedSession =
+      sessionStorage.getItem('loginSession') ||
+      localStorage.getItem('loginSession');
+
+    if (!savedSession) {
+      return '';
+    }
+
+    try {
+      const session = JSON.parse(savedSession);
+
+      return session.role === 'member' ? session.memberId || '' : '';
+    } catch (error) {
+      console.warn('회원 로그인 정보를 확인하지 못했습니다.', error);
+
+      return '';
+    }
+  }
+
   async function linkMemberAuthUser(member, user) {
     if (!member?.id || !user?.id || member.auth_user_id === user.id) {
       return member;
@@ -368,7 +388,7 @@
   async function loadMemberFromSupabase(user) {
     const client = getClient();
     const params = new URLSearchParams(window.location.search);
-    const memberId = params.get('memberId');
+    const memberId = params.get('memberId') || getSessionMemberId();
     const metadata = user?.user_metadata || {};
     const name = metadata.name || metadata.full_name || '';
     const phone = metadata.phone || '';
@@ -430,7 +450,7 @@
     } else if (name) {
       query = query.eq('name', name).limit(1);
     } else {
-      query = query.order('created_at', { ascending: false }).limit(1);
+      return null;
     }
 
     const { data, error } = await query;
@@ -444,7 +464,7 @@
 
   function loadMemberFromLocal(user) {
     const params = new URLSearchParams(window.location.search);
-    const memberId = params.get('memberId');
+    const memberId = params.get('memberId') || getSessionMemberId();
     const metadata = user?.user_metadata || {};
     const name = metadata.name || metadata.full_name || '';
     const phone = normalizePhone(metadata.phone);
@@ -464,7 +484,7 @@
       return members.find((member) => member.name === name) || null;
     }
 
-    return members[0] || null;
+    return null;
   }
 
   async function attachCompletedLessonKeys(member) {
