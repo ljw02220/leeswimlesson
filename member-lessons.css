@@ -501,11 +501,69 @@ button {
   cursor: not-allowed;
 }
 
+.lesson-calendar-navigation {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  flex-shrink: 0;
+}
+
 .lesson-calendar-range {
+  min-width: 66px;
+
   color: var(--text-soft);
 
   font-size: 9px;
   font-weight: 800;
+  text-align: center;
+}
+
+.lesson-calendar-nav-button,
+.lesson-calendar-today-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 26px;
+
+  border: 1px solid #d7e4f6;
+
+  background: #ffffff;
+  color: var(--blue-strong);
+
+  cursor: pointer;
+}
+
+.lesson-calendar-nav-button {
+  width: 26px;
+  padding: 0;
+
+  border-radius: 50%;
+}
+
+.lesson-calendar-nav-button svg {
+  width: 14px;
+  height: 14px;
+
+  stroke-width: 2.5;
+}
+
+.lesson-calendar-today-button {
+  padding: 0 7px;
+
+  border-radius: 7px;
+
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.lesson-calendar-nav-button:disabled,
+.lesson-calendar-today-button:disabled {
+  opacity: 0.35;
+
+  cursor: default;
 }
 
 .lesson-calendar-weekdays,
@@ -1242,6 +1300,17 @@ button {
 
   .lesson-page-heading h1 {
     font-size: 20px;
+  }
+
+  .member-card:has(.lesson-calendar-navigation) .member-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lesson-calendar-navigation {
+    justify-content: flex-end;
+
+    width: 100%;
   }
 }
 

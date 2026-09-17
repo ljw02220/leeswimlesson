@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
   let allUpcomingLessons = [];
   let allCompletedLessons = [];
+  let calendarWeekOffset = 0;
 
   function setText(id, value) {
     const element = document.getElementById(id);
@@ -93,12 +94,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     return `${year}-${month}-${day}`;
   }
 
-  function getTwoWeekPeriod() {
+  function getTwoWeekPeriod(weekOffset = 0) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const start = new Date(today);
-    start.setDate(today.getDate() - today.getDay());
+    start.setDate(today.getDate() - today.getDay() + weekOffset * 7);
 
     const end = new Date(start);
     end.setDate(start.getDate() + 13);
@@ -106,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return { today, start, end };
   }
 
-  function renderTwoWeekCalendar(lessons) {
+  function renderTwoWeekCalendar() {
     const calendar = document.getElementById('twoWeekCalendar');
     const range = document.getElementById('twoWeekRange');
 
@@ -114,9 +115,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const { today, start, end } = getTwoWeekPeriod();
+    const { today, start, end } = getTwoWeekPeriod(calendarWeekOffset);
     const todayKey = formatDateKey(today);
-    const lessonsByDate = lessons.reduce((map, lesson) => {
+    const startKey = formatDateKey(start);
+    const endKey = formatDateKey(end);
+    const visibleLessons = allUpcomingLessons.filter(
+      (lesson) => lesson.date >= startKey && lesson.date <= endKey
+    );
+    const lessonsByDate = visibleLessons.reduce((map, lesson) => {
       if (!map.has(lesson.date)) {
         map.set(lesson.date, []);
       }
@@ -170,6 +176,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     calendar.innerHTML = cells.join('');
+
+    const previousButton = document.getElementById('calendarPreviousButton');
+    const todayButton = document.getElementById('calendarTodayButton');
+
+    if (previousButton) {
+      previousButton.disabled = calendarWeekOffset === 0;
+    }
+
+    if (todayButton) {
+      todayButton.disabled = calendarWeekOffset === 0;
+    }
   }
 
   function getLessonItemKey(lesson) {
@@ -334,6 +351,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  document
+    .getElementById('calendarPreviousButton')
+    ?.addEventListener('click', () => {
+      calendarWeekOffset = Math.max(0, calendarWeekOffset - 1);
+      renderTwoWeekCalendar();
+    });
+
+  document
+    .getElementById('calendarTodayButton')
+    ?.addEventListener('click', () => {
+      calendarWeekOffset = 0;
+      renderTwoWeekCalendar();
+    });
+
+  document
+    .getElementById('calendarNextButton')
+    ?.addEventListener('click', () => {
+      calendarWeekOffset += 1;
+      renderTwoWeekCalendar();
+    });
+
   try {
     const { member } = await portal.loadCurrentMember();
     const total = Number(member.total_lessons || 0);
@@ -344,14 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       member,
       Math.max(remaining, 100)
     );
-    const { start: calendarStart, end: calendarEnd } = getTwoWeekPeriod();
-    const calendarStartKey = formatDateKey(calendarStart);
-    const calendarEndKey = formatDateKey(calendarEnd);
-
-    allUpcomingLessons = upcomingLessonPool.filter(
-      (lesson) =>
-        lesson.date >= calendarStartKey && lesson.date <= calendarEndKey
-    );
+    allUpcomingLessons = upcomingLessonPool;
     allCompletedLessons = await portal.getCompletedLessons(member, 100);
 
     const previewCompletedLessons = allCompletedLessons.slice(0, 2);
@@ -390,7 +421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       progressFill.style.width = `${Math.min(progressRate, 100)}%`;
     }
 
-    renderTwoWeekCalendar(allUpcomingLessons);
+    renderTwoWeekCalendar();
 
     const historyList = document.querySelector('.lesson-history-list');
 

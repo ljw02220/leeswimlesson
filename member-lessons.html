@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>내 수업</title>
-    <link rel="stylesheet" href="member-lessons.css?v=20260917-two-week-calendar" />
+    <link
+      rel="stylesheet"
+      href="member-lessons.css?v=20260917-calendar-navigation"
+    />
   </head>
 
   <body class="member-page">
@@ -86,7 +89,7 @@
       <section class="member-card lesson-progress-card">
         <div class="lesson-progress-header">
           <div>
-            <span> 전체 수업 진행률 </span>
+            <span> 개인레슨 진행률 </span>
 
             <strong> 50% </strong>
           </div>
@@ -108,7 +111,38 @@
             <h2>2주 수업 일정</h2>
           </div>
 
-          <span id="twoWeekRange" class="lesson-calendar-range"></span>
+          <div class="lesson-calendar-navigation">
+            <button
+              type="button"
+              id="calendarPreviousButton"
+              class="lesson-calendar-nav-button"
+              aria-label="이전 주"
+              title="이전 주"
+              disabled
+            >
+              <i data-lucide="chevron-left"></i>
+            </button>
+
+            <button
+              type="button"
+              id="calendarTodayButton"
+              class="lesson-calendar-today-button"
+            >
+              오늘
+            </button>
+
+            <span id="twoWeekRange" class="lesson-calendar-range"></span>
+
+            <button
+              type="button"
+              id="calendarNextButton"
+              class="lesson-calendar-nav-button"
+              aria-label="다음 주"
+              title="다음 주"
+            >
+              <i data-lucide="chevron-right"></i>
+            </button>
+          </div>
         </div>
 
         <div class="lesson-calendar-weekdays" aria-hidden="true">
@@ -210,7 +244,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="member-shared.js?v=20260916-lesson-records"></script>
-    <script src="member-lessons.js?v=20260917-two-week-calendar"></script>
+    <script src="member-lessons.js?v=20260917-calendar-navigation"></script>
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {
