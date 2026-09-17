@@ -430,6 +430,17 @@ async function loadLessonRecordState() {
 
       if (schedule) {
         lessonKey = `${row.lesson_date}_personal_${schedule.id}_${time}`;
+        recordedPersonalLessons[lessonKey] = {
+          date: row.lesson_date,
+          id: schedule.id,
+          memberId: schedule.memberId,
+          memberIds:
+            schedule.memberIds || [schedule.memberId].filter(Boolean),
+          time,
+          title: schedule.name,
+          type: 'personal',
+          source: 'personal',
+        };
       }
     }
 
@@ -480,6 +491,8 @@ let cancelledLessons = getStorageData('cancelledLessons', {});
 let addedLessons = getStorageData('addedLessons', []);
 
 let lessonFeedback = getStorageData('lessonFeedback', {});
+
+let recordedPersonalLessons = {};
 
 /* ==================================================
   7. 공휴일
@@ -655,6 +668,19 @@ function createPersonalLessonsByDate(holidaysByDate) {
         source: 'personal',
       });
     });
+  });
+
+  Object.entries(recordedPersonalLessons).forEach(([lessonKey, lesson]) => {
+    const lessonsForDate = personalLessonsByDate[lesson.date] || [];
+    const alreadyIncluded = lessonsForDate.some(
+      (item) => getLessonKey(lesson.date, item) === lessonKey
+    );
+
+    if (!alreadyIncluded) {
+      lessonsForDate.push(lesson);
+    }
+
+    personalLessonsByDate[lesson.date] = lessonsForDate;
   });
 
   return personalLessonsByDate;
