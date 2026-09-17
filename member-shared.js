@@ -972,6 +972,7 @@
     formatMoney,
     formatShortDate,
     getCompletedLessons,
+    getHolidayName,
     getRemainingLessons,
     getThisMonthCompletedCount,
     getUpcomingLessons,

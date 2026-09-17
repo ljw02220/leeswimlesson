@@ -627,6 +627,14 @@ button {
   box-shadow: inset 0 0 0 2px var(--blue);
 }
 
+.lesson-calendar-day.holiday:not(.today) {
+  background: #fffafa;
+}
+
+.lesson-calendar-day.holiday .calendar-date-number {
+  color: #d64141;
+}
+
 .calendar-date-number {
   display: flex;
   align-items: center;

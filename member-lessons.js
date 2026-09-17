@@ -145,19 +145,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       date.setDate(start.getDate() + index);
 
       const dateKey = formatDateKey(date);
-      const dayLessons = lessonsByDate.get(dateKey) || [];
+      const holidayName = portal.getHolidayName(dateKey);
+      const dayLessons = (lessonsByDate.get(dateKey) || []).filter(
+        (lesson) => lesson.status !== 'holiday'
+      );
       const isPast = dateKey < todayKey;
       const isToday = dateKey === todayKey;
       const dayClass = date.getDay() === 0 ? ' sunday' : date.getDay() === 6 ? ' saturday' : '';
-      const stateClass = `${isPast ? ' past' : ''}${isToday ? ' today' : ''}`;
-      const events = dayLessons
+      const stateClass = `${isPast ? ' past' : ''}${isToday ? ' today' : ''}${
+        holidayName ? ' holiday' : ''
+      }`;
+      const holidayEvent = holidayName
+        ? `<span class="calendar-lesson holiday">${holidayName}</span>`
+        : '';
+      const lessonEvents = dayLessons
         .map((lesson) => {
-          if (lesson.status === 'holiday') {
-            return `<span class="calendar-lesson holiday">${
-              lesson.holidayName || '휴일'
-            }</span>`;
-          }
-
           return `
             <span class="calendar-lesson scheduled">
               <strong>${portal.formatLessonTime(lesson.time)}</strong>
@@ -170,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       cells.push(`
         <article class="lesson-calendar-day${dayClass}${stateClass}">
           <span class="calendar-date-number">${date.getDate()}</span>
-          <div class="calendar-day-lessons">${events}</div>
+          <div class="calendar-day-lessons">${holidayEvent}${lessonEvents}</div>
         </article>
       `);
     }
