@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>내 수업</title>
-    <link rel="stylesheet" href="member-lessons.css?v=20260916-note-accordion" />
+    <link rel="stylesheet" href="member-lessons.css?v=20260917-two-week-calendar" />
   </head>
 
   <body class="member-page">
@@ -39,7 +39,7 @@
 
           <h1>내 수업</h1>
 
-          <p>예정된 수업과 지난 수업 내용을 확인하세요.</p>
+          <p>앞으로 2주 일정과 지난 수업 내용을 확인하세요.</p>
         </div>
 
         <div class="member-profile-mini">
@@ -99,30 +99,30 @@
         </div>
       </section>
 
-      <!-- 예정된 수업 -->
+      <!-- 2주 수업 달력 -->
       <section class="member-card">
         <div class="member-card-header">
           <div class="member-card-title">
             <i data-lucide="calendar-check"></i>
 
-            <h2>예정된 수업</h2>
+            <h2>2주 수업 일정</h2>
           </div>
 
-          <div class="lesson-header-actions">
-            <span class="lesson-count"> 0건 </span>
-
-            <button
-              type="button"
-              class="lesson-view-all-button"
-              data-lesson-modal-open="scheduled"
-            >
-              전체보기
-            </button>
-          </div>
+          <span id="twoWeekRange" class="lesson-calendar-range"></span>
         </div>
 
-        <div id="scheduledLessonList" class="lesson-detail-list">
-          <p class="member-empty">예정된 수업을 불러오는 중입니다.</p>
+        <div class="lesson-calendar-weekdays" aria-hidden="true">
+          <span class="sunday">일</span>
+          <span>월</span>
+          <span>화</span>
+          <span>수</span>
+          <span>목</span>
+          <span>금</span>
+          <span class="saturday">토</span>
+        </div>
+
+        <div id="twoWeekCalendar" class="lesson-calendar-grid">
+          <p class="member-empty">수업 일정을 불러오는 중입니다.</p>
         </div>
       </section>
 
@@ -210,7 +210,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="member-shared.js?v=20260916-lesson-records"></script>
-    <script src="member-lessons.js?v=20260916-note-accordion"></script>
+    <script src="member-lessons.js?v=20260917-two-week-calendar"></script>
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {

@@ -501,6 +501,141 @@ button {
   cursor: not-allowed;
 }
 
+.lesson-calendar-range {
+  color: var(--text-soft);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.lesson-calendar-weekdays,
+.lesson-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.lesson-calendar-weekdays {
+  margin-bottom: 5px;
+}
+
+.lesson-calendar-weekdays span {
+  color: #7f8da0;
+
+  font-size: 9px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.lesson-calendar-weekdays .sunday,
+.lesson-calendar-day.sunday .calendar-date-number {
+  color: #df5656;
+}
+
+.lesson-calendar-weekdays .saturday,
+.lesson-calendar-day.saturday .calendar-date-number {
+  color: var(--blue);
+}
+
+.lesson-calendar-grid {
+  overflow: hidden;
+
+  border: 1px solid #dde7f1;
+  border-radius: 12px;
+
+  background: #dde7f1;
+
+  gap: 1px;
+}
+
+.lesson-calendar-grid > .member-empty {
+  grid-column: 1 / -1;
+
+  border-radius: 0;
+}
+
+.lesson-calendar-day {
+  min-width: 0;
+  min-height: 86px;
+  padding: 6px 4px;
+
+  background: #ffffff;
+}
+
+.lesson-calendar-day.past {
+  background: #f7f9fc;
+}
+
+.lesson-calendar-day.today {
+  box-shadow: inset 0 0 0 2px var(--blue);
+}
+
+.calendar-date-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 20px;
+  height: 20px;
+  margin: 0 auto 4px;
+
+  border-radius: 50%;
+
+  color: var(--text);
+
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.lesson-calendar-day.today .calendar-date-number {
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.calendar-day-lessons {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.calendar-lesson {
+  display: block;
+  min-width: 0;
+  padding: 4px 3px;
+
+  overflow: hidden;
+
+  border-radius: 5px;
+
+  font-size: 7px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.calendar-lesson.scheduled {
+  background: #eaf3ff;
+  color: var(--blue-strong);
+}
+
+.calendar-lesson.holiday {
+  background: #ffe8e8;
+  color: #d64141;
+
+  font-weight: 800;
+}
+
+.calendar-lesson strong,
+.calendar-lesson small {
+  display: block;
+  overflow: hidden;
+
+  font-size: inherit;
+  font-weight: 800;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 /* ==================================================
   10. 예정된 수업
 ================================================== */

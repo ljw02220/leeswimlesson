@@ -85,6 +85,93 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
+  function formatDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function getTwoWeekPeriod() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay());
+
+    const end = new Date(start);
+    end.setDate(start.getDate() + 13);
+
+    return { today, start, end };
+  }
+
+  function renderTwoWeekCalendar(lessons) {
+    const calendar = document.getElementById('twoWeekCalendar');
+    const range = document.getElementById('twoWeekRange');
+
+    if (!calendar) {
+      return;
+    }
+
+    const { today, start, end } = getTwoWeekPeriod();
+    const todayKey = formatDateKey(today);
+    const lessonsByDate = lessons.reduce((map, lesson) => {
+      if (!map.has(lesson.date)) {
+        map.set(lesson.date, []);
+      }
+
+      map.get(lesson.date).push(lesson);
+
+      return map;
+    }, new Map());
+
+    if (range) {
+      range.textContent = `${start.getMonth() + 1}.${start.getDate()} - ${
+        end.getMonth() + 1
+      }.${end.getDate()}`;
+    }
+
+    const cells = [];
+
+    for (let index = 0; index < 14; index += 1) {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+
+      const dateKey = formatDateKey(date);
+      const dayLessons = lessonsByDate.get(dateKey) || [];
+      const isPast = dateKey < todayKey;
+      const isToday = dateKey === todayKey;
+      const dayClass = date.getDay() === 0 ? ' sunday' : date.getDay() === 6 ? ' saturday' : '';
+      const stateClass = `${isPast ? ' past' : ''}${isToday ? ' today' : ''}`;
+      const events = dayLessons
+        .map((lesson) => {
+          if (lesson.status === 'holiday') {
+            return `<span class="calendar-lesson holiday">${
+              lesson.holidayName || '휴일'
+            }</span>`;
+          }
+
+          return `
+            <span class="calendar-lesson scheduled">
+              <strong>${portal.formatLessonTime(lesson.time)}</strong>
+              <small>${formatLessonTitle(lesson.title)}</small>
+            </span>
+          `;
+        })
+        .join('');
+
+      cells.push(`
+        <article class="lesson-calendar-day${dayClass}${stateClass}">
+          <span class="calendar-date-number">${date.getDate()}</span>
+          <div class="calendar-day-lessons">${events}</div>
+        </article>
+      `);
+    }
+
+    calendar.innerHTML = cells.join('');
+  }
+
   function getLessonItemKey(lesson) {
     return [lesson.id, lesson.date, lesson.time, lesson.title]
       .filter(Boolean)
@@ -253,13 +340,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const used = Number(member.used_lessons || 0);
     const remaining = portal.getRemainingLessons(member);
     const progressRate = total > 0 ? Math.round((used / total) * 100) : 0;
-    allUpcomingLessons = portal.getUpcomingLessonsWithHolidays(
+    const upcomingLessonPool = portal.getUpcomingLessonsWithHolidays(
       member,
-      Math.max(remaining, 12)
+      Math.max(remaining, 100)
+    );
+    const { start: calendarStart, end: calendarEnd } = getTwoWeekPeriod();
+    const calendarStartKey = formatDateKey(calendarStart);
+    const calendarEndKey = formatDateKey(calendarEnd);
+
+    allUpcomingLessons = upcomingLessonPool.filter(
+      (lesson) =>
+        lesson.date >= calendarStartKey && lesson.date <= calendarEndKey
     );
     allCompletedLessons = await portal.getCompletedLessons(member, 100);
 
-    const previewUpcomingLessons = allUpcomingLessons.slice(0, 2);
     const previewCompletedLessons = allCompletedLessons.slice(0, 2);
     const nextLesson = allUpcomingLessons.find(
       (lesson) => lesson.status === 'scheduled'
@@ -296,26 +390,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       progressFill.style.width = `${Math.min(progressRate, 100)}%`;
     }
 
-    const lessonCount = document.querySelector('.lesson-count');
-
-    if (lessonCount) {
-      const scheduledCount = allUpcomingLessons.filter(
-        (lesson) => lesson.status === 'scheduled'
-      ).length;
-
-      lessonCount.textContent = `${scheduledCount}건`;
-    }
-
-    const scheduledList = document.getElementById('scheduledLessonList');
-
-    renderLessonList(
-      scheduledList,
-      previewUpcomingLessons,
-      renderScheduledLesson,
-      '예정된 수업이 없습니다.'
-    );
-
-    setViewAllButtonState('scheduled', allUpcomingLessons.length > 0);
+    renderTwoWeekCalendar(allUpcomingLessons);
 
     const historyList = document.querySelector('.lesson-history-list');
 
@@ -331,7 +406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('내 수업 정보를 불러오지 못했습니다.', error);
 
     renderEmpty(
-      document.getElementById('scheduledLessonList'),
+      document.getElementById('twoWeekCalendar'),
       '회원 정보를 불러오지 못했습니다.'
     );
   }
