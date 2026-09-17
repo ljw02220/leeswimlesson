@@ -431,6 +431,57 @@ async function loadLessonRecordState() {
   saveStorageData('cancelledLessons', cancelledLessons);
   saveStorageData('lessonFeedback', lessonFeedback);
 
+  const personalRecords = (data || []).filter(
+    (row) => row.lesson_type === 'personal' && row.status === 'completed'
+  );
+  const memberSchedules = personalSchedule.flatMap((schedule) => {
+    return (schedule.memberIds || []).map((memberId) => ({
+      memberId,
+      startDate: schedule.startDate,
+      totalCount: schedule.totalCount,
+    }));
+  });
+
+  await Promise.all(
+    memberSchedules.map(async (schedule) => {
+      const memberRecords = personalRecords.filter((record) => {
+        return (
+          String(record.member_id) === String(schedule.memberId) &&
+          (!schedule.startDate || record.lesson_date >= schedule.startDate)
+        );
+      });
+
+      if (memberRecords.length === 0) {
+        return;
+      }
+
+      const completedKeys = new Set(
+        memberRecords.map(
+          (record) =>
+            `${record.lesson_date}_${normalizeTimeValue(record.lesson_time)}`
+        )
+      );
+      const usedLessons = schedule.totalCount > 0
+        ? Math.min(completedKeys.size, schedule.totalCount)
+        : completedKeys.size;
+      const latestLessonDate = memberRecords
+        .map((record) => record.lesson_date)
+        .sort()
+        .at(-1);
+      const { error: updateError } = await window.swimDb.client
+        .from('members')
+        .update({
+          used_lessons: usedLessons,
+          last_lesson_date: latestLessonDate,
+        })
+        .eq('id', schedule.memberId);
+
+      if (updateError) {
+        throw updateError;
+      }
+    })
+  );
+
   lessonRecordStateLoaded = true;
 }
 
@@ -1725,7 +1776,9 @@ if (confirmDetailBtn && detailStatus) {
 
       console.error('회원 진행 횟수를 변경하지 못했습니다.', error);
 
-      alert('회원 진행 횟수 변경 중 오류가 발생했습니다.');
+      alert(
+        `회원 진행 횟수 변경 중 오류가 발생했습니다.\n${getErrorText(error)}`
+      );
     }
   });
 }
@@ -1761,7 +1814,9 @@ if (deleteLessonBtn) {
     } catch (error) {
       console.error('회원 진행 횟수를 되돌리지 못했습니다.', error);
 
-      alert('회원 진행 횟수 변경 중 오류가 발생했습니다.');
+      alert(
+        `회원 진행 횟수 변경 중 오류가 발생했습니다.\n${getErrorText(error)}`
+      );
 
       return;
     }
@@ -1826,7 +1881,9 @@ async function toggleComplete(event, lessonKey) {
 
     console.error('회원 진행 횟수를 변경하지 못했습니다.', error);
 
-    alert('회원 진행 횟수 변경 중 오류가 발생했습니다.');
+    alert(
+      `회원 진행 횟수 변경 중 오류가 발생했습니다.\n${getErrorText(error)}`
+    );
   }
 }
 
