@@ -226,18 +226,26 @@ function getMemberLessonDayIndexes(days) {
 function mapDatabaseMemberToPersonalSchedule(member) {
   const dayIndexes = getMemberLessonDayIndexes(member.days);
   const time = normalizeTimeValue(member.lesson_time);
-  const totalCount = Number(member.total_lessons || 0) || 8;
+  const registeredCount = Number(member.total_lessons || 0) || 8;
+  const usedCount = Math.min(
+    Number(member.used_lessons || 0),
+    registeredCount
+  );
+  const remainingCount = Math.max(registeredCount - usedCount, 0);
+  const hasProgress = usedCount > 0;
   const startDate =
-    member.lesson_start_date ||
+    (hasProgress && member.last_lesson_date
+      ? getNextDateKey(member.last_lesson_date)
+      : member.lesson_start_date) ||
     member.payment_date ||
-    member.last_lesson_date ||
     getDateKey(today);
+  const totalCount = hasProgress ? remainingCount : registeredCount;
 
   if (!member.id || !member.name || dayIndexes.length === 0 || !time) {
     return null;
   }
 
-  if (member.status === '종료') {
+  if (member.status === '종료' || totalCount <= 0) {
     return null;
   }
 
@@ -431,57 +439,6 @@ async function loadLessonRecordState() {
   saveStorageData('cancelledLessons', cancelledLessons);
   saveStorageData('lessonFeedback', lessonFeedback);
 
-  const personalRecords = (data || []).filter(
-    (row) => row.lesson_type === 'personal' && row.status === 'completed'
-  );
-  const memberSchedules = personalSchedule.flatMap((schedule) => {
-    return (schedule.memberIds || []).map((memberId) => ({
-      memberId,
-      startDate: schedule.startDate,
-      totalCount: schedule.totalCount,
-    }));
-  });
-
-  await Promise.all(
-    memberSchedules.map(async (schedule) => {
-      const memberRecords = personalRecords.filter((record) => {
-        return (
-          String(record.member_id) === String(schedule.memberId) &&
-          (!schedule.startDate || record.lesson_date >= schedule.startDate)
-        );
-      });
-
-      if (memberRecords.length === 0) {
-        return;
-      }
-
-      const completedKeys = new Set(
-        memberRecords.map(
-          (record) =>
-            `${record.lesson_date}_${normalizeTimeValue(record.lesson_time)}`
-        )
-      );
-      const usedLessons = schedule.totalCount > 0
-        ? Math.min(completedKeys.size, schedule.totalCount)
-        : completedKeys.size;
-      const latestLessonDate = memberRecords
-        .map((record) => record.lesson_date)
-        .sort()
-        .at(-1);
-      const { error: updateError } = await window.swimDb.client
-        .from('members')
-        .update({
-          used_lessons: usedLessons,
-          last_lesson_date: latestLessonDate,
-        })
-        .eq('id', schedule.memberId);
-
-      if (updateError) {
-        throw updateError;
-      }
-    })
-  );
-
   lessonRecordStateLoaded = true;
 }
 
@@ -618,6 +575,14 @@ function getDateKey(date) {
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
+}
+
+function getNextDateKey(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00`);
+
+  date.setDate(date.getDate() + 1);
+
+  return getDateKey(date);
 }
 
 /* ==================================================
@@ -877,7 +842,7 @@ async function findDatabaseMembersForLesson(lesson) {
   return data || [];
 }
 
-async function updateDatabaseMemberLessonCounts(lesson) {
+async function updateDatabaseMemberLessonCounts(lesson, change) {
   const matchedMembers = await findDatabaseMembersForLesson(lesson);
 
   if (matchedMembers.length === 0) {
@@ -886,41 +851,29 @@ async function updateDatabaseMemberLessonCounts(lesson) {
 
   await Promise.all(
     matchedMembers.map(async (member) => {
-      let query = window.swimDb.client
-        .from('lessons')
-        .select('lesson_date, lesson_time')
-        .eq('member_id', member.id)
-        .eq('lesson_type', 'personal')
-        .eq('status', 'completed');
-
-      if (member.lesson_start_date) {
-        query = query.gte('lesson_date', member.lesson_start_date);
-      }
-
-      const { data: completedRecords, error: countError } = await query;
-
-      if (countError) {
-        throw countError;
-      }
-
-      const completedKeys = new Set(
-        (completedRecords || []).map(
-          (record) =>
-            `${record.lesson_date}_${normalizeTimeValue(record.lesson_time)}`
-        )
-      );
-      const totalLessons = Number(member.total_lessons || 0);
-      const usedLessons = totalLessons > 0
-        ? Math.min(completedKeys.size, totalLessons)
-        : completedKeys.size;
-      const latestLessonDate = (completedRecords || [])
-        .map((record) => record.lesson_date)
-        .sort()
-        .at(-1) || null;
       const updateData = {
-        used_lessons: usedLessons,
-        last_lesson_date: latestLessonDate,
+        used_lessons: getNextUsedLessonCount(member, change),
       };
+
+      if (change > 0 && lesson.date) {
+        updateData.last_lesson_date = lesson.date;
+      } else if (change < 0) {
+        const { data: latestRecords, error: latestError } =
+          await window.swimDb.client
+            .from('lessons')
+            .select('lesson_date')
+            .eq('member_id', member.id)
+            .eq('lesson_type', 'personal')
+            .eq('status', 'completed')
+            .order('lesson_date', { ascending: false })
+            .limit(1);
+
+        if (latestError) {
+          throw latestError;
+        }
+
+        updateData.last_lesson_date = latestRecords?.[0]?.lesson_date || null;
+      }
 
       return window.swimDb.client
         .from('members')
@@ -988,7 +941,7 @@ async function syncPersonalLessonCount(lesson, change) {
   }
 
   if (hasSupabaseConnection()) {
-    await updateDatabaseMemberLessonCounts(lesson);
+    await updateDatabaseMemberLessonCounts(lesson, change);
 
     return;
   }

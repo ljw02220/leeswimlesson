@@ -517,33 +517,47 @@
       .filter((day) => Number.isInteger(day));
   }
 
-  function isCompletedPersonalLesson(member, dateKey, lessonIndex) {
-    if (Array.isArray(member.completed_lesson_keys)) {
-      const lessonKey = `${dateKey}_${formatTime(member.lesson_time)}`;
+  function getNextDateKey(dateKey) {
+    const date = new Date(`${dateKey}T00:00:00`);
 
-      return member.completed_lesson_keys.includes(lessonKey);
-    }
+    date.setDate(date.getDate() + 1);
 
-    return (
-      dateKey < getTodayKey() &&
-      lessonIndex < Number(member.used_lessons || 0)
+    return toDateKey(date);
+  }
+
+  function getPersonalScheduleWindow(member) {
+    const totalLessons = Number(member.total_lessons || 0);
+    const usedLessons = Math.min(
+      Number(member.used_lessons || 0),
+      totalLessons
     );
+    const remainingLessons = Math.max(totalLessons - usedLessons, 0);
+    const hasProgress = usedLessons > 0;
+    const startKey =
+      (hasProgress && member.last_lesson_date
+        ? getNextDateKey(member.last_lesson_date)
+        : member.lesson_start_date) ||
+      member.payment_date ||
+      getTodayKey();
+
+    return {
+      count: hasProgress ? remainingLessons : totalLessons,
+      startKey,
+    };
   }
 
   function createLessonDatePlan(member) {
-    const totalLessons = Number(member.total_lessons || 0);
+    const scheduleWindow = getPersonalScheduleWindow(member);
     const dayIndexes = getLessonDayIndexes(member);
-    const startKey =
-      member.lesson_start_date || member.payment_date || getTodayKey();
 
-    if (totalLessons <= 0 || dayIndexes.length === 0) {
+    if (scheduleWindow.count <= 0 || dayIndexes.length === 0) {
       return [];
     }
 
     const dates = [];
-    const currentDate = new Date(`${startKey}T00:00:00`);
+    const currentDate = new Date(`${scheduleWindow.startKey}T00:00:00`);
 
-    while (dates.length < totalLessons) {
+    while (dates.length < scheduleWindow.count) {
       const dateKey = toDateKey(currentDate);
 
       if (
@@ -557,35 +571,31 @@
     }
 
     return dates.map((dateKey, index) => {
-      const isCompleted = isCompletedPersonalLesson(member, dateKey, index);
-
       return {
         id: `${member.id}-${dateKey}-${member.lesson_time || index}`,
         date: dateKey,
         time: member.lesson_time,
-        status: isCompleted ? 'completed' : 'scheduled',
+        status: 'scheduled',
         title: member.lesson_format || '개인레슨',
-        memo: isCompleted ? '' : '예정된 개인레슨입니다.',
+        memo: '예정된 개인레슨입니다.',
       };
     });
   }
 
   function createLessonSchedule(member) {
-    const totalLessons = Number(member.total_lessons || 0);
+    const scheduleWindow = getPersonalScheduleWindow(member);
     const dayIndexes = getLessonDayIndexes(member);
-    const startKey =
-      member.lesson_start_date || member.payment_date || getTodayKey();
 
-    if (totalLessons <= 0 || dayIndexes.length === 0) {
+    if (scheduleWindow.count <= 0 || dayIndexes.length === 0) {
       return [];
     }
 
     const lessons = [];
-    const currentDate = new Date(`${startKey}T00:00:00`);
+    const currentDate = new Date(`${scheduleWindow.startKey}T00:00:00`);
     let lessonIndex = 0;
     let guard = 0;
 
-    while (lessonIndex < totalLessons && guard < 700) {
+    while (lessonIndex < scheduleWindow.count && guard < 700) {
       const dateKey = toDateKey(currentDate);
       const holidayName = getHolidayName(dateKey);
 
@@ -601,19 +611,13 @@
             holidayName,
           });
         } else {
-          const isCompleted = isCompletedPersonalLesson(
-            member,
-            dateKey,
-            lessonIndex
-          );
-
           lessons.push({
             id: `${member.id}-${dateKey}-${member.lesson_time || lessonIndex}`,
             date: dateKey,
             time: member.lesson_time,
-            status: isCompleted ? 'completed' : 'scheduled',
+            status: 'scheduled',
             title: member.lesson_format || '개인레슨',
-            memo: isCompleted ? '' : '예정된 개인레슨입니다.',
+            memo: '예정된 개인레슨입니다.',
           });
 
           lessonIndex += 1;
@@ -900,10 +904,13 @@
       today.getMonth() + 1
     ).padStart(2, '0')}`;
 
-    return createLessonDatePlan(member).filter(
-      (lesson) =>
-        lesson.status === 'completed' && lesson.date.startsWith(monthPrefix)
-    ).length;
+    if (Array.isArray(member.completed_lesson_keys)) {
+      return member.completed_lesson_keys.filter((key) =>
+        key.startsWith(monthPrefix)
+      ).length;
+    }
+
+    return 0;
   }
 
   async function updateMemberPayment(member, paymentData) {
