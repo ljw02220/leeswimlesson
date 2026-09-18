@@ -25,13 +25,24 @@ create unique index if not exists makeup_requests_active_slot_idx
 on public.makeup_requests(slot_id)
 where status in ('pending', 'approved');
 
+delete from public.makeup_slots as slot
+where extract(dow from slot.slot_date)::integer = 5
+  and slot.slot_time = '19:00'::time
+  and slot.slot_date >= current_date
+  and not exists (
+    select 1
+    from public.makeup_requests as request
+    where request.slot_id = slot.id
+      and request.status in ('pending', 'approved')
+  );
+
 with recurring_times(day_of_week, slot_time) as (
   values
     (0, '12:00'::time), (0, '13:00'::time),
     (2, '14:00'::time), (2, '15:00'::time),
     (3, '15:00'::time),
     (4, '14:00'::time), (4, '15:00'::time),
-    (5, '15:00'::time), (5, '19:00'::time),
+    (5, '07:00'::time), (5, '15:00'::time),
     (6, '11:00'::time), (6, '12:00'::time), (6, '13:00'::time)
 )
 insert into public.makeup_slots (slot_date, slot_time)
