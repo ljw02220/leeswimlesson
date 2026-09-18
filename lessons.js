@@ -699,6 +699,10 @@ function getLessonKey(dateKey, item) {
     return `${dateKey}_personal_` + `${item.id}_${item.time}`;
   }
 
+  if (item.type === 'makeup') {
+    return `${dateKey}_makeup_` + `${item.id}_${item.time}`;
+  }
+
   return `${dateKey}_group_` + `${item.time}`;
 }
 
@@ -1198,6 +1202,12 @@ function getDaySchedule(date, dateKey, holidayName, personalLessonsByDate) {
     }
   });
 
+  (window.makeupCalendarLessons || []).forEach((item) => {
+    if (item.date === dateKey) {
+      daySchedule.push(item);
+    }
+  });
+
   daySchedule.sort((a, b) => a.time.localeCompare(b.time));
 
   return daySchedule;
@@ -1570,6 +1580,14 @@ function renderTodayLessons(schedule, targetDate = today, holidayName = '') {
 ================================================== */
 
 function findLesson(dateKey, lessonKey) {
+  const makeupLesson = (window.makeupCalendarLessons || []).find(
+    (item) => item.date === dateKey && getLessonKey(dateKey, item) === lessonKey
+  );
+
+  if (makeupLesson) {
+    return makeupLesson;
+  }
+
   const addedLesson = addedLessons.find(
     (item) => getLessonKey(dateKey, item) === lessonKey
   );
@@ -1631,6 +1649,11 @@ function openLessonDetail(dateKey, lessonKey) {
   if (!lesson) {
     console.error('수업 정보를 찾지 못했습니다.');
 
+    return;
+  }
+
+  if (lesson.source === 'makeup-request') {
+    window.openMakeupManagement?.();
     return;
   }
 

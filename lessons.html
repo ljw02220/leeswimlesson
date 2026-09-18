@@ -6,7 +6,7 @@
 
     <title>수업관리</title>
 
-    <link rel="stylesheet" href="common.css?v=20260917-lesson-colors" />
+    <link rel="stylesheet" href="common.css?v=20260918-makeup" />
   </head>
 
   <body>
@@ -30,6 +30,10 @@
 
           <h1>수업관리</h1>
         </div>
+
+        <button type="button" class="primary-action" id="makeupManageButton">
+          보강 관리
+        </button>
       </section>
 
       <section class="schedule-panel">
@@ -157,6 +161,26 @@
       </div>
     </div>
 
+    <div class="lesson-modal" id="makeup-manage-modal" aria-hidden="true">
+      <div class="lesson-modal-box makeup-manage-box" role="dialog" aria-modal="true">
+        <div class="lesson-modal-header">
+          <h3>보강 관리</h3>
+          <button type="button" id="close-makeup-manage" aria-label="닫기">×</button>
+        </div>
+
+        <form id="makeup-slot-form" class="lesson-form makeup-slot-form">
+          <label for="makeup-slot-date">가능 날짜</label>
+          <input type="date" id="makeup-slot-date" required />
+          <label for="makeup-slot-time">가능 시간</label>
+          <input type="time" id="makeup-slot-time" required />
+          <button type="submit">가능 시간 등록</button>
+        </form>
+
+        <div id="makeup-admin-message" class="makeup-admin-message"></div>
+        <div id="makeup-request-list" class="makeup-request-list"></div>
+      </div>
+    </div>
+
     <!-- 수업 상세 팝업 -->
     <div class="lesson-modal" id="lesson-detail-modal" aria-hidden="true">
       <div
@@ -248,6 +272,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260913-role-guard"></script>
-    <script src="lessons.js?v=20260918-cancel-save-v2"></script>
+    <script src="lessons.js?v=20260918-makeup"></script>
+    <script src="makeup-admin.js?v=20260918"></script>
   </body>
 </html>

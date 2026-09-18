@@ -6,7 +6,7 @@
 
     <title>회원 홈</title>
 
-    <link rel="stylesheet" href="member-home.css?v=20260917-lesson-colors" />
+    <link rel="stylesheet" href="member-home.css?v=20260918-makeup" />
   </head>
 
   <body class="member-page">
@@ -52,6 +52,21 @@
           </div>
 
           <span> 일반회원 </span>
+        </div>
+      </section>
+
+      <section class="member-card makeup-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="calendar-plus"></i>
+            <h2>보강 신청</h2>
+          </div>
+          <button type="button" id="makeupModalOpen" class="member-card-link member-card-button">
+            신청하기
+          </button>
+        </div>
+        <div id="makeupRequestStatus" class="makeup-member-status">
+          <p class="member-empty">보강 신청 정보를 불러오는 중입니다.</p>
         </div>
       </section>
 
@@ -212,6 +227,16 @@
           <div id="completedLessonModalBody" class="member-modal-body"></div>
         </div>
       </div>
+
+      <div id="makeupModal" class="member-modal-overlay" aria-hidden="true">
+        <div class="member-modal" role="dialog" aria-modal="true">
+          <div class="member-modal-header">
+            <div><span>Make-up</span><h2>보강 가능 시간</h2></div>
+            <button type="button" id="makeupModalClose" class="member-modal-close" aria-label="닫기">×</button>
+          </div>
+          <div id="makeupSlotList" class="member-modal-body"></div>
+        </div>
+      </div>
     </main>
 
     <!-- 하단 메뉴 -->
@@ -248,6 +273,7 @@
     <script src="supabase.js?v=20260911"></script>
     <script src="member-shared.js?v=20260917-fixed-member-session"></script>
     <script src="member-home.js?v=20260918-one-month-upcoming"></script>
+    <script src="makeup-member.js?v=20260918"></script>
 
     <script>
       lucide.createIcons();

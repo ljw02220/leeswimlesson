@@ -11,6 +11,28 @@
   font-family: 'Pretendard', sans-serif;
 }
 
+.makeup-manage-box { max-height: min(760px, 88vh); overflow-y: auto; }
+.makeup-slot-form { border-bottom: 1px solid #e5e7eb; padding-bottom: 20px; }
+.makeup-admin-message { color: #64748b; font-size: 14px; margin: 14px 0; }
+.makeup-admin-message[data-tone='error'] { color: #dc2626; }
+.makeup-request-list { display: grid; gap: 10px; margin-top: 14px; }
+.makeup-admin-item {
+  align-items: center; background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 8px; display: flex; justify-content: space-between; padding: 12px;
+}
+.makeup-admin-item > div:first-child { display: grid; gap: 4px; }
+.makeup-admin-item span, .makeup-admin-item em {
+  color: #64748b; font-size: 13px; font-style: normal;
+}
+.makeup-admin-actions { align-items: center; display: flex; gap: 6px; }
+.makeup-admin-actions button {
+  background: #2563eb; border: 0; border-radius: 6px; color: #fff;
+  cursor: pointer; padding: 7px 10px;
+}
+.makeup-admin-actions button.danger {
+  background: #fff; border: 1px solid #fecaca; color: #dc2626;
+}
+
 body {
   min-height: 100vh;
   padding: 32px 12px;
