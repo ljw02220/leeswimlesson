@@ -31,8 +31,8 @@ with recurring_times(day_of_week, slot_time) as (
     (2, '14:00'::time), (2, '15:00'::time),
     (3, '15:00'::time),
     (4, '14:00'::time), (4, '15:00'::time),
-    (5, '15:00'::time),
-    (6, '12:00'::time), (6, '13:00'::time)
+    (5, '15:00'::time), (5, '19:00'::time),
+    (6, '11:00'::time), (6, '12:00'::time), (6, '13:00'::time)
 )
 insert into public.makeup_slots (slot_date, slot_time)
 select calendar_date::date, recurring_times.slot_time
