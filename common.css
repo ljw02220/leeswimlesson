@@ -13,6 +13,11 @@
 
 .makeup-manage-box { max-height: min(760px, 88vh); overflow-y: auto; }
 .makeup-slot-form { border-bottom: 1px solid #e5e7eb; padding-bottom: 20px; }
+.makeup-weekly-summary {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+  display: grid; gap: 5px; padding: 14px;
+}
+.makeup-weekly-summary span { color: #475569; font-size: 14px; }
 .makeup-admin-message { color: #64748b; font-size: 14px; margin: 14px 0; }
 .makeup-admin-message[data-tone='error'] { color: #dc2626; }
 .makeup-request-list { display: grid; gap: 10px; margin-top: 14px; }

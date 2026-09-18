@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('makeup-manage-modal');
   const list = document.getElementById('makeup-request-list');
   const message = document.getElementById('makeup-admin-message');
-  const form = document.getElementById('makeup-slot-form');
   let slots = [];
   let requests = [];
   let members = [];
@@ -27,6 +26,48 @@ document.addEventListener('DOMContentLoaded', () => {
   function showMessage(text, tone = '') {
     message.textContent = text;
     message.dataset.tone = tone;
+  }
+
+  function toDateKey(date) {
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
+  }
+
+  async function ensureRecurringSlots() {
+    const timesByDay = {
+      0: ['12:00', '13:00'],
+      2: ['14:00', '15:00'],
+      3: ['15:00'],
+      4: ['14:00', '15:00'],
+      5: ['15:00'],
+      6: ['12:00', '13:00'],
+    };
+    const slotsToSave = [];
+    const date = new Date();
+
+    date.setHours(0, 0, 0, 0);
+
+    for (let offset = 0; offset <= 45; offset += 1) {
+      const times = timesByDay[date.getDay()] || [];
+
+      times.forEach((time) => {
+        slotsToSave.push({ slot_date: toDateKey(date), slot_time: time });
+      });
+
+      date.setDate(date.getDate() + 1);
+    }
+
+    if (slotsToSave.length > 0) {
+      const { error } = await client.from('makeup_slots').upsert(slotsToSave, {
+        onConflict: 'slot_date,slot_time',
+        ignoreDuplicates: true,
+      });
+
+      if (error) throw error;
+    }
   }
 
   function render() {
@@ -99,6 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadData() {
     if (!client) return;
 
+    try {
+      await ensureRecurringSlots();
+    } catch (error) {
+      showMessage(
+        error.code === 'PGRST205'
+          ? 'Supabase SQL Editor에서 supabase-makeup-migration.sql을 먼저 실행해주세요.'
+          : `보강 시간을 준비하지 못했습니다. ${error.message}`,
+        'error'
+      );
+      return;
+    }
+
     const [slotResult, requestResult, memberResult] = await Promise.all([
       client.from('makeup_slots').select('*').order('slot_date').order('slot_time'),
       client.from('makeup_requests').select('*').order('requested_at'),
@@ -139,27 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('close-makeup-manage')?.addEventListener('click', closeModal);
   modal?.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
-  });
-
-  form?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const slotDate = document.getElementById('makeup-slot-date').value;
-    const slotTime = document.getElementById('makeup-slot-time').value;
-    const { error } = await client.from('makeup_slots').insert({
-      slot_date: slotDate,
-      slot_time: slotTime,
-    });
-
-    if (error) {
-      showMessage(
-        error.code === '23505' ? '이미 등록된 날짜와 시간입니다.' : error.message,
-        'error'
-      );
-      return;
-    }
-
-    form.reset();
-    await loadData();
   });
 
   list?.addEventListener('click', async (event) => {

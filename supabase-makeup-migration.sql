@@ -25,6 +25,26 @@ create unique index if not exists makeup_requests_active_slot_idx
 on public.makeup_requests(slot_id)
 where status in ('pending', 'approved');
 
+with recurring_times(day_of_week, slot_time) as (
+  values
+    (0, '12:00'::time), (0, '13:00'::time),
+    (2, '14:00'::time), (2, '15:00'::time),
+    (3, '15:00'::time),
+    (4, '14:00'::time), (4, '15:00'::time),
+    (5, '15:00'::time),
+    (6, '12:00'::time), (6, '13:00'::time)
+)
+insert into public.makeup_slots (slot_date, slot_time)
+select calendar_date::date, recurring_times.slot_time
+from generate_series(
+  current_date,
+  current_date + interval '45 days',
+  interval '1 day'
+) as calendar_date
+join recurring_times
+  on extract(dow from calendar_date)::integer = recurring_times.day_of_week
+on conflict (slot_date, slot_time) do nothing;
+
 alter table public.makeup_slots enable row level security;
 alter table public.makeup_requests enable row level security;
 

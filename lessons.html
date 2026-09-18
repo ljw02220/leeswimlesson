@@ -168,13 +168,12 @@
           <button type="button" id="close-makeup-manage" aria-label="닫기">×</button>
         </div>
 
-        <form id="makeup-slot-form" class="lesson-form makeup-slot-form">
-          <label for="makeup-slot-date">가능 날짜</label>
-          <input type="date" id="makeup-slot-date" required />
-          <label for="makeup-slot-time">가능 시간</label>
-          <input type="time" id="makeup-slot-time" required />
-          <button type="submit">가능 시간 등록</button>
-        </form>
+        <div class="makeup-weekly-summary">
+          <strong>보강 가능 시간</strong>
+          <span>화·목 14:00, 15:00</span>
+          <span>수·금 15:00</span>
+          <span>토·일 12:00, 13:00</span>
+        </div>
 
         <div id="makeup-admin-message" class="makeup-admin-message"></div>
         <div id="makeup-request-list" class="makeup-request-list"></div>
@@ -273,6 +272,6 @@
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260913-role-guard"></script>
     <script src="lessons.js?v=20260918-makeup"></script>
-    <script src="makeup-admin.js?v=20260918"></script>
+    <script src="makeup-admin.js?v=20260918-recurring"></script>
   </body>
 </html>

@@ -21,12 +21,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function loadMakeupData() {
     const today = new Date().toISOString().slice(0, 10);
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
+    const endDateKey = [
+      endDate.getFullYear(),
+      String(endDate.getMonth() + 1).padStart(2, '0'),
+      String(endDate.getDate()).padStart(2, '0'),
+    ].join('-');
     const [slotResult, requestResult] = await Promise.all([
       client
         .from('makeup_slots')
         .select('*')
         .eq('status', 'open')
         .gte('slot_date', today)
+        .lte('slot_date', endDateKey)
         .order('slot_date')
         .order('slot_time'),
       client
@@ -59,7 +67,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         .map((item) => item.slot_id)
     );
     const availableSlots = (slotResult.data || []).filter(
-      (slot) => !activeSlotIds.has(slot.id)
+      (slot) =>
+        !activeSlotIds.has(slot.id) &&
+        !window.memberPortal.getHolidayName(slot.slot_date)
     );
 
     slotList.innerHTML = availableSlots.length
