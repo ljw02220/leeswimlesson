@@ -40,6 +40,22 @@
 .makeup-option-grid button.selected {
   border-color: #3478f6; background: #3478f6; color: #fff;
 }
+.makeup-weekday-time-list { display: grid; gap: 6px; }
+.makeup-weekday-time-row {
+  align-items: center; display: grid; grid-template-columns: 30px 1fr; gap: 8px;
+}
+.makeup-weekday-time-row > strong {
+  align-items: center; display: flex; justify-content: center; width: 30px; height: 30px;
+  border-radius: 50%; background: #f1f5f9; color: #526276; font-size: 11px;
+}
+.makeup-weekday-time-row > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.makeup-weekday-time-row button {
+  min-width: 58px; min-height: 32px; border: 1px solid #dbe5f0; border-radius: 7px;
+  background: #fff; color: #526276; cursor: pointer; font-size: 11px; font-weight: 800;
+}
+.makeup-weekday-time-row button.selected {
+  border-color: #3478f6; background: #3478f6; color: #fff;
+}
 .makeup-calendar-header {
   align-items: center; display: grid; grid-template-columns: 34px 1fr 34px;
   margin-top: 3px; text-align: center;

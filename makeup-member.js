@@ -35,10 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return `${dateText} ${String(slot.slot_time).slice(0, 5)}`;
   }
 
-  function getTimes() {
-    return timesByWeekday[selectedWeekday] || [];
-  }
-
   function renderCalendar() {
     const year = calendarDate.getFullYear();
     const month = calendarDate.getMonth();
@@ -71,25 +67,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderPicker() {
-    if (availableSlots.length === 0) {
-      slotList.innerHTML = '<p class="member-empty">현재 신청 가능한 시간이 없습니다.</p>';
-      return;
-    }
-
-    const times = selectedWeekday === null ? [] : getTimes();
     const selectedSlot = availableSlots.find((slot) => slot.id === selectedSlotId);
     slotList.innerHTML = `
       <section class="makeup-picker-section">
-        <span class="makeup-picker-label">요일</span>
-        <div class="makeup-option-grid weekday">${weekdays.map((day) =>
-          `<button type="button" data-weekday="${day.value}" class="${selectedWeekday === day.value ? 'selected' : ''}">${day.label}</button>`
-        ).join('')}</div>
+        <span class="makeup-picker-label">요일과 시간</span>
+        <div class="makeup-weekday-time-list">${weekdays.map((day) => `
+          <div class="makeup-weekday-time-row">
+            <strong>${day.label}</strong>
+            <div>${(timesByWeekday[day.value] || []).map((time) =>
+              `<button type="button" data-makeup-time data-weekday="${day.value}" data-time="${time}"
+                class="${selectedWeekday === day.value && selectedTime === time ? 'selected' : ''}">${time}</button>`
+            ).join('')}</div>
+          </div>`).join('')}</div>
       </section>
-      ${selectedWeekday === null ? '' : `<section class="makeup-picker-section">
-        <span class="makeup-picker-label">시간</span>
-        <div class="makeup-option-grid time">${times.map((time) =>
-          `<button type="button" data-time="${time}" class="${selectedTime === time ? 'selected' : ''}">${time}</button>`
-        ).join('')}</div></section>`}
       ${selectedTime ? renderCalendar() : ''}
       ${selectedSlot ? `<div class="makeup-selection-confirm"><span>선택한 보강</span>
         <strong>${formatSlot(selectedSlot)}</strong>
@@ -135,14 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     availableSlots = (slotResult.data || []).filter((slot) =>
       !activeSlotIds.has(slot.id) && !window.memberPortal.getHolidayName(slot.slot_date));
 
-    if (availableSlots.length > 0 && selectedWeekday === null) {
-      const firstSlot = availableSlots[0];
-
-      selectedWeekday = new Date(`${firstSlot.slot_date}T00:00:00`).getDay();
-      selectedTime = String(firstSlot.slot_time).slice(0, 5);
-      calendarDate = new Date(`${firstSlot.slot_date}T00:00:00`);
-    }
-
     renderPicker();
   }
 
@@ -157,17 +139,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('makeupModalClose')?.addEventListener('click', closeModal);
   modal?.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
   slotList?.addEventListener('click', async (event) => {
-    const weekday = event.target.closest('[data-weekday]');
-    const time = event.target.closest('[data-time]');
+    const time = event.target.closest('[data-makeup-time]');
     const date = event.target.closest('[data-slot-id]');
     const nav = event.target.closest('[data-calendar-nav]');
     const submit = event.target.closest('[data-submit-slot]');
 
-    if (weekday) {
-      selectedWeekday = Number(weekday.dataset.weekday);
-      selectedTime = ''; selectedSlotId = ''; renderPicker();
-    } else if (time) {
-      selectedTime = time.dataset.time; selectedSlotId = '';
+    if (time) {
+      selectedWeekday = Number(time.dataset.weekday);
+      selectedTime = time.dataset.time;
+      selectedSlotId = '';
       const firstSlot = availableSlots.find((slot) =>
         new Date(`${slot.slot_date}T00:00:00`).getDay() === selectedWeekday &&
         String(slot.slot_time).slice(0, 5) === selectedTime);
