@@ -355,8 +355,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const remaining = portal.getRemainingLessons(member);
 
-    allUpcomingLessons = getLessonsWithinOneMonth(
-      portal.getUpcomingLessons(member, 100)
+    const approvedMakeupLessons = await portal.getApprovedMakeupLessons(member);
+
+    allUpcomingLessons = getLessonsWithinOneMonth([
+      ...portal.getUpcomingLessons(member, 100),
+      ...approvedMakeupLessons,
+    ]).sort((a, b) =>
+      `${a.date}_${a.time}`.localeCompare(`${b.date}_${b.time}`)
     );
 
     const upcomingLessons = allUpcomingLessons.slice(0, 2);

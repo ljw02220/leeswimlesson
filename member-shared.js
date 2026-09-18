@@ -920,6 +920,43 @@
     });
   }
 
+  async function getApprovedMakeupLessons(member) {
+    const client = getClient();
+
+    if (!client || !member?.id) {
+      return [];
+    }
+
+    const { data, error } = await client
+      .from('makeup_requests')
+      .select('id, status, makeup_slots(id, slot_date, slot_time, status)')
+      .eq('member_id', member.id)
+      .eq('status', 'approved');
+
+    if (error) {
+      console.warn('승인된 보강 수업을 불러오지 못했습니다.', error);
+      return [];
+    }
+
+    const todayKey = getTodayKey();
+
+    return (data || [])
+      .filter((request) => request.makeup_slots?.slot_date >= todayKey)
+      .map((request) => ({
+        id: `makeup-${request.id}`,
+        requestId: request.id,
+        date: request.makeup_slots.slot_date,
+        time: formatTime(request.makeup_slots.slot_time),
+        type: 'makeup',
+        status: 'scheduled',
+        title: '보강',
+        memo: '확정된 보강 수업입니다.',
+      }))
+      .sort((a, b) =>
+        `${a.date}_${a.time}`.localeCompare(`${b.date}_${b.time}`)
+      );
+  }
+
   async function getCompletedLessons(member, limit = 4, options = {}) {
     const personalRecords = await loadCompletedPersonalLessonRecords(member);
     const personalLessons = personalRecords.map(mapCompletedPersonalLesson);
@@ -1025,6 +1062,7 @@
     formatMoney,
     formatShortDate,
     getCompletedLessons,
+    getApprovedMakeupLessons,
     getEffectiveUsedLessons,
     getHolidayName,
     getRemainingLessons,

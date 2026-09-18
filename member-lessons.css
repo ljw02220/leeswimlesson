@@ -704,6 +704,11 @@ button {
   color: #20845b;
 }
 
+.calendar-lesson.scheduled.makeup {
+  background: #fff0bd;
+  color: #9a6700;
+}
+
 .calendar-lesson.holiday {
   background: #ffe8e8;
   color: #d64141;
@@ -799,6 +804,13 @@ button {
   border-left: 3px solid #2fb47c;
 
   background: #f0faf4;
+}
+
+.member-day-lesson.makeup,
+.lesson-detail-item.makeup,
+.lesson-history-item.makeup {
+  border-left: 3px solid #e5a923;
+  background: #fff9e8;
 }
 
 .member-day-lesson span,

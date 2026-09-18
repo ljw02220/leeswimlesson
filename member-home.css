@@ -517,12 +517,27 @@ button {
   background: #f0faf4;
 }
 
+.member-lesson-item.makeup,
+.member-feedback-item.makeup {
+  border-left: 3px solid #e5a923;
+  background: #fff9e8;
+}
+
 .member-lesson-item.group .lesson-date-box {
   background: #e8f1ff;
 }
 
 .member-lesson-item.personal .lesson-date-box {
   background: #e5f7ed;
+}
+
+.member-lesson-item.makeup .lesson-date-box {
+  background: #fff0bd;
+}
+
+.member-lesson-item.makeup .lesson-date-box span,
+.member-lesson-item.makeup .lesson-info strong {
+  color: #9a6700;
 }
 
 .member-lesson-item.personal .lesson-date-box span,

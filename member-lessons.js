@@ -236,7 +236,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="member-day-lesson ${lesson.type || 'personal'}">
             <span>${portal.formatLessonTime(lesson.time)}</span>
             <strong>${formatLessonTitle(lesson.title)}</strong>
-            <small>${lesson.type === 'group' ? '단체수업' : '개인레슨'}</small>
+            <small>${
+              lesson.type === 'group'
+                ? '단체수업'
+                : lesson.type === 'makeup'
+                ? '보강'
+                : '개인레슨'
+            }</small>
           </div>
         `
       )
@@ -458,7 +464,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       member,
       Math.max(remaining, 100)
     );
-    allUpcomingLessons = upcomingLessonPool;
+    const approvedMakeupLessons = await portal.getApprovedMakeupLessons(member);
+    allUpcomingLessons = [...upcomingLessonPool, ...approvedMakeupLessons].sort(
+      (a, b) => `${a.date}_${a.time}`.localeCompare(`${b.date}_${b.time}`)
+    );
     allCompletedLessons = await portal.getCompletedLessons(member, 100);
 
     const previewCompletedLessons = allCompletedLessons.slice(0, 2);
