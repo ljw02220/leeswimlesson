@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     return `<section class="makeup-picker-section">
-      <span class="makeup-picker-label">3. 날짜를 선택하세요</span>
+      <span class="makeup-picker-label">날짜</span>
       <div class="makeup-calendar-header">
         <button type="button" data-calendar-nav="-1" aria-label="이전 달">‹</button>
         <strong>${year}년 ${month + 1}월</strong>
@@ -74,13 +74,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const selectedSlot = availableSlots.find((slot) => slot.id === selectedSlotId);
     slotList.innerHTML = `
       <section class="makeup-picker-section">
-        <span class="makeup-picker-label">1. 요일을 선택하세요</span>
+        <span class="makeup-picker-label">요일</span>
         <div class="makeup-option-grid weekday">${weekdays.map((day) =>
           `<button type="button" data-weekday="${day.value}" class="${selectedWeekday === day.value ? 'selected' : ''}">${day.label}</button>`
         ).join('')}</div>
       </section>
       ${selectedWeekday === null ? '' : `<section class="makeup-picker-section">
-        <span class="makeup-picker-label">2. 시간을 선택하세요</span>
+        <span class="makeup-picker-label">시간</span>
         <div class="makeup-option-grid time">${times.map((time) =>
           `<button type="button" data-time="${time}" class="${selectedTime === time ? 'selected' : ''}">${time}</button>`
         ).join('')}</div></section>`}
@@ -128,6 +128,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       ['pending', 'approved'].includes(item.status)).map((item) => item.slot_id));
     availableSlots = (slotResult.data || []).filter((slot) =>
       !activeSlotIds.has(slot.id) && !window.memberPortal.getHolidayName(slot.slot_date));
+
+    if (availableSlots.length > 0 && selectedWeekday === null) {
+      const firstSlot = availableSlots[0];
+
+      selectedWeekday = new Date(`${firstSlot.slot_date}T00:00:00`).getDay();
+      selectedTime = String(firstSlot.slot_time).slice(0, 5);
+      calendarDate = new Date(`${firstSlot.slot_date}T00:00:00`);
+    }
+
     renderPicker();
   }
 
