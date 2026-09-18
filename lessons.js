@@ -1726,6 +1726,7 @@ if (confirmDetailBtn && detailStatus) {
     const status = detailStatus.value;
     const feedback = detailMemo?.value.trim() || '';
     const wasCompleted = completedLessons[lessonKey] === true;
+    const wasCancelled = cancelledLessons[lessonKey] === true;
     const previousCompletedLessons = { ...completedLessons };
     const previousCancelledLessons = { ...cancelledLessons };
 
@@ -1745,10 +1746,12 @@ if (confirmDetailBtn && detailStatus) {
     }
 
     const isCompleted = completedLessons[lessonKey] === true;
+    const isCancelled = cancelledLessons[lessonKey] === true;
 
     try {
       if (
         wasCompleted !== isCompleted ||
+        wasCancelled !== isCancelled ||
         feedback ||
         selectedLesson.type === 'group'
       ) {
