@@ -1005,20 +1005,20 @@ async function upsertLessonRecord(payload, match) {
     query = value === null ? query.is(key, null) : query.eq(key, value);
   });
 
-  const { data: existingRows, error: selectError } = await query.limit(1);
+  const { data: existingRows, error: selectError } = await query;
 
   if (selectError) {
     throw selectError;
   }
 
-  const existingId = existingRows?.[0]?.id;
+  const existingIds = (existingRows || []).map((row) => row.id);
 
   async function writePayload(nextPayload) {
-    if (existingId) {
+    if (existingIds.length > 0) {
       return window.swimDb.client
         .from('lessons')
         .update(nextPayload)
-        .eq('id', existingId);
+        .in('id', existingIds);
     }
 
     return window.swimDb.client.from('lessons').insert(nextPayload);
@@ -1726,7 +1726,6 @@ if (confirmDetailBtn && detailStatus) {
     const status = detailStatus.value;
     const feedback = detailMemo?.value.trim() || '';
     const wasCompleted = completedLessons[lessonKey] === true;
-    const wasCancelled = cancelledLessons[lessonKey] === true;
     const previousCompletedLessons = { ...completedLessons };
     const previousCancelledLessons = { ...cancelledLessons };
 
@@ -1746,25 +1745,27 @@ if (confirmDetailBtn && detailStatus) {
     }
 
     const isCompleted = completedLessons[lessonKey] === true;
-    const isCancelled = cancelledLessons[lessonKey] === true;
-
     try {
-      if (
-        wasCompleted !== isCompleted ||
-        wasCancelled !== isCancelled ||
-        feedback ||
-        selectedLesson.type === 'group'
-      ) {
-        await saveLessonRecord(selectedLesson, status, feedback);
-      }
+      await saveLessonRecord(selectedLesson, status, feedback);
 
       if (wasCompleted !== isCompleted) {
-        await syncPersonalLessonCount(selectedLesson, isCompleted ? 1 : -1);
+        try {
+          await syncPersonalLessonCount(selectedLesson, isCompleted ? 1 : -1);
+        } catch (countError) {
+          console.error('회원 진행 횟수를 변경하지 못했습니다.', countError);
+          alert(
+            '수업 상태는 저장했지만 회원 진행 횟수를 변경하지 못했습니다.\n' +
+              getErrorText(countError)
+          );
+        }
       }
 
       saveStorageData('completedLessons', completedLessons);
 
       saveStorageData('cancelledLessons', cancelledLessons);
+
+      lessonRecordStateLoaded = false;
+      recordedPersonalLessons = {};
 
       closeLessonDetailModal();
 
