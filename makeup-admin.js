@@ -98,7 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rows = slots.map((slot) => {
       const request = requests.find(
-        (item) => item.slot_id === slot.id && item.status !== 'rejected'
+        (item) =>
+          item.slot_id === slot.id &&
+          ['pending', 'approved'].includes(item.status)
       );
       const status = request?.status || slot.status;
       const statusText = {
@@ -119,6 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ${request?.status === 'pending' ? `
               <button type="button" data-action="approve" data-id="${request.id}">승인</button>
               <button type="button" class="danger" data-action="reject" data-id="${request.id}">반려</button>
+            ` : ''}
+            ${request?.status === 'approved' ? `
+              <button type="button" class="danger" data-action="cancel" data-id="${request.id}">취소</button>
             ` : ''}
             ${!request ? `
               <button type="button" class="danger" data-action="close" data-id="${slot.id}">마감</button>
@@ -203,6 +208,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (action === 'close') {
       await client.from('makeup_slots').update({ status: 'closed' }).eq('id', id);
+    } else if (action === 'cancel') {
+      const shouldCancel = confirm('승인된 보강 수업을 취소할까요?');
+
+      if (!shouldCancel) return;
+
+      const { error } = await client.rpc('cancel_makeup_request', {
+        p_request_id: id,
+      });
+
+      if (error) {
+        showMessage(`보강을 취소하지 못했습니다. ${error.message}`, 'error');
+        return;
+      }
     } else {
       const request = requests.find((item) => item.id === id);
       const nextStatus = action === 'approve' ? 'approved' : 'rejected';

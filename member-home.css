@@ -21,6 +21,11 @@
 .makeup-status-row span { color: #b45309; font-size: 12px; font-weight: 700; }
 .makeup-status-row span.approved { color: #15803d; }
 .makeup-status-row span.rejected { color: #dc2626; }
+.makeup-status-row span.cancelled { color: #64748b; }
+.makeup-status-row button {
+  min-height: 30px; padding: 5px 9px; border: 1px solid #fecaca; border-radius: 6px;
+  background: #fff; color: #dc2626; cursor: pointer; font-size: 10px; font-weight: 800;
+}
 .makeup-slot-item + .makeup-slot-item { margin-top: 8px; }
 .makeup-slot-item button {
   background: #2563eb; border: 0; border-radius: 6px; color: #fff;

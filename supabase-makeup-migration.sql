@@ -21,6 +21,13 @@ create table if not exists public.makeup_requests (
   created_at timestamptz not null default now()
 );
 
+alter table public.makeup_requests
+drop constraint if exists makeup_requests_status_check;
+
+alter table public.makeup_requests
+add constraint makeup_requests_status_check
+check (status in ('pending', 'approved', 'rejected', 'cancelled'));
+
 create unique index if not exists makeup_requests_active_slot_idx
 on public.makeup_requests(slot_id)
 where status in ('pending', 'approved');
@@ -115,6 +122,54 @@ on public.makeup_requests
 for all to authenticated
 using ((auth.jwt() ->> 'email') = 'ljw022072@gmail.com')
 with check ((auth.jwt() ->> 'email') = 'ljw022072@gmail.com');
+
+create or replace function public.cancel_makeup_request(p_request_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_request public.makeup_requests%rowtype;
+  is_admin boolean;
+  is_owner boolean;
+begin
+  select * into target_request
+  from public.makeup_requests
+  where id = p_request_id
+  for update;
+
+  if not found then
+    raise exception '보강 신청을 찾을 수 없습니다.';
+  end if;
+
+  is_admin := (auth.jwt() ->> 'email') = 'ljw022072@gmail.com';
+  select exists (
+    select 1 from public.members
+    where members.id = target_request.member_id
+      and members.auth_user_id = auth.uid()
+  ) into is_owner;
+
+  if not is_admin and not is_owner then
+    raise exception '보강 신청을 취소할 권한이 없습니다.';
+  end if;
+
+  if target_request.status not in ('pending', 'approved') then
+    raise exception '이미 처리된 보강 신청입니다.';
+  end if;
+
+  update public.makeup_requests
+  set status = 'cancelled', reviewed_at = now()
+  where id = p_request_id;
+
+  update public.makeup_slots
+  set status = 'open'
+  where id = target_request.slot_id;
+end;
+$$;
+
+revoke all on function public.cancel_makeup_request(uuid) from public;
+grant execute on function public.cancel_makeup_request(uuid) to authenticated;
 
 notify pgrst, 'reload schema';
 

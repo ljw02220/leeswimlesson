@@ -115,9 +115,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const requests = requestResult.data || [];
     const latest = requests[0];
-    const statusText = { pending: '승인 대기', approved: '승인 완료', rejected: '반려' };
+    const statusText = {
+      pending: '승인 대기',
+      approved: '승인 완료',
+      rejected: '반려',
+      cancelled: '취소',
+    };
     statusBox.innerHTML = latest
-      ? `<div class="makeup-status-row"><strong>${formatSlot(latest.makeup_slots)}</strong><span class="${latest.status}">${statusText[latest.status]}</span></div>`
+      ? `<div class="makeup-status-row">
+          <strong>${formatSlot(latest.makeup_slots)}</strong>
+          <span class="${latest.status}">${statusText[latest.status]}</span>
+          ${['pending', 'approved'].includes(latest.status)
+            ? `<button type="button" data-cancel-request="${latest.id}">취소</button>`
+            : ''}
+        </div>`
       : '<p class="member-empty">신청한 보강 수업이 없습니다.</p>';
 
     const activeSlotIds = new Set(requests.filter((item) =>
@@ -138,6 +149,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('makeupModalClose')?.addEventListener('click', closeModal);
   modal?.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
+  statusBox?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-cancel-request]');
+
+    if (!button || !confirm('신청한 보강 수업을 취소할까요?')) return;
+
+    button.disabled = true;
+    const { error } = await client.rpc('cancel_makeup_request', {
+      p_request_id: button.dataset.cancelRequest,
+    });
+
+    if (error) {
+      alert(`보강 신청을 취소하지 못했습니다. ${error.message}`);
+      button.disabled = false;
+      return;
+    }
+
+    await loadMakeupData();
+  });
   slotList?.addEventListener('click', async (event) => {
     const time = event.target.closest('[data-makeup-time]');
     const date = event.target.closest('[data-slot-id]');
