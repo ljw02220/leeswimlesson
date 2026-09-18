@@ -137,7 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
       ? rows.join('')
       : '<p class="today-empty">등록된 보강 가능 시간이 없습니다.</p>';
 
-    if (typeof window.renderCalendar === 'function') {
+    if (typeof window.refreshLessonRecordState === 'function') {
+      window.refreshLessonRecordState();
+    } else if (typeof window.renderCalendar === 'function') {
       window.renderCalendar();
     }
   }
@@ -193,6 +195,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.openMakeupManagement = openModal;
+  window.cancelMakeupLesson = async (requestId) => {
+    const { error } = await client.rpc('cancel_makeup_request', {
+      p_request_id: requestId,
+    });
+
+    if (error) throw error;
+
+    await loadData();
+  };
   document.getElementById('makeupManageButton')?.addEventListener('click', openModal);
   document.getElementById('close-makeup-manage')?.addEventListener('click', closeModal);
   modal?.addEventListener('click', (event) => {

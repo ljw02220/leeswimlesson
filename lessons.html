@@ -6,7 +6,7 @@
 
     <title>수업관리</title>
 
-    <link rel="stylesheet" href="common.css?v=20260918-makeup" />
+    <link rel="stylesheet" href="common.css?v=20260919-detail-actions" />
   </head>
 
   <body>
@@ -233,7 +233,6 @@
             <select id="detail-status">
               <option value="scheduled">예정</option>
               <option value="completed">완료</option>
-              <option value="cancelled">취소</option>
             </select>
           </div>
 
@@ -259,11 +258,18 @@
 
           <button
             type="button"
+            id="cancel-detail-btn"
+            class="cancel-detail-btn"
+          >
+            취소
+          </button>
+
+          <button
+            type="button"
             id="delete-lesson-btn"
             class="delete-lesson-btn"
-            hidden
           >
-            수업 삭제
+            삭제
           </button>
         </div>
       </div>
@@ -273,7 +279,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260911"></script>
     <script src="common.js?v=20260913-role-guard"></script>
-    <script src="lessons.js?v=20260918-makeup"></script>
-    <script src="makeup-admin.js?v=20260919-cancel"></script>
+    <script src="lessons.js?v=20260919-detail-actions"></script>
+    <script src="makeup-admin.js?v=20260919-lesson-detail"></script>
   </body>
 </html>

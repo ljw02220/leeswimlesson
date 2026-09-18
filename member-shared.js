@@ -782,6 +782,41 @@
     };
   }
 
+  function mapCompletedMakeupLesson(row) {
+    return {
+      id: row.id,
+      date: row.lesson_date,
+      time: row.lesson_time,
+      type: 'makeup',
+      status: 'completed',
+      title: '보강',
+      memo: row.memo || '',
+    };
+  }
+
+  async function loadMakeupLessonRecords(member, status) {
+    const client = getClient();
+
+    if (!client || !member?.id) return [];
+
+    let query = client
+      .from('lessons')
+      .select('id, lesson_date, lesson_time, status, memo')
+      .eq('member_id', member.id)
+      .eq('lesson_type', 'makeup');
+
+    if (status) query = query.eq('status', status);
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.warn('보강 수업 기록을 불러오지 못했습니다.', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
   async function loadCompletedPersonalLessonRecords(member) {
     const client = getClient();
 
@@ -927,11 +962,15 @@
       return [];
     }
 
-    const { data, error } = await client
-      .from('makeup_requests')
-      .select('id, status, makeup_slots(id, slot_date, slot_time, status)')
-      .eq('member_id', member.id)
-      .eq('status', 'approved');
+    const [requestResult, lessonRecords] = await Promise.all([
+      client
+        .from('makeup_requests')
+        .select('id, status, makeup_slots(id, slot_date, slot_time, status)')
+        .eq('member_id', member.id)
+        .eq('status', 'approved'),
+      loadMakeupLessonRecords(member),
+    ]);
+    const { data, error } = requestResult;
 
     if (error) {
       console.warn('승인된 보강 수업을 불러오지 못했습니다.', error);
@@ -939,19 +978,37 @@
     }
 
     const todayKey = getTodayKey();
+    const recordsByKey = new Map(
+      lessonRecords.map((record) => [
+        `${record.lesson_date}_${formatTime(record.lesson_time)}`,
+        record,
+      ])
+    );
 
     return (data || [])
       .filter((request) => request.makeup_slots?.slot_date >= todayKey)
-      .map((request) => ({
-        id: `makeup-${request.id}`,
-        requestId: request.id,
-        date: request.makeup_slots.slot_date,
-        time: formatTime(request.makeup_slots.slot_time),
-        type: 'makeup',
-        status: 'scheduled',
-        title: '보강',
-        memo: '확정된 보강 수업입니다.',
-      }))
+      .map((request) => {
+        const time = formatTime(request.makeup_slots.slot_time);
+        const record = recordsByKey.get(
+          `${request.makeup_slots.slot_date}_${time}`
+        );
+
+        if (['completed', 'cancelled', 'deleted'].includes(record?.status)) {
+          return null;
+        }
+
+        return {
+          id: `makeup-${request.id}`,
+          requestId: request.id,
+          date: request.makeup_slots.slot_date,
+          time,
+          type: 'makeup',
+          status: 'scheduled',
+          title: '보강',
+          memo: record?.memo || '',
+        };
+      })
+      .filter(Boolean)
       .sort((a, b) =>
         `${a.date}_${a.time}`.localeCompare(`${b.date}_${b.time}`)
       );
@@ -961,9 +1018,12 @@
     const personalRecords = await loadCompletedPersonalLessonRecords(member);
     const personalLessons = personalRecords.map(mapCompletedPersonalLesson);
     const groupLessons = await loadCompletedGroupLessons(member, limit);
+    const makeupLessons = (await loadMakeupLessonRecords(member, 'completed'))
+      .map(mapCompletedMakeupLesson);
     const completedLessons = sortLessonsByDateTimeDesc([
       ...personalLessons,
       ...groupLessons,
+      ...makeupLessons,
     ]);
     const visibleLessons = options.onlyWithMemo
       ? completedLessons.filter((lesson) => String(lesson.memo || '').trim())

@@ -1059,6 +1059,7 @@ body {
 }
 
 .confirm-detail-btn,
+.cancel-detail-btn,
 .delete-lesson-btn {
   flex: 1;
 
@@ -1071,6 +1072,18 @@ body {
   font-size: 12px;
   font-weight: 700;
 
+  cursor: pointer;
+}
+
+.cancel-detail-btn {
+  flex: 1;
+  height: 42px;
+  border: 1px solid #f1c86b;
+  border-radius: 9px;
+  background: #fff9e8;
+  color: #9a6700;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
 }
 

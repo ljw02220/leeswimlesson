@@ -53,6 +53,8 @@ const detailMemo = document.querySelector('#detail-memo');
 
 const confirmDetailBtn = document.querySelector('#confirm-detail-btn');
 
+const cancelDetailBtn = document.querySelector('#cancel-detail-btn');
+
 const deleteLessonBtn = document.querySelector('#delete-lesson-btn');
 
 let selectedLesson = null;
@@ -378,7 +380,7 @@ async function loadLessonRecordState() {
     .select(
       'member_id, lesson_date, lesson_time, title, lesson_type, status, source, memo'
     )
-    .in('status', ['completed', 'cancelled']);
+    .in('status', ['completed', 'cancelled', 'deleted']);
 
   if (error && getErrorText(error).includes('memo')) {
     const fallbackResult = await window.swimDb.client
@@ -386,7 +388,7 @@ async function loadLessonRecordState() {
       .select(
         'member_id, lesson_date, lesson_time, title, lesson_type, status, source'
       )
-      .in('status', ['completed', 'cancelled']);
+      .in('status', ['completed', 'cancelled', 'deleted']);
 
     data = fallbackResult.data;
     error = fallbackResult.error;
@@ -398,6 +400,7 @@ async function loadLessonRecordState() {
 
   const databaseCompletedLessons = {};
   const databaseCancelledLessons = {};
+  const databaseDeletedLessons = {};
 
   (data || []).forEach((row) => {
     const time = normalizeTimeValue(row.lesson_time);
@@ -442,6 +445,17 @@ async function loadLessonRecordState() {
           source: 'personal',
         };
       }
+    } else if (!lessonKey && row.lesson_type === 'makeup') {
+      const makeupLesson = (window.makeupCalendarLessons || []).find(
+        (item) =>
+          String(item.memberId) === String(row.member_id) &&
+          item.date === row.lesson_date &&
+          normalizeTimeValue(item.time) === time
+      );
+
+      if (makeupLesson) {
+        lessonKey = getLessonKey(row.lesson_date, makeupLesson);
+      }
     }
 
     if (!lessonKey) {
@@ -456,6 +470,10 @@ async function loadLessonRecordState() {
       databaseCancelledLessons[lessonKey] = true;
     }
 
+    if (row.status === 'deleted') {
+      databaseDeletedLessons[lessonKey] = true;
+    }
+
     if (row.memo) {
       lessonFeedback[lessonKey] = row.memo;
     }
@@ -463,13 +481,21 @@ async function loadLessonRecordState() {
 
   completedLessons = databaseCompletedLessons;
   cancelledLessons = databaseCancelledLessons;
+  deletedLessons = databaseDeletedLessons;
 
   saveStorageData('completedLessons', completedLessons);
   saveStorageData('cancelledLessons', cancelledLessons);
+  saveStorageData('deletedLessons', deletedLessons);
   saveStorageData('lessonFeedback', lessonFeedback);
 
   lessonRecordStateLoaded = true;
 }
+
+window.refreshLessonRecordState = () => {
+  lessonRecordStateLoaded = false;
+  recordedPersonalLessons = {};
+  renderCalendar();
+};
 
 function getLessonMemberNames(lesson) {
   const title = getLessonName(lesson).trim();
@@ -487,6 +513,8 @@ function getLessonMemberNames(lesson) {
 let completedLessons = getStorageData('completedLessons', {});
 
 let cancelledLessons = getStorageData('cancelledLessons', {});
+
+let deletedLessons = getStorageData('deletedLessons', {});
 
 let addedLessons = getStorageData('addedLessons', []);
 
@@ -1104,6 +1132,31 @@ async function saveGroupLessonRecord(lesson, status, feedback) {
   );
 }
 
+async function saveMakeupLessonRecord(lesson, status, feedback) {
+  if (!hasSupabaseConnection() || !lesson?.memberId) {
+    return;
+  }
+
+  await upsertLessonRecord(
+    {
+      member_id: lesson.memberId,
+      lesson_date: lesson.date,
+      lesson_time: lesson.time,
+      title: '보강',
+      lesson_type: 'makeup',
+      status,
+      source: 'makeup-request',
+      memo: feedback.trim() || null,
+    },
+    {
+      member_id: lesson.memberId,
+      lesson_date: lesson.date,
+      lesson_time: lesson.time,
+      lesson_type: 'makeup',
+    }
+  );
+}
+
 async function saveLessonRecord(lesson, status, feedback) {
   const cleanFeedback = feedback.trim();
 
@@ -1126,6 +1179,12 @@ async function saveLessonRecord(lesson, status, feedback) {
 
   if (lesson.type === 'group') {
     await saveGroupLessonRecord(lesson, status, cleanFeedback);
+
+    return;
+  }
+
+  if (lesson.type === 'makeup') {
+    await saveMakeupLessonRecord(lesson, status, cleanFeedback);
   }
 }
 
@@ -1210,7 +1269,9 @@ function getDaySchedule(date, dateKey, holidayName, personalLessonsByDate) {
 
   daySchedule.sort((a, b) => a.time.localeCompare(b.time));
 
-  return daySchedule;
+  return daySchedule.filter(
+    (item) => !deletedLessons[getLessonKey(dateKey, item)]
+  );
 }
 
 /* ==================================================
@@ -1652,11 +1713,6 @@ function openLessonDetail(dateKey, lessonKey) {
     return;
   }
 
-  if (lesson.source === 'makeup-request') {
-    window.openMakeupManagement?.();
-    return;
-  }
-
   selectedLesson = {
     ...lesson,
     lessonKey,
@@ -1686,7 +1742,7 @@ function openLessonDetail(dateKey, lessonKey) {
 
   if (detailStatus) {
     if (cancelledLessons[lessonKey]) {
-      detailStatus.value = 'cancelled';
+      detailStatus.value = 'scheduled';
     } else if (completedLessons[lessonKey]) {
       detailStatus.value = 'completed';
     } else {
@@ -1699,8 +1755,7 @@ function openLessonDetail(dateKey, lessonKey) {
   }
 
   if (deleteLessonBtn) {
-    deleteLessonBtn.style.display =
-      lesson.source === 'added' ? 'block' : 'none';
+    deleteLessonBtn.style.display = 'block';
   }
 
   if (lessonDetailModal) {
@@ -1807,6 +1862,36 @@ if (confirmDetailBtn && detailStatus) {
   });
 }
 
+if (cancelDetailBtn) {
+  cancelDetailBtn.addEventListener('click', async () => {
+    if (!selectedLesson || !confirm('이 수업을 취소할까요?')) return;
+
+    const lessonKey = selectedLesson.lessonKey;
+    const wasCompleted = completedLessons[lessonKey] === true;
+
+    try {
+      await saveLessonRecord(
+        selectedLesson,
+        'cancelled',
+        detailMemo?.value.trim() || ''
+      );
+
+      if (wasCompleted) {
+        await syncPersonalLessonCount(selectedLesson, -1);
+      }
+
+      delete completedLessons[lessonKey];
+      cancelledLessons[lessonKey] = true;
+      saveStorageData('completedLessons', completedLessons);
+      saveStorageData('cancelledLessons', cancelledLessons);
+      closeLessonDetailModal();
+      renderCalendar();
+    } catch (error) {
+      alert(`수업을 취소하지 못했습니다.\n${getErrorText(error)}`);
+    }
+  });
+}
+
 /* ==================================================
   23. 직접 추가한 수업 삭제
 ================================================== */
@@ -1817,11 +1902,7 @@ if (deleteLessonBtn) {
       return;
     }
 
-    if (selectedLesson.source !== 'added') {
-      return;
-    }
-
-    const shouldDelete = confirm('이 수업을 삭제할까요?');
+    const shouldDelete = confirm('이 수업을 달력에서 완전히 삭제할까요?');
 
     if (!shouldDelete) {
       return;
@@ -1830,7 +1911,14 @@ if (deleteLessonBtn) {
     const wasCompleted = completedLessons[selectedLesson.lessonKey] === true;
 
     try {
-      await deleteLessonRecord(selectedLesson);
+      if (selectedLesson.source === 'added') {
+        await deleteLessonRecord(selectedLesson);
+      } else if (selectedLesson.type === 'makeup') {
+        await saveLessonRecord(selectedLesson, 'deleted', '');
+        await window.cancelMakeupLesson?.(selectedLesson.requestId);
+      } else {
+        await saveLessonRecord(selectedLesson, 'deleted', '');
+      }
 
       if (wasCompleted) {
         await syncPersonalLessonCount(selectedLesson, -1);
@@ -1845,17 +1933,23 @@ if (deleteLessonBtn) {
       return;
     }
 
-    addedLessons = addedLessons.filter((item) => item.id !== selectedLesson.id);
+    if (selectedLesson.source === 'added') {
+      addedLessons = addedLessons.filter((item) => item.id !== selectedLesson.id);
+    }
 
     delete completedLessons[selectedLesson.lessonKey];
 
     delete cancelledLessons[selectedLesson.lessonKey];
+
+    deletedLessons[selectedLesson.lessonKey] = true;
 
     saveStorageData('addedLessons', addedLessons);
 
     saveStorageData('completedLessons', completedLessons);
 
     saveStorageData('cancelledLessons', cancelledLessons);
+
+    saveStorageData('deletedLessons', deletedLessons);
 
     closeLessonDetailModal();
 
