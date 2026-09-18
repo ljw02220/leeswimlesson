@@ -8,6 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     { value: 4, label: '목' }, { value: 5, label: '금' },
     { value: 6, label: '토' }, { value: 0, label: '일' },
   ];
+  const timesByWeekday = {
+    0: ['12:00', '13:00'],
+    2: ['14:00', '15:00'],
+    3: ['15:00'],
+    4: ['14:00', '15:00'],
+    5: ['07:00', '15:00'],
+    6: ['11:00', '12:00', '13:00'],
+  };
   let member = null;
   let availableSlots = [];
   let selectedWeekday = null;
@@ -28,9 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function getTimes() {
-    return [...new Set(availableSlots.filter((slot) =>
-      new Date(`${slot.slot_date}T00:00:00`).getDay() === selectedWeekday
-    ).map((slot) => String(slot.slot_time).slice(0, 5)))].sort();
+    return timesByWeekday[selectedWeekday] || [];
   }
 
   function renderCalendar() {
