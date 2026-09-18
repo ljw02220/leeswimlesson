@@ -39,6 +39,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     return days[date.getDay()];
   }
 
+  function getOneMonthDateRange() {
+    const start = new Date();
+    const end = new Date(start);
+    const targetDay = end.getDate();
+
+    start.setHours(0, 0, 0, 0);
+    end.setDate(1);
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(
+      Math.min(
+        targetDay,
+        new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate()
+      )
+    );
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
+  }
+
+  function getLessonsWithinOneMonth(lessons) {
+    const { start, end } = getOneMonthDateRange();
+
+    return lessons.filter((lesson) => {
+      const lessonDate = new Date(`${lesson.date}T00:00:00`);
+
+      return lessonDate >= start && lessonDate <= end;
+    });
+  }
+
   function renderLessonItem(lesson) {
     const date = new Date(`${lesson.date}T00:00:00`);
 
@@ -326,7 +355,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const remaining = portal.getRemainingLessons(member);
 
-    allUpcomingLessons = portal.getUpcomingLessons(member, 100);
+    allUpcomingLessons = getLessonsWithinOneMonth(
+      portal.getUpcomingLessons(member, 100)
+    );
 
     const upcomingLessons = allUpcomingLessons.slice(0, 2);
 
