@@ -48,6 +48,14 @@ on conflict (slot_date, slot_time) do nothing;
 alter table public.makeup_slots enable row level security;
 alter table public.makeup_requests enable row level security;
 
+grant select, insert, update, delete
+on public.makeup_slots
+to authenticated;
+
+grant select, insert, update, delete
+on public.makeup_requests
+to authenticated;
+
 drop policy if exists "authenticated makeup slots access" on public.makeup_slots;
 drop policy if exists "makeup slots read" on public.makeup_slots;
 drop policy if exists "makeup slots admin write" on public.makeup_slots;
