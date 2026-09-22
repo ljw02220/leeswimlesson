@@ -238,6 +238,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const request = requests.find((item) => item.id === id);
         if (!request) throw new Error('처리할 보강 신청을 찾지 못했습니다.');
 
+        const rpcResult = await Promise.race([
+          client.rpc('review_makeup_request', {
+            p_request_id: id,
+            p_decision: decision,
+          }),
+          new Promise((resolve) => {
+            setTimeout(
+              () => resolve({ error: { code: 'TIMEOUT', message: '처리 시간 초과' } }),
+              5000
+            );
+          }),
+        ]);
+
+        if (!rpcResult.error) {
+          await loadData();
+          return;
+        }
+
         const requestResult = await client
           .from('makeup_requests')
           .update({ status: decision, reviewed_at: new Date().toISOString() })

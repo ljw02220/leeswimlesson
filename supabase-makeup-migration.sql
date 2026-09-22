@@ -87,12 +87,10 @@ create policy "makeup slots admin write"
 on public.makeup_slots
 for all to authenticated
 using (
-  (auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
-  or (auth.jwt() ->> 'email') like '%@admins.leeswimlesson.com'
+  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
 )
 with check (
-  (auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
-  or (auth.jwt() ->> 'email') like '%@admins.leeswimlesson.com'
+  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
 );
 
 drop policy if exists "authenticated makeup requests access" on public.makeup_requests;
@@ -127,12 +125,10 @@ create policy "admin manages makeup requests"
 on public.makeup_requests
 for all to authenticated
 using (
-  (auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
-  or (auth.jwt() ->> 'email') like '%@admins.leeswimlesson.com'
+  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
 )
 with check (
-  (auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
-  or (auth.jwt() ->> 'email') like '%@admins.leeswimlesson.com'
+  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
 );
 
 create or replace function public.cancel_makeup_request(p_request_id uuid)
