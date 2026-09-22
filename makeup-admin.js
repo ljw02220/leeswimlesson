@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
           .select('id');
         if (requestResult.error) throw requestResult.error;
         if (!requestResult.data?.length) {
-          throw new Error('관리자 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
+          throw new Error('관리자 변경 권한이 없습니다.');
         }
 
         const slotResult = await client
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
           .select('id');
         if (slotResult.error) throw slotResult.error;
         if (!slotResult.data?.length) {
-          throw new Error('보강 시간 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
+          throw new Error('보강 시간 변경 권한이 없습니다.');
         }
       } else {
         const decision = action === 'approve' ? 'approved' : 'rejected';
@@ -263,7 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
           .select('id');
         if (requestResult.error) throw requestResult.error;
         if (!requestResult.data?.length) {
-          throw new Error('관리자 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
+          const rpcMessage = rpcResult.error?.message || 'RPC 처리 실패';
+          throw new Error(`관리자 변경 권한이 없습니다. ${rpcMessage}`);
         }
 
         const slotResult = await client
@@ -284,7 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .from('makeup_requests')
             .update({ status: 'pending', reviewed_at: null })
             .eq('id', id);
-          throw new Error('보강 시간 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
+          const rpcMessage = rpcResult.error?.message || 'RPC 처리 실패';
+          throw new Error(`보강 시간 변경 권한이 없습니다. ${rpcMessage}`);
         }
       }
 

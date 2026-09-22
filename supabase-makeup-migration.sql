@@ -221,7 +221,10 @@ as $$
 declare
   target_request public.makeup_requests%rowtype;
 begin
-  if (auth.jwt() ->> 'email') is distinct from 'ljw022072@gmail.com' then
+  if lower(auth.jwt() ->> 'email') not in (
+    'ljw022072@gmail.com',
+    'admin@admins.leeswimlesson.com'
+  ) then
     raise exception '관리자만 보강 신청을 처리할 수 있습니다.';
   end if;
 

@@ -16,7 +16,10 @@ begin
   from auth.users
   where id = auth.uid();
 
-  if current_email is distinct from 'ljw022072@gmail.com' then
+  if current_email not in (
+    'ljw022072@gmail.com',
+    'admin@admins.leeswimlesson.com'
+  ) then
     raise exception '관리자만 보강 신청을 처리할 수 있습니다.';
   end if;
 
