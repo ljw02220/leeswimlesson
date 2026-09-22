@@ -210,12 +210,44 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
     } else {
+      const decision = action === 'approve' ? 'approved' : 'rejected';
       const { error } = await client.rpc('review_makeup_request', {
         p_request_id: id,
-        p_decision: action === 'approve' ? 'approved' : 'rejected',
+        p_decision: decision,
       });
 
-      if (error) {
+      if (error?.code === 'PGRST202') {
+        const request = requests.find((item) => item.id === id);
+        const requestResult = await client
+          .from('makeup_requests')
+          .update({ status: decision, reviewed_at: new Date().toISOString() })
+          .eq('id', id);
+
+        if (requestResult.error) {
+          showMessage(
+            `보강 신청을 처리하지 못했습니다. ${requestResult.error.message}`,
+            'error'
+          );
+          return;
+        }
+
+        const slotResult = await client
+          .from('makeup_slots')
+          .update({ status: decision === 'approved' ? 'booked' : 'open' })
+          .eq('id', request.slot_id);
+
+        if (slotResult.error) {
+          await client
+            .from('makeup_requests')
+            .update({ status: 'pending', reviewed_at: null })
+            .eq('id', id);
+          showMessage(
+            `보강 시간을 변경하지 못했습니다. ${slotResult.error.message}`,
+            'error'
+          );
+          return;
+        }
+      } else if (error) {
         showMessage(`보강 신청을 처리하지 못했습니다. ${error.message}`, 'error');
         return;
       }
