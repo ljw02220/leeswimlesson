@@ -28,46 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     message.dataset.tone = tone;
   }
 
-  function toDateKey(date) {
-    return [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-    ].join('-');
-  }
-
   async function ensureRecurringSlots() {
-    const timesByDay = {
-      0: ['12:00', '13:00'],
-      2: ['14:00', '15:00'],
-      3: ['15:00'],
-      4: ['14:00', '15:00'],
-      5: ['07:00', '15:00'],
-      6: ['11:00', '12:00', '13:00'],
-    };
-    const slotsToSave = [];
-    const date = new Date();
+    const { error } = await client.rpc('ensure_makeup_slots');
 
-    date.setHours(0, 0, 0, 0);
-
-    for (let offset = 0; offset <= 45; offset += 1) {
-      const times = timesByDay[date.getDay()] || [];
-
-      times.forEach((time) => {
-        slotsToSave.push({ slot_date: toDateKey(date), slot_time: time });
-      });
-
-      date.setDate(date.getDate() + 1);
-    }
-
-    if (slotsToSave.length > 0) {
-      const { error } = await client.from('makeup_slots').upsert(slotsToSave, {
-        onConflict: 'slot_date,slot_time',
-        ignoreDuplicates: true,
-      });
-
-      if (error) throw error;
-    }
+    if (error) throw error;
   }
 
   function render() {
@@ -151,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await ensureRecurringSlots();
     } catch (error) {
       showMessage(
-        error.code === 'PGRST205'
+        ['PGRST202', 'PGRST205'].includes(error.code)
           ? 'Supabase SQL Editor에서 supabase-makeup-migration.sql을 먼저 실행해주세요.'
           : `보강 시간을 준비하지 못했습니다. ${error.message}`,
         'error'
