@@ -93,14 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div class="makeup-admin-actions">
             ${request?.status === 'pending' ? `
-              <button type="button" data-action="approve" data-id="${request.id}">승인</button>
-              <button type="button" class="danger" data-action="reject" data-id="${request.id}">반려</button>
+              <button type="button" onclick="handleMakeupAdminAction('approve', '${request.id}', this)">승인</button>
+              <button type="button" class="danger" onclick="handleMakeupAdminAction('reject', '${request.id}', this)">반려</button>
             ` : ''}
             ${request?.status === 'approved' ? `
-              <button type="button" class="danger" data-action="cancel" data-id="${request.id}">취소</button>
+              <button type="button" class="danger" onclick="handleMakeupAdminAction('cancel', '${request.id}', this)">취소</button>
             ` : ''}
             ${!request ? `
-              <button type="button" class="danger" data-action="close" data-id="${slot.id}">마감</button>
+              <button type="button" class="danger" onclick="handleMakeupAdminAction('close', '${slot.id}', this)">마감</button>
             ` : `<em>${statusText}</em>`}
           </div>
         </article>
@@ -187,74 +187,98 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target === modal) closeModal();
   });
 
-  list?.addEventListener('click', async (event) => {
-    const button = event.target.closest('[data-action]');
-    if (!button) return;
+  window.handleMakeupAdminAction = async (action, id, button) => {
+    const originalText = button?.textContent || '';
 
-    const action = button.dataset.action;
-    const id = button.dataset.id;
-
-    if (action === 'close') {
-      await client.from('makeup_slots').update({ status: 'closed' }).eq('id', id);
-    } else if (action === 'cancel') {
-      const shouldCancel = confirm('승인된 보강 수업을 취소할까요?');
-
-      if (!shouldCancel) return;
-
-      const { error } = await client.rpc('cancel_makeup_request', {
-        p_request_id: id,
-      });
-
-      if (error) {
-        showMessage(`보강을 취소하지 못했습니다. ${error.message}`, 'error');
-        return;
-      }
-    } else {
-      const decision = action === 'approve' ? 'approved' : 'rejected';
-      const { error } = await client.rpc('review_makeup_request', {
-        p_request_id: id,
-        p_decision: decision,
-      });
-
-      if (error?.code === 'PGRST202') {
-        const request = requests.find((item) => item.id === id);
-        const requestResult = await client
-          .from('makeup_requests')
-          .update({ status: decision, reviewed_at: new Date().toISOString() })
-          .eq('id', id);
-
-        if (requestResult.error) {
-          showMessage(
-            `보강 신청을 처리하지 못했습니다. ${requestResult.error.message}`,
-            'error'
-          );
-          return;
-        }
-
-        const slotResult = await client
-          .from('makeup_slots')
-          .update({ status: decision === 'approved' ? 'booked' : 'open' })
-          .eq('id', request.slot_id);
-
-        if (slotResult.error) {
-          await client
-            .from('makeup_requests')
-            .update({ status: 'pending', reviewed_at: null })
-            .eq('id', id);
-          showMessage(
-            `보강 시간을 변경하지 못했습니다. ${slotResult.error.message}`,
-            'error'
-          );
-          return;
-        }
-      } else if (error) {
-        showMessage(`보강 신청을 처리하지 못했습니다. ${error.message}`, 'error');
-        return;
-      }
+    if (button) {
+      button.disabled = true;
+      button.textContent = '처리 중';
     }
 
-    await loadData();
-  });
+    try {
+      if (action === 'close') {
+        const { error } = await client
+          .from('makeup_slots')
+          .update({ status: 'closed' })
+          .eq('id', id);
+        if (error) throw error;
+      } else if (action === 'cancel') {
+        if (!confirm('승인된 보강 수업을 취소할까요?')) {
+          if (button) {
+            button.disabled = false;
+            button.textContent = originalText;
+          }
+          return;
+        }
+
+        const rpcResult = await client.rpc('cancel_makeup_request', {
+          p_request_id: id,
+        });
+
+        if (rpcResult.error?.code === 'PGRST202') {
+          const request = requests.find((item) => item.id === id);
+          if (!request) throw new Error('취소할 보강 신청을 찾지 못했습니다.');
+
+          const requestResult = await client
+            .from('makeup_requests')
+            .update({ status: 'cancelled', reviewed_at: new Date().toISOString() })
+            .eq('id', id);
+          if (requestResult.error) throw requestResult.error;
+
+          const slotResult = await client
+            .from('makeup_slots')
+            .update({ status: 'open' })
+            .eq('id', request.slot_id);
+          if (slotResult.error) throw slotResult.error;
+        } else if (rpcResult.error) {
+          throw rpcResult.error;
+        }
+      } else {
+        const decision = action === 'approve' ? 'approved' : 'rejected';
+        const rpcResult = await client.rpc('review_makeup_request', {
+          p_request_id: id,
+          p_decision: decision,
+        });
+
+        if (rpcResult.error?.code === 'PGRST202') {
+          const request = requests.find((item) => item.id === id);
+          if (!request) throw new Error('처리할 보강 신청을 찾지 못했습니다.');
+
+          const requestResult = await client
+            .from('makeup_requests')
+            .update({ status: decision, reviewed_at: new Date().toISOString() })
+            .eq('id', id);
+          if (requestResult.error) throw requestResult.error;
+
+          const slotResult = await client
+            .from('makeup_slots')
+            .update({ status: decision === 'approved' ? 'booked' : 'open' })
+            .eq('id', request.slot_id);
+
+          if (slotResult.error) {
+            await client
+              .from('makeup_requests')
+              .update({ status: 'pending', reviewed_at: null })
+              .eq('id', id);
+            throw slotResult.error;
+          }
+        } else if (rpcResult.error) {
+          throw rpcResult.error;
+        }
+      }
+
+      await loadData();
+    } catch (error) {
+      const message = `보강 신청을 처리하지 못했습니다. ${error.message || error}`;
+      showMessage(message, 'error');
+      alert(message);
+
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+  };
 
   loadData();
 });
