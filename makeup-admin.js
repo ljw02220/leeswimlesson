@@ -264,7 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (requestResult.error) throw requestResult.error;
         if (!requestResult.data?.length) {
           const rpcMessage = rpcResult.error?.message || 'RPC 처리 실패';
-          throw new Error(`관리자 변경 권한이 없습니다. ${rpcMessage}`);
+          const { data: authData } = await client.auth.getUser();
+          const loginEmail = authData?.user?.email || '확인되지 않음';
+          throw new Error(
+            `관리자 변경 권한이 없습니다. 현재 로그인: ${loginEmail}. ${rpcMessage}`
+          );
         }
 
         const slotResult = await client
@@ -286,7 +290,11 @@ document.addEventListener('DOMContentLoaded', () => {
             .update({ status: 'pending', reviewed_at: null })
             .eq('id', id);
           const rpcMessage = rpcResult.error?.message || 'RPC 처리 실패';
-          throw new Error(`보강 시간 변경 권한이 없습니다. ${rpcMessage}`);
+          const { data: authData } = await client.auth.getUser();
+          const loginEmail = authData?.user?.email || '확인되지 않음';
+          throw new Error(
+            `보강 시간 변경 권한이 없습니다. 현재 로그인: ${loginEmail}. ${rpcMessage}`
+          );
         }
       }
 
