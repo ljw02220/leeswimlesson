@@ -288,6 +288,10 @@ function setupLogin() {
     return;
   }
 
+  if (rememberLogin) {
+    rememberLogin.checked = localStorage.getItem('swimRememberLogin') === 'true';
+  }
+
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -295,6 +299,11 @@ function setupLogin() {
     const email = getLoginEmail(rawLoginId);
 
     const password = loginPassword.value;
+
+    localStorage.setItem(
+      'swimRememberLogin',
+      rememberLogin?.checked ? 'true' : 'false'
+    );
 
     if (loginError) {
       loginError.textContent = '';
@@ -577,7 +586,36 @@ function setupPhoneFormat() {
   });
 }
 
+async function restoreRememberedLogin() {
+  if (
+    localStorage.getItem('swimRememberLogin') !== 'true' ||
+    !window.swimDb?.client
+  ) {
+    return;
+  }
+
+  const [{ data }, savedSession] = await Promise.all([
+    window.swimDb.client.auth.getSession(),
+    Promise.resolve(localStorage.getItem('loginSession')),
+  ]);
+
+  if (!data.session || !savedSession) {
+    return;
+  }
+
+  try {
+    const loginData = JSON.parse(savedSession);
+    window.location.replace(
+      loginData.role === 'member' ? 'member-home.html' : 'home.html'
+    );
+  } catch (error) {
+    console.error('저장된 로그인 정보를 확인하지 못했습니다.', error);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  restoreRememberedLogin();
+
   setupPasswordToggle('loginPassword', 'togglePassword');
 
   setupPasswordToggle('signupPassword', 'toggleSignupPassword');
