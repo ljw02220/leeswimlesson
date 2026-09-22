@@ -210,16 +210,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
     } else {
-      const request = requests.find((item) => item.id === id);
-      const nextStatus = action === 'approve' ? 'approved' : 'rejected';
-      await client
-        .from('makeup_requests')
-        .update({ status: nextStatus, reviewed_at: new Date().toISOString() })
-        .eq('id', id);
-      await client
-        .from('makeup_slots')
-        .update({ status: action === 'approve' ? 'booked' : 'open' })
-        .eq('id', request.slot_id);
+      const { error } = await client.rpc('review_makeup_request', {
+        p_request_id: id,
+        p_decision: action === 'approve' ? 'approved' : 'rejected',
+      });
+
+      if (error) {
+        showMessage(`보강 신청을 처리하지 못했습니다. ${error.message}`, 'error');
+        return;
+      }
     }
 
     await loadData();
