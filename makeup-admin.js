@@ -114,13 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await ensureRecurringSlots();
     } catch (error) {
-      showMessage(
-        ['PGRST202', 'PGRST205'].includes(error.code)
-          ? 'Supabase SQL Editor에서 supabase-makeup-migration.sql을 먼저 실행해주세요.'
-          : `보강 시간을 준비하지 못했습니다. ${error.message}`,
-        'error'
-      );
-      return;
+      if (error.code === 'PGRST202') {
+        console.warn('보강 시간 자동 생성 함수를 아직 불러오지 못했습니다.', error);
+      } else {
+        showMessage(`보강 시간을 자동 생성하지 못했습니다. ${error.message}`, 'error');
+      }
     }
 
     const [slotResult, requestResult, memberResult] = await Promise.all([
