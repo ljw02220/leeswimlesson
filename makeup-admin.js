@@ -28,6 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
     message.dataset.tone = tone;
   }
 
+  function getTodayKey() {
+    const date = new Date();
+
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
+  }
+
   async function ensureRecurringSlots() {
     const { error } = await client.rpc('ensure_makeup_slots');
 
@@ -122,7 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const [slotResult, requestResult, memberResult] = await Promise.all([
-      client.from('makeup_slots').select('*').order('slot_date').order('slot_time'),
+      client
+        .from('makeup_slots')
+        .select('*')
+        .gte('slot_date', getTodayKey())
+        .order('slot_date')
+        .order('slot_time'),
       client.from('makeup_requests').select('*').order('requested_at'),
       client.from('members').select('id, name'),
     ]);
