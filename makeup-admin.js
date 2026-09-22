@@ -211,59 +211,50 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        const rpcResult = await client.rpc('cancel_makeup_request', {
-          p_request_id: id,
-        });
+        const request = requests.find((item) => item.id === id);
+        if (!request) throw new Error('취소할 보강 신청을 찾지 못했습니다.');
 
-        if (rpcResult.error?.code === 'PGRST202') {
-          const request = requests.find((item) => item.id === id);
-          if (!request) throw new Error('취소할 보강 신청을 찾지 못했습니다.');
+        const requestResult = await client
+          .from('makeup_requests')
+          .update({ status: 'cancelled', reviewed_at: new Date().toISOString() })
+          .eq('id', id)
+          .select('id')
+          .single();
+        if (requestResult.error) throw requestResult.error;
 
-          const requestResult = await client
-            .from('makeup_requests')
-            .update({ status: 'cancelled', reviewed_at: new Date().toISOString() })
-            .eq('id', id);
-          if (requestResult.error) throw requestResult.error;
-
-          const slotResult = await client
-            .from('makeup_slots')
-            .update({ status: 'open' })
-            .eq('id', request.slot_id);
-          if (slotResult.error) throw slotResult.error;
-        } else if (rpcResult.error) {
-          throw rpcResult.error;
-        }
+        const slotResult = await client
+          .from('makeup_slots')
+          .update({ status: 'open' })
+          .eq('id', request.slot_id)
+          .select('id')
+          .single();
+        if (slotResult.error) throw slotResult.error;
       } else {
         const decision = action === 'approve' ? 'approved' : 'rejected';
-        const rpcResult = await client.rpc('review_makeup_request', {
-          p_request_id: id,
-          p_decision: decision,
-        });
+        const request = requests.find((item) => item.id === id);
+        if (!request) throw new Error('처리할 보강 신청을 찾지 못했습니다.');
 
-        if (rpcResult.error?.code === 'PGRST202') {
-          const request = requests.find((item) => item.id === id);
-          if (!request) throw new Error('처리할 보강 신청을 찾지 못했습니다.');
+        const requestResult = await client
+          .from('makeup_requests')
+          .update({ status: decision, reviewed_at: new Date().toISOString() })
+          .eq('id', id)
+          .select('id')
+          .single();
+        if (requestResult.error) throw requestResult.error;
 
-          const requestResult = await client
+        const slotResult = await client
+          .from('makeup_slots')
+          .update({ status: decision === 'approved' ? 'booked' : 'open' })
+          .eq('id', request.slot_id)
+          .select('id')
+          .single();
+
+        if (slotResult.error) {
+          await client
             .from('makeup_requests')
-            .update({ status: decision, reviewed_at: new Date().toISOString() })
+            .update({ status: 'pending', reviewed_at: null })
             .eq('id', id);
-          if (requestResult.error) throw requestResult.error;
-
-          const slotResult = await client
-            .from('makeup_slots')
-            .update({ status: decision === 'approved' ? 'booked' : 'open' })
-            .eq('id', request.slot_id);
-
-          if (slotResult.error) {
-            await client
-              .from('makeup_requests')
-              .update({ status: 'pending', reviewed_at: null })
-              .eq('id', id);
-            throw slotResult.error;
-          }
-        } else if (rpcResult.error) {
-          throw rpcResult.error;
+          throw slotResult.error;
         }
       }
 
