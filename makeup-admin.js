@@ -218,17 +218,21 @@ document.addEventListener('DOMContentLoaded', () => {
           .from('makeup_requests')
           .update({ status: 'cancelled', reviewed_at: new Date().toISOString() })
           .eq('id', id)
-          .select('id')
-          .single();
+          .select('id');
         if (requestResult.error) throw requestResult.error;
+        if (!requestResult.data?.length) {
+          throw new Error('관리자 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
+        }
 
         const slotResult = await client
           .from('makeup_slots')
           .update({ status: 'open' })
           .eq('id', request.slot_id)
-          .select('id')
-          .single();
+          .select('id');
         if (slotResult.error) throw slotResult.error;
+        if (!slotResult.data?.length) {
+          throw new Error('보강 시간 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
+        }
       } else {
         const decision = action === 'approve' ? 'approved' : 'rejected';
         const request = requests.find((item) => item.id === id);
@@ -238,16 +242,17 @@ document.addEventListener('DOMContentLoaded', () => {
           .from('makeup_requests')
           .update({ status: decision, reviewed_at: new Date().toISOString() })
           .eq('id', id)
-          .select('id')
-          .single();
+          .select('id');
         if (requestResult.error) throw requestResult.error;
+        if (!requestResult.data?.length) {
+          throw new Error('관리자 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
+        }
 
         const slotResult = await client
           .from('makeup_slots')
           .update({ status: decision === 'approved' ? 'booked' : 'open' })
           .eq('id', request.slot_id)
-          .select('id')
-          .single();
+          .select('id');
 
         if (slotResult.error) {
           await client
@@ -255,6 +260,13 @@ document.addEventListener('DOMContentLoaded', () => {
             .update({ status: 'pending', reviewed_at: null })
             .eq('id', id);
           throw slotResult.error;
+        }
+        if (!slotResult.data?.length) {
+          await client
+            .from('makeup_requests')
+            .update({ status: 'pending', reviewed_at: null })
+            .eq('id', id);
+          throw new Error('보강 시간 변경 권한이 없습니다. 보강 SQL 정책을 갱신해주세요.');
         }
       }
 
