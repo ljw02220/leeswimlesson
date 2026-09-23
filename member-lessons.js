@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
     allCompletedLessons = await portal.getCompletedLessons(member, 100);
 
-    const previewCompletedLessons = allCompletedLessons.slice(0, 2);
+    const previewCompletedLessons = allCompletedLessons.slice(0, 1);
     const nextLesson = allUpcomingLessons.find(
       (lesson) => lesson.status === 'scheduled'
     );
