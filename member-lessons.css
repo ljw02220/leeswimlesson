@@ -1150,6 +1150,149 @@ button {
   line-height: 1.55;
 }
 
+.lesson-comments {
+  margin-top: 10px;
+  padding-top: 10px;
+
+  border-top: 1px solid #e5edf6;
+}
+
+.lesson-comments-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.lesson-comments-heading strong {
+  color: var(--text);
+
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.lesson-comments-heading span {
+  color: var(--text-soft);
+
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.lesson-comments-list {
+  display: grid;
+
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.lesson-comment {
+  padding: 8px 9px;
+
+  border: 1px solid #e5edf6;
+  border-radius: 8px;
+
+  background: #ffffff;
+}
+
+.lesson-comment.mine {
+  border-color: #cfe0ff;
+  background: #f2f7ff;
+}
+
+.lesson-comment > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.lesson-comment strong,
+.lesson-comment time {
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.lesson-comment strong {
+  color: var(--blue-strong);
+}
+
+.lesson-comment time {
+  color: #8a97a8;
+}
+
+.lesson-comment p {
+  color: #4b5d72;
+
+  font-size: 9px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.lesson-comments-empty,
+.lesson-comments-error {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  background: #f7f9fc;
+  color: var(--text-soft);
+
+  font-size: 9px;
+  text-align: center;
+}
+
+.lesson-comments-error {
+  color: #c24141;
+}
+
+.lesson-comment-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+
+  gap: 6px;
+}
+
+.lesson-comment-form input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+
+  border: 1px solid #d9e4f1;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: var(--text);
+
+  font-size: 9px;
+}
+
+.lesson-comment-form button {
+  min-width: 48px;
+  height: 34px;
+  padding: 0 10px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: var(--blue);
+  color: #ffffff;
+
+  font-size: 9px;
+  font-weight: 900;
+
+  cursor: pointer;
+}
+
+.lesson-comment-form button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .lesson-edit-button {
   display: inline-flex;
   align-items: center;

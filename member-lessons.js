@@ -19,6 +19,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function escapeHTML(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatCommentTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    return new Intl.DateTimeFormat('ko-KR', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
+
   function formatLessonTitle(title) {
     if (!title) {
       return '개인레슨';
@@ -266,7 +287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderCompletedLesson(lesson, options = {}) {
     const shouldShowNote = Boolean(options.showNote);
     const noteId = `lesson-note-${getLessonItemKey(lesson)}`;
-    const noteText = lesson.memo || '수업 내용이 없습니다.';
+    const noteText = escapeHTML(lesson.memo || '수업 내용이 없습니다.');
 
     if (shouldShowNote) {
       return `
@@ -296,6 +317,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="lesson-content-box">
               <p>${noteText}</p>
             </div>
+
+            <section class="lesson-comments" data-lesson-comments="${lesson.id}">
+              <div class="lesson-comments-heading">
+                <strong>수업 댓글</strong>
+                <span>같이 수업한 회원에게도 보여요.</span>
+              </div>
+              <div class="lesson-comments-list">
+                <p class="lesson-comments-empty">댓글을 불러오는 중입니다.</p>
+              </div>
+              <form class="lesson-comment-form" data-lesson-comment-form="${lesson.id}">
+                <input
+                  type="text"
+                  name="comment"
+                  maxlength="500"
+                  placeholder="수업에 대한 메모나 댓글을 남겨주세요."
+                  autocomplete="off"
+                  required
+                />
+                <button type="submit">등록</button>
+              </form>
+            </section>
           </div>
         </article>
       `;
@@ -325,6 +367,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       renderEmpty(container, emptyMessage);
     }
+  }
+
+  async function loadLessonComments(lessonId) {
+    const section = document.querySelector(
+      `[data-lesson-comments="${lessonId}"]`
+    );
+    const list = section?.querySelector('.lesson-comments-list');
+    if (!section || !list || !window.swimDb?.client) return;
+
+    const { data, error } = await window.swimDb.client.rpc(
+      'get_lesson_comments',
+      { p_lesson_id: lessonId }
+    );
+
+    if (error) {
+      list.innerHTML = `
+        <p class="lesson-comments-error">
+          댓글 기능을 준비하지 못했습니다. 관리자에게 문의해주세요.
+        </p>
+      `;
+      return;
+    }
+
+    list.innerHTML = data?.length
+      ? data
+          .map(
+            (comment) => `
+              <article class="lesson-comment${comment.is_mine ? ' mine' : ''}">
+                <div>
+                  <strong>${escapeHTML(comment.author_name)}</strong>
+                  <time>${formatCommentTime(comment.created_at)}</time>
+                </div>
+                <p>${escapeHTML(comment.body)}</p>
+              </article>
+            `
+          )
+          .join('')
+      : '<p class="lesson-comments-empty">아직 댓글이 없습니다.</p>';
   }
 
   function setViewAllButtonState(type, isEnabled) {
@@ -403,7 +483,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  document.getElementById('lessonListModalBody')?.addEventListener('click', (event) => {
+  document.getElementById('lessonListModalBody')?.addEventListener('click', async (event) => {
     const toggle = event.target.closest('.lesson-note-toggle');
 
     if (!toggle) {
@@ -434,8 +514,52 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (panel) {
       panel.hidden = isExpanded;
+
+      if (!isExpanded) {
+        const comments = panel.querySelector('[data-lesson-comments]');
+        if (comments?.dataset.lessonComments) {
+          await loadLessonComments(comments.dataset.lessonComments);
+        }
+      }
     }
   });
+
+  document
+    .getElementById('lessonListModalBody')
+    ?.addEventListener('submit', async (event) => {
+      const form = event.target.closest('[data-lesson-comment-form]');
+      if (!form) return;
+
+      event.preventDefault();
+      const lessonId = form.dataset.lessonCommentForm;
+      const input = form.elements.comment;
+      const body = input?.value.trim() || '';
+      const button = form.querySelector('button[type="submit"]');
+      if (!body) return;
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = '등록 중';
+      }
+
+      const { error } = await window.swimDb.client.rpc('add_lesson_comment', {
+        p_lesson_id: lessonId,
+        p_body: body,
+      });
+
+      if (button) {
+        button.disabled = false;
+        button.textContent = '등록';
+      }
+
+      if (error) {
+        alert(`댓글을 등록하지 못했습니다. ${error.message}`);
+        return;
+      }
+
+      form.reset();
+      await loadLessonComments(lessonId);
+    });
 
   document
     .getElementById('calendarPreviousButton')
