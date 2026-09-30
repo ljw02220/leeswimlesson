@@ -127,7 +127,17 @@ begin
     return exists (
       select 1
       from jsonb_array_elements(coalesce(current_member.group_lessons, '[]'::jsonb)) item
-      where (item ->> 'day')::integer = extract(dow from target_lesson.lesson_date)::integer
+      where case
+          when item ->> 'day' ~ '^[0-6]$' then (item ->> 'day')::integer
+          when coalesce(item ->> 'dayName', item ->> 'day') = '일' then 0
+          when coalesce(item ->> 'dayName', item ->> 'day') = '월' then 1
+          when coalesce(item ->> 'dayName', item ->> 'day') = '화' then 2
+          when coalesce(item ->> 'dayName', item ->> 'day') = '수' then 3
+          when coalesce(item ->> 'dayName', item ->> 'day') = '목' then 4
+          when coalesce(item ->> 'dayName', item ->> 'day') = '금' then 5
+          when coalesce(item ->> 'dayName', item ->> 'day') = '토' then 6
+          else -1
+        end = extract(dow from target_lesson.lesson_date)::integer
         and left(item ->> 'time', 5) = to_char(target_lesson.lesson_time, 'HH24:MI')
     );
   end if;
