@@ -292,6 +292,17 @@
     }
   }
 
+  function isAdminPreviewRequested(user) {
+    if (new URLSearchParams(window.location.search).get('preview') !== 'admin') {
+      return false;
+    }
+
+    return [
+      'ljw022072@gmail.com',
+      'admin@admins.leeswimlesson.com',
+    ].includes(String(user?.email || '').toLowerCase());
+  }
+
   function syncSessionMemberId(memberId) {
     ['sessionStorage', 'localStorage'].forEach((storageName) => {
       const storage = window[storageName];
@@ -447,6 +458,10 @@
 
       if (!candidate) {
         return null;
+      }
+
+      if (isAdminPreviewRequested(user)) {
+        return mapMember(candidate);
       }
 
       if (candidate.auth_user_id && candidate.auth_user_id !== user?.id) {

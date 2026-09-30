@@ -1319,6 +1319,19 @@ button {
   cursor: wait;
 }
 
+.lesson-comments-preview {
+  margin: 0;
+  padding: 9px;
+
+  border-radius: 8px;
+
+  background: #f7f9fc;
+  color: var(--text-soft);
+
+  font-size: 9px;
+  text-align: center;
+}
+
 .lesson-edit-button {
   display: inline-flex;
   align-items: center;

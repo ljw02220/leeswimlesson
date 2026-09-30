@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
+  const isAdminPreview =
+    new URLSearchParams(window.location.search).get('preview') === 'admin';
   let allUpcomingLessons = [];
   let allCompletedLessons = [];
   let calendarWeekOffset = 0;
@@ -326,17 +328,21 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div class="lesson-comments-list">
                 <p class="lesson-comments-empty">댓글을 불러오는 중입니다.</p>
               </div>
-              <form class="lesson-comment-form" data-lesson-comment-form="${lesson.id}">
-                <input
-                  type="text"
-                  name="comment"
-                  maxlength="500"
-                  placeholder="수업에 대한 메모나 댓글을 남겨주세요."
-                  autocomplete="off"
-                  required
-                />
-                <button type="submit">등록</button>
-              </form>
+              ${
+                isAdminPreview
+                  ? '<p class="lesson-comments-preview">관리자 미리보기에서는 댓글을 읽기만 할 수 있습니다.</p>'
+                  : `<form class="lesson-comment-form" data-lesson-comment-form="${lesson.id}">
+                      <input
+                        type="text"
+                        name="comment"
+                        maxlength="500"
+                        placeholder="수업에 대한 메모나 댓글을 남겨주세요."
+                        autocomplete="off"
+                        required
+                      />
+                      <button type="submit">등록</button>
+                    </form>`
+              }
             </section>
           </div>
         </article>
@@ -384,7 +390,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (error) {
       list.innerHTML = `
         <p class="lesson-comments-error">
-          댓글 기능을 준비하지 못했습니다. 관리자에게 문의해주세요.
+          댓글을 불러오지 못했습니다. ${escapeHTML(error.message)}
         </p>
       `;
       return;
@@ -632,6 +638,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const { member } = await portal.loadCurrentMember();
+
+    if (isAdminPreview) {
+      const heading = document.querySelector('.lesson-page-heading h1');
+      if (heading) heading.textContent = `${member.name}님의 내 수업`;
+      document.title = `${member.name} 회원 미리보기`;
+    }
+
     const total = Number(member.total_lessons || 0);
     const used = portal.getEffectiveUsedLessons(member);
     const remaining = portal.getRemainingLessons(member);

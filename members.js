@@ -1566,6 +1566,7 @@ function setupModalEvents() {
   const cancelButton = document.getElementById('cancelMemberButton');
 
   const deleteButton = document.getElementById('deleteMemberButton');
+  const previewButton = document.getElementById('previewMemberButton');
 
   const totalInput = document.getElementById('totalLessons');
 
@@ -1601,6 +1602,10 @@ function setupModalEvents() {
         deleteMember(editingMemberId);
       }
     });
+  }
+
+  if (previewButton) {
+    previewButton.addEventListener('click', previewEditingMember);
   }
 
   modal.addEventListener('click', (event) => {
@@ -1711,6 +1716,7 @@ function openAddMemberModal() {
   setSelectedGroupLessons([]);
 
   document.getElementById('deleteMemberButton').style.display = 'none';
+  document.getElementById('previewMemberButton').style.display = 'none';
 
   updateRemainingPreview();
 
@@ -1779,6 +1785,7 @@ function openMemberDetail(memberId) {
   document.getElementById('memberMemo').value = member.memo || '';
 
   document.getElementById('deleteMemberButton').style.display = 'inline-flex';
+  document.getElementById('previewMemberButton').style.display = 'inline-flex';
 
   updateRemainingPreview();
 
@@ -1803,6 +1810,20 @@ function closeMemberModal() {
   document.body.style.overflow = '';
 
   editingMemberId = null;
+}
+
+function previewEditingMember() {
+  if (!editingMemberId) {
+    alert('먼저 미리 볼 회원을 선택해주세요.');
+    return;
+  }
+
+  const params = new URLSearchParams({
+    memberId: editingMemberId,
+    preview: 'admin',
+  });
+
+  window.open(`member-lessons.html?${params.toString()}`, '_blank', 'noopener');
 }
 
 // ======================================================
