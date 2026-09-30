@@ -1823,7 +1823,7 @@ function previewEditingMember() {
     preview: 'admin',
   });
 
-  window.open(`member-lessons.html?${params.toString()}`, '_blank', 'noopener');
+  window.location.href = `member-lessons.html?${params.toString()}`;
 }
 
 // ======================================================
