@@ -212,12 +212,43 @@
     });
   }
 
+  async function loadLessonNoteNotifications() {
+    if (!isMember) return [];
+
+    const { data, error } = await client.rpc('get_lesson_note_notifications');
+    if (error) {
+      console.warn('수업노트 알림을 불러오지 못했습니다.', error);
+      return [];
+    }
+
+    return (data || []).map((note) => {
+      const typeName = note.lesson_type === 'group'
+        ? '단체수업'
+        : note.lesson_type === 'makeup'
+          ? '보강'
+          : '개인레슨';
+      const time = String(note.lesson_time || '').slice(0, 5);
+
+      return {
+        title: '새 수업노트가 작성되었습니다.',
+        message: `${typeName} · ${note.lesson_date} ${time}`,
+        href: 'member-lessons.html?view=completed',
+        createdAt: note.created_at || '',
+      };
+    });
+  }
+
   async function refresh(trigger, panel) {
-    const [baseNotifications, commentNotifications] = await Promise.all([
+    const [baseNotifications, commentNotifications, noteNotifications] = await Promise.all([
       isMember ? loadMemberNotifications() : loadAdminNotifications(),
       loadCommentNotifications(),
+      loadLessonNoteNotifications(),
     ]);
-    notifications = [...baseNotifications, ...commentNotifications].sort((a, b) => {
+    notifications = [
+      ...baseNotifications,
+      ...commentNotifications,
+      ...noteNotifications,
+    ].sort((a, b) => {
       if (a.persistent && !b.persistent) return -1;
       if (!a.persistent && b.persistent) return 1;
       return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));

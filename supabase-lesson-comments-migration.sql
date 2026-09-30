@@ -30,6 +30,43 @@ on public.lesson_comments (lesson_type, lesson_date, lesson_time, created_at);
 
 alter table public.lesson_comments enable row level security;
 
+alter table public.lessons
+add column if not exists note_updated_at timestamptz;
+
+create or replace function public.track_lesson_note_update()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    if nullif(trim(coalesce(new.memo, '')), '') is not null then
+      new.note_updated_at := now();
+    end if;
+  elsif new.memo is distinct from old.memo then
+    if nullif(trim(coalesce(new.memo, '')), '') is not null then
+      new.note_updated_at := now();
+    else
+      new.note_updated_at := null;
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists track_lesson_note_update on public.lessons;
+
+create trigger track_lesson_note_update
+before insert or update of memo on public.lessons
+for each row
+execute function public.track_lesson_note_update();
+
+update public.lessons
+set note_updated_at = coalesce(updated_at, created_at, now())
+where nullif(trim(coalesce(memo, '')), '') is not null
+  and note_updated_at is null;
+
 create or replace function public.can_access_lesson_comments(p_lesson_id uuid)
 returns boolean
 language plpgsql
@@ -310,15 +347,77 @@ begin
 end;
 $$;
 
+create or replace function public.get_lesson_note_notifications()
+returns table (
+  id uuid,
+  lesson_type text,
+  lesson_date date,
+  lesson_time time,
+  body text,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  is_admin boolean;
+begin
+  is_admin := lower(coalesce(auth.jwt() ->> 'email', '')) in (
+    'ljw022072@gmail.com',
+    'admin@admins.leeswimlesson.com'
+  );
+
+  if is_admin then
+    return;
+  end if;
+
+  return query
+  select
+    note.id,
+    note.lesson_type,
+    note.lesson_date,
+    note.lesson_time,
+    note.body,
+    note.created_at
+  from (
+    select distinct on (
+      lesson.lesson_type,
+      lesson.lesson_date,
+      lesson.lesson_time
+    )
+      lesson.id,
+      lesson.lesson_type,
+      lesson.lesson_date,
+      lesson.lesson_time,
+      lesson.memo as body,
+      lesson.note_updated_at as created_at
+    from public.lessons lesson
+    where lesson.note_updated_at is not null
+      and nullif(trim(coalesce(lesson.memo, '')), '') is not null
+      and public.can_access_lesson_comments(lesson.id)
+    order by
+      lesson.lesson_type,
+      lesson.lesson_date,
+      lesson.lesson_time,
+      lesson.note_updated_at desc
+  ) note
+  order by note.created_at desc
+  limit 20;
+end;
+$$;
+
 revoke all on function public.can_access_lesson_comments(uuid) from public;
 revoke all on function public.get_lesson_comments(uuid) from public;
 revoke all on function public.add_lesson_comment(uuid, text) from public;
 revoke all on function public.delete_lesson_comment(uuid) from public;
 revoke all on function public.get_lesson_comment_notifications() from public;
+revoke all on function public.get_lesson_note_notifications() from public;
 
 grant execute on function public.get_lesson_comments(uuid) to authenticated;
 grant execute on function public.add_lesson_comment(uuid, text) to authenticated;
 grant execute on function public.delete_lesson_comment(uuid) to authenticated;
 grant execute on function public.get_lesson_comment_notifications() to authenticated;
+grant execute on function public.get_lesson_note_notifications() to authenticated;
 
 notify pgrst, 'reload schema';
