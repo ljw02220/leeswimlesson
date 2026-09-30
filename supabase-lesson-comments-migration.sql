@@ -75,7 +75,6 @@ set search_path = public
 as $$
 declare
   target_lesson public.lessons%rowtype;
-  current_member public.members%rowtype;
 begin
   select * into target_lesson
   from public.lessons
@@ -90,43 +89,54 @@ begin
     return true;
   end if;
 
-  select * into current_member
-  from public.members
-  where auth_user_id = auth.uid()
-  limit 1;
-
-  if not found then return false; end if;
+  if not exists (
+    select 1
+    from public.members member
+    where member.auth_user_id = auth.uid()
+  ) then
+    return false;
+  end if;
 
   if target_lesson.lesson_type = 'personal' then
     return exists (
       select 1
-      from public.lessons
-      where member_id = current_member.id
-        and lesson_type = target_lesson.lesson_type
-        and lesson_date = target_lesson.lesson_date
-        and lesson_time = target_lesson.lesson_time
-        and status = 'completed'
-    ) or current_member.name = any(
-      regexp_split_to_array(coalesce(target_lesson.title, ''), '\s*,\s*')
+      from public.lessons lesson
+      join public.members member on member.id = lesson.member_id
+      where member.auth_user_id = auth.uid()
+        and lesson.lesson_type = target_lesson.lesson_type
+        and lesson.lesson_date = target_lesson.lesson_date
+        and lesson.lesson_time = target_lesson.lesson_time
+        and lesson.status = 'completed'
+    ) or exists (
+      select 1
+      from public.members member
+      where member.auth_user_id = auth.uid()
+        and member.name = any(
+          regexp_split_to_array(coalesce(target_lesson.title, ''), '\s*,\s*')
+        )
     );
   end if;
 
   if target_lesson.lesson_type = 'makeup' then
     return exists (
       select 1
-      from public.lessons
-      where member_id = current_member.id
-        and lesson_type = 'makeup'
-        and lesson_date = target_lesson.lesson_date
-        and lesson_time = target_lesson.lesson_time
-        and status = 'completed'
+      from public.lessons lesson
+      join public.members member on member.id = lesson.member_id
+      where member.auth_user_id = auth.uid()
+        and lesson.lesson_type = 'makeup'
+        and lesson.lesson_date = target_lesson.lesson_date
+        and lesson.lesson_time = target_lesson.lesson_time
+        and lesson.status = 'completed'
     );
   end if;
 
   if target_lesson.lesson_type = 'group' then
     return exists (
       select 1
-      from jsonb_array_elements(coalesce(current_member.group_lessons, '[]'::jsonb)) item
+      from public.members member
+      cross join lateral jsonb_array_elements(
+        coalesce(member.group_lessons, '[]'::jsonb)
+      ) item
       where case
           when item ->> 'day' ~ '^[0-6]$' then (item ->> 'day')::integer
           when coalesce(item ->> 'dayName', item ->> 'day') = '일' then 0
@@ -139,6 +149,7 @@ begin
           else -1
         end = extract(dow from target_lesson.lesson_date)::integer
         and left(item ->> 'time', 5) = to_char(target_lesson.lesson_time, 'HH24:MI')
+        and member.auth_user_id = auth.uid()
     );
   end if;
 
