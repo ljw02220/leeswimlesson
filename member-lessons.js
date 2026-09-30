@@ -382,6 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    body.scrollTop = 0;
   }
 
   document
@@ -412,6 +413,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panelId = toggle.getAttribute('aria-controls');
     const panel = panelId ? document.getElementById(panelId) : null;
     const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+
+    document
+      .querySelectorAll(
+        '#lessonListModalBody .lesson-note-toggle[aria-expanded="true"]'
+      )
+      .forEach((openToggle) => {
+        if (openToggle === toggle) return;
+
+        openToggle.setAttribute('aria-expanded', 'false');
+        const openPanelId = openToggle.getAttribute('aria-controls');
+        const openPanel = openPanelId
+          ? document.getElementById(openPanelId)
+          : null;
+
+        if (openPanel) openPanel.hidden = true;
+      });
 
     toggle.setAttribute('aria-expanded', String(!isExpanded));
 

@@ -1129,6 +1129,10 @@ button {
   padding: 0 11px 11px;
 }
 
+.lesson-note-panel[hidden] {
+  display: none;
+}
+
 .lesson-content-box {
   padding: 10px;
 
@@ -1279,6 +1283,15 @@ button {
   padding: 14px;
 
   overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lesson-list-modal-body > * {
+  flex: 0 0 auto;
+}
+
+.lesson-list-modal-body .lesson-note-toggle {
+  min-height: 58px;
 }
 
 /* ==================================================
