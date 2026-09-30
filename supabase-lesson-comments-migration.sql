@@ -43,12 +43,26 @@ begin
 
   if not found then return false; end if;
 
-  if target_lesson.lesson_type in ('personal', 'makeup') then
+  if target_lesson.lesson_type = 'personal' then
     return exists (
       select 1
       from public.lessons
       where member_id = current_member.id
         and lesson_type = target_lesson.lesson_type
+        and lesson_date = target_lesson.lesson_date
+        and lesson_time = target_lesson.lesson_time
+        and status = 'completed'
+    ) or current_member.name = any(
+      regexp_split_to_array(coalesce(target_lesson.title, ''), '\s*,\s*')
+    );
+  end if;
+
+  if target_lesson.lesson_type = 'makeup' then
+    return exists (
+      select 1
+      from public.lessons
+      where member_id = current_member.id
+        and lesson_type = 'makeup'
         and lesson_date = target_lesson.lesson_date
         and lesson_time = target_lesson.lesson_time
         and status = 'completed'
