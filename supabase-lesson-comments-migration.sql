@@ -3,10 +3,27 @@ create table if not exists public.lesson_comments (
   lesson_type text not null,
   lesson_date date not null,
   lesson_time time not null,
-  author_member_id uuid not null references public.members(id) on delete cascade,
+  author_member_id uuid references public.members(id) on delete cascade,
+  author_role text not null default 'member' check (author_role in ('member', 'admin')),
+  author_name text,
   body text not null check (char_length(trim(body)) between 1 and 500),
   created_at timestamptz not null default now()
 );
+
+alter table public.lesson_comments
+alter column author_member_id drop not null;
+
+alter table public.lesson_comments
+add column if not exists author_role text not null default 'member';
+
+alter table public.lesson_comments
+add column if not exists author_name text;
+
+update public.lesson_comments comment
+set author_name = member.name
+from public.members member
+where comment.author_member_id = member.id
+  and comment.author_name is null;
 
 create index if not exists lesson_comments_thread_idx
 on public.lesson_comments (lesson_type, lesson_date, lesson_time, created_at);
@@ -97,6 +114,7 @@ as $$
 declare
   target_lesson public.lessons%rowtype;
   current_member_id uuid;
+  is_admin boolean;
 begin
   if not public.can_access_lesson_comments(p_lesson_id) then
     raise exception '이 수업의 댓글을 볼 권한이 없습니다.';
@@ -108,15 +126,20 @@ begin
   where auth_user_id = auth.uid()
   limit 1;
 
+  is_admin := lower(coalesce(auth.jwt() ->> 'email', '')) in (
+    'ljw022072@gmail.com',
+    'admin@admins.leeswimlesson.com'
+  );
+
   return query
   select
     comment.id,
-    member.name,
+    coalesce(comment.author_name, member.name, '회원'),
     comment.body,
     comment.created_at,
-    comment.author_member_id = current_member_id
+    is_admin or comment.author_member_id = current_member_id
   from public.lesson_comments comment
-  join public.members member on member.id = comment.author_member_id
+  left join public.members member on member.id = comment.author_member_id
   where comment.lesson_type = target_lesson.lesson_type
     and comment.lesson_date = target_lesson.lesson_date
     and comment.lesson_time = target_lesson.lesson_time
@@ -137,6 +160,7 @@ declare
   target_lesson public.lessons%rowtype;
   current_member_id uuid;
   new_comment_id uuid;
+  is_admin boolean;
 begin
   if not public.can_access_lesson_comments(p_lesson_id) then
     raise exception '이 수업에 댓글을 작성할 권한이 없습니다.';
@@ -152,7 +176,12 @@ begin
   where auth_user_id = auth.uid()
   limit 1;
 
-  if current_member_id is null then
+  is_admin := lower(coalesce(auth.jwt() ->> 'email', '')) in (
+    'ljw022072@gmail.com',
+    'admin@admins.leeswimlesson.com'
+  );
+
+  if current_member_id is null and not is_admin then
     raise exception '회원 정보를 찾을 수 없습니다.';
   end if;
 
@@ -161,12 +190,16 @@ begin
     lesson_date,
     lesson_time,
     author_member_id,
+    author_role,
+    author_name,
     body
   ) values (
     target_lesson.lesson_type,
     target_lesson.lesson_date,
     target_lesson.lesson_time,
     current_member_id,
+    case when is_admin then 'admin' else 'member' end,
+    case when is_admin then '코치' else null end,
     trim(p_body)
   )
   returning id into new_comment_id;

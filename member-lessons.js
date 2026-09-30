@@ -328,21 +328,21 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div class="lesson-comments-list">
                 <p class="lesson-comments-empty">댓글을 불러오는 중입니다.</p>
               </div>
-              ${
-                isAdminPreview
-                  ? '<p class="lesson-comments-preview">관리자 미리보기에서는 댓글을 읽기만 할 수 있습니다.</p>'
-                  : `<form class="lesson-comment-form" data-lesson-comment-form="${lesson.id}">
-                      <input
-                        type="text"
-                        name="comment"
-                        maxlength="500"
-                        placeholder="수업에 대한 메모나 댓글을 남겨주세요."
-                        autocomplete="off"
-                        required
-                      />
-                      <button type="submit">등록</button>
-                    </form>`
-              }
+              <form class="lesson-comment-form" data-lesson-comment-form="${lesson.id}">
+                <input
+                  type="text"
+                  name="comment"
+                  maxlength="500"
+                  placeholder="${
+                    isAdminPreview
+                      ? '코치 댓글을 남겨주세요.'
+                      : '수업에 대한 메모나 댓글을 남겨주세요.'
+                  }"
+                  autocomplete="off"
+                  required
+                />
+                <button type="submit">등록</button>
+              </form>
             </section>
           </div>
         </article>
