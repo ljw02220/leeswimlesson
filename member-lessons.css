@@ -1210,6 +1210,13 @@ button {
   margin-bottom: 4px;
 }
 
+.lesson-comment > div > span {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+}
+
 .lesson-comment strong,
 .lesson-comment time {
   font-size: 8px;
@@ -1230,6 +1237,25 @@ button {
   font-size: 9px;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.lesson-comment-delete {
+  padding: 3px 5px;
+
+  border: 0;
+
+  background: transparent;
+  color: #d34a4a;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.lesson-comment-delete:disabled {
+  opacity: 0.45;
+  cursor: wait;
 }
 
 .lesson-comments-empty,

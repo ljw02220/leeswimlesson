@@ -161,11 +161,51 @@ begin
 end;
 $$;
 
+create or replace function public.delete_lesson_comment(p_comment_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_comment public.lesson_comments%rowtype;
+  current_member_id uuid;
+  is_admin boolean;
+begin
+  select * into target_comment
+  from public.lesson_comments
+  where id = p_comment_id;
+
+  if not found then
+    raise exception '삭제할 댓글을 찾을 수 없습니다.';
+  end if;
+
+  select members.id into current_member_id
+  from public.members
+  where auth_user_id = auth.uid()
+  limit 1;
+
+  is_admin := lower(coalesce(auth.jwt() ->> 'email', '')) in (
+    'ljw022072@gmail.com',
+    'admin@admins.leeswimlesson.com'
+  );
+
+  if not is_admin and target_comment.author_member_id is distinct from current_member_id then
+    raise exception '본인이 작성한 댓글만 삭제할 수 있습니다.';
+  end if;
+
+  delete from public.lesson_comments
+  where id = p_comment_id;
+end;
+$$;
+
 revoke all on function public.can_access_lesson_comments(uuid) from public;
 revoke all on function public.get_lesson_comments(uuid) from public;
 revoke all on function public.add_lesson_comment(uuid, text) from public;
+revoke all on function public.delete_lesson_comment(uuid) from public;
 
 grant execute on function public.get_lesson_comments(uuid) to authenticated;
 grant execute on function public.add_lesson_comment(uuid, text) to authenticated;
+grant execute on function public.delete_lesson_comment(uuid) to authenticated;
 
 notify pgrst, 'reload schema';

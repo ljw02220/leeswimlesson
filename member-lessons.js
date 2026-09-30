@@ -396,8 +396,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             (comment) => `
               <article class="lesson-comment${comment.is_mine ? ' mine' : ''}">
                 <div>
-                  <strong>${escapeHTML(comment.author_name)}</strong>
-                  <time>${formatCommentTime(comment.created_at)}</time>
+                  <span>
+                    <strong>${escapeHTML(comment.author_name)}</strong>
+                    <time>${formatCommentTime(comment.created_at)}</time>
+                  </span>
+                  ${
+                    comment.is_mine
+                      ? `<button
+                          type="button"
+                          class="lesson-comment-delete"
+                          data-comment-delete="${comment.id}"
+                          data-lesson-id="${lessonId}"
+                        >삭제</button>`
+                      : ''
+                  }
                 </div>
                 <p>${escapeHTML(comment.body)}</p>
               </article>
@@ -559,6 +571,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       form.reset();
       await loadLessonComments(lessonId);
+    });
+
+  document
+    .getElementById('lessonListModalBody')
+    ?.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-comment-delete]');
+      if (!button) return;
+
+      if (!confirm('작성한 댓글을 삭제할까요?')) return;
+
+      button.disabled = true;
+      const { error } = await window.swimDb.client.rpc(
+        'delete_lesson_comment',
+        { p_comment_id: button.dataset.commentDelete }
+      );
+
+      if (error) {
+        button.disabled = false;
+        alert(`댓글을 삭제하지 못했습니다. ${error.message}`);
+        return;
+      }
+
+      await loadLessonComments(button.dataset.lessonId);
     });
 
   document
