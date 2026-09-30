@@ -292,6 +292,23 @@
     }
   }
 
+  function syncSessionMemberId(memberId) {
+    ['sessionStorage', 'localStorage'].forEach((storageName) => {
+      const storage = window[storageName];
+      const savedSession = storage.getItem('loginSession');
+      if (!savedSession) return;
+
+      try {
+        const session = JSON.parse(savedSession);
+        if (session.role !== 'member') return;
+        session.memberId = memberId;
+        storage.setItem('loginSession', JSON.stringify(session));
+      } catch (error) {
+        console.warn('회원 로그인 정보를 갱신하지 못했습니다.', error);
+      }
+    });
+  }
+
   async function linkMemberAuthUser(member, user) {
     if (!member?.id || !user?.id || member.auth_user_id === user.id) {
       return member;
@@ -393,11 +410,7 @@
     const name = metadata.name || metadata.full_name || '';
     const phone = metadata.phone || '';
 
-    let query = client.from('members').select('*');
-
-    if (memberId) {
-      query = query.eq('id', memberId).limit(1);
-    } else if (user?.id) {
+    if (user?.id) {
       const { data, error } = await client
         .from('members')
         .select('*')
@@ -409,45 +422,67 @@
       }
 
       if (data?.[0]) {
+        syncSessionMemberId(data[0].id);
         return mapMember(data[0]);
       }
 
       const approvedSignupMember = await loadApprovedSignupMember(user);
 
       if (approvedSignupMember) {
+        syncSessionMemberId(approvedSignupMember.id);
         return approvedSignupMember;
       }
+    }
 
-      if (phone) {
-        const { data: phoneData, error: phoneError } = await client
-          .from('members')
-          .select('*');
+    let query = client.from('members').select('*');
 
-        if (phoneError) {
-          throw phoneError;
-        }
-
-        const normalizedPhone = normalizePhone(phone);
-        const matchedMember = (phoneData || []).find(
-          (member) => normalizePhone(member.phone) === normalizedPhone
-        );
-
-        return matchedMember ? mapMember(matchedMember) : null;
-      }
-    } else if (phone) {
-      const { data, error } = await client.from('members').select('*');
+    if (memberId) {
+      const { data, error } = await query.eq('id', memberId).limit(1);
 
       if (error) {
         throw error;
       }
 
+      const candidate = data?.[0];
+
+      if (!candidate) {
+        return null;
+      }
+
+      if (candidate.auth_user_id && candidate.auth_user_id !== user?.id) {
+        return null;
+      }
+
+      const linkedMember = await linkMemberAuthUser(candidate, user);
+      syncSessionMemberId(linkedMember.id);
+
+      return mapMember(linkedMember);
+    }
+
+    if (phone) {
+      const { data: phoneData, error: phoneError } = await client
+        .from('members')
+        .select('*');
+
+      if (phoneError) {
+        throw phoneError;
+      }
+
       const normalizedPhone = normalizePhone(phone);
-      const matchedMember = (data || []).find(
+      const matchedMember = (phoneData || []).find(
         (member) => normalizePhone(member.phone) === normalizedPhone
       );
 
-      return matchedMember ? mapMember(matchedMember) : null;
-    } else if (name) {
+      if (matchedMember) {
+        const linkedMember = await linkMemberAuthUser(matchedMember, user);
+        syncSessionMemberId(linkedMember.id);
+        return mapMember(linkedMember);
+      }
+
+      return null;
+    }
+
+    if (name) {
       query = query.eq('name', name).limit(1);
     } else {
       return null;
