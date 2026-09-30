@@ -246,13 +246,79 @@ begin
 end;
 $$;
 
+create or replace function public.get_lesson_comment_notifications()
+returns table (
+  id uuid,
+  lesson_id uuid,
+  lesson_type text,
+  lesson_date date,
+  lesson_time time,
+  author_name text,
+  body text,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_member_id uuid;
+  is_admin boolean;
+begin
+  select members.id into current_member_id
+  from public.members
+  where auth_user_id = auth.uid()
+  limit 1;
+
+  is_admin := lower(coalesce(auth.jwt() ->> 'email', '')) in (
+    'ljw022072@gmail.com',
+    'admin@admins.leeswimlesson.com'
+  );
+
+  return query
+  select
+    comment.id,
+    accessible_lesson.id,
+    comment.lesson_type,
+    comment.lesson_date,
+    comment.lesson_time,
+    coalesce(comment.author_name, member.name, '회원'),
+    comment.body,
+    comment.created_at
+  from public.lesson_comments comment
+  left join public.members member on member.id = comment.author_member_id
+  join lateral (
+    select lesson.id
+    from public.lessons lesson
+    where lesson.lesson_type = comment.lesson_type
+      and lesson.lesson_date = comment.lesson_date
+      and lesson.lesson_time = comment.lesson_time
+      and public.can_access_lesson_comments(lesson.id)
+    order by lesson.created_at asc
+    limit 1
+  ) accessible_lesson on true
+  where (
+    (is_admin and comment.author_role <> 'admin')
+    or (
+      not is_admin
+      and current_member_id is not null
+      and comment.author_member_id is distinct from current_member_id
+    )
+  )
+  order by comment.created_at desc
+  limit 20;
+end;
+$$;
+
 revoke all on function public.can_access_lesson_comments(uuid) from public;
 revoke all on function public.get_lesson_comments(uuid) from public;
 revoke all on function public.add_lesson_comment(uuid, text) from public;
 revoke all on function public.delete_lesson_comment(uuid) from public;
+revoke all on function public.get_lesson_comment_notifications() from public;
 
 grant execute on function public.get_lesson_comments(uuid) to authenticated;
 grant execute on function public.add_lesson_comment(uuid, text) to authenticated;
 grant execute on function public.delete_lesson_comment(uuid) to authenticated;
+grant execute on function public.get_lesson_comment_notifications() to authenticated;
 
 notify pgrst, 'reload schema';

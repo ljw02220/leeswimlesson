@@ -18,6 +18,22 @@
   const seenKey = `swimNotificationSeenAt:${loginData.memberId || 'admin'}`;
   let notifications = [];
 
+  function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;',
+    })[character]);
+  }
+
+  function getPersistentCount() {
+    return notifications
+      .filter((item) => item.persistent)
+      .reduce((sum, item) => sum + Number(item.count || 0), 0);
+  }
+
   function addStyles() {
     if (document.getElementById('swim-notification-styles')) return;
 
@@ -77,9 +93,9 @@
 
     trigger.addEventListener('click', () => {
       panel.hidden = !panel.hidden;
-      if (!panel.hidden && isMember) {
+      if (!panel.hidden) {
         localStorage.setItem(seenKey, new Date().toISOString());
-        renderBadge(trigger, 0);
+        renderBadge(trigger, getPersistentCount());
       }
     });
 
@@ -106,9 +122,9 @@
       ? notifications
           .map(
             (item) => `
-              <a class="swim-notification-item" href="${item.href}">
-                <strong>${item.title}</strong>
-                <span>${item.message}</span>
+              <a class="swim-notification-item" href="${escapeHTML(item.href)}">
+                <strong>${escapeHTML(item.title)}</strong>
+                <span>${escapeHTML(item.message)}</span>
               </a>
             `
           )
@@ -128,6 +144,8 @@
         title: `가입 신청 ${signupResult.count}건`,
         message: '승인을 기다리는 회원이 있습니다.',
         href: 'members.html',
+        persistent: true,
+        count: signupResult.count,
       });
     }
     if (!makeupResult.error && makeupResult.count) {
@@ -135,6 +153,8 @@
         title: `보강 신청 ${makeupResult.count}건`,
         message: '승인 또는 반려 처리가 필요합니다.',
         href: 'lessons.html',
+        persistent: true,
+        count: makeupResult.count,
       });
     }
     return items;
@@ -161,24 +181,54 @@
         title: approved ? '보강 신청이 승인되었습니다.' : '보강 신청이 반려되었습니다.',
         message: date ? `${date} ${time}` : '보강 신청 결과를 확인해주세요.',
         href: 'member-home.html',
-        reviewedAt: request.reviewed_at || '',
+        createdAt: request.reviewed_at || '',
+      };
+    });
+  }
+
+  async function loadCommentNotifications() {
+    const { data, error } = await client.rpc('get_lesson_comment_notifications');
+    if (error) {
+      console.warn('댓글 알림을 불러오지 못했습니다.', error);
+      return [];
+    }
+
+    return (data || []).map((comment) => {
+      const typeName = comment.lesson_type === 'group'
+        ? '단체수업'
+        : comment.lesson_type === 'makeup'
+          ? '보강'
+          : '개인레슨';
+      const time = String(comment.lesson_time || '').slice(0, 5);
+      const body = String(comment.body || '').trim();
+      const preview = body.length > 45 ? `${body.slice(0, 45)}...` : body;
+
+      return {
+        title: `${comment.author_name || '회원'}님의 새 댓글`,
+        message: `${typeName} · ${comment.lesson_date} ${time} · ${preview}`,
+        href: isMember ? 'member-lessons.html?view=completed' : 'members.html',
+        createdAt: comment.created_at || '',
       };
     });
   }
 
   async function refresh(trigger, panel) {
-    notifications = isMember
-      ? await loadMemberNotifications()
-      : await loadAdminNotifications();
+    const [baseNotifications, commentNotifications] = await Promise.all([
+      isMember ? loadMemberNotifications() : loadAdminNotifications(),
+      loadCommentNotifications(),
+    ]);
+    notifications = [...baseNotifications, ...commentNotifications].sort((a, b) => {
+      if (a.persistent && !b.persistent) return -1;
+      if (!a.persistent && b.persistent) return 1;
+      return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+    });
     renderList(panel);
 
     const seenAt = localStorage.getItem(seenKey) || '';
-    const count = isMember
-      ? notifications.filter((item) => item.reviewedAt > seenAt).length
-      : notifications.reduce((sum, item) => {
-          const match = item.title.match(/(\d+)건/);
-          return sum + Number(match?.[1] || 0);
-        }, 0);
+    const unreadCount = notifications.filter(
+      (item) => !item.persistent && item.createdAt > seenAt
+    ).length;
+    const count = getPersistentCount() + unreadCount;
     renderBadge(trigger, count);
   }
 
