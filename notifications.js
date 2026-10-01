@@ -173,7 +173,7 @@
   async function loadMemberNotifications() {
     if (!loginData.memberId) return [];
 
-    const [requestResult, creditResult] = await Promise.all([
+    const [requestResult, creditResult, usageResult] = await Promise.all([
       client
         .from('makeup_requests')
         .select('id, status, reviewed_at, makeup_slots(slot_date, slot_time)')
@@ -187,6 +187,12 @@
         .eq('member_id', loginData.memberId)
         .in('status', ['approved', 'rejected'])
         .order('reviewed_at', { ascending: false })
+        .limit(8),
+      client
+        .from('makeup_credit_usages')
+        .select('id, quantity, usage_type, used_at')
+        .eq('member_id', loginData.memberId)
+        .order('used_at', { ascending: false })
         .limit(8),
     ]);
 
@@ -217,6 +223,15 @@
         createdAt: credit.reviewed_at || '',
       };
     }));
+
+    if (!usageResult.error) items.push(...(usageResult.data || []).map((usage) => ({
+      title: usage.usage_type === 'payment_discount'
+        ? `보강 ${usage.quantity}회가 결제에서 차감되었습니다.`
+        : `보강 ${usage.quantity}회가 사용 처리되었습니다.`,
+      message: '보강 횟수 현황에서 사용 내역을 확인해주세요.',
+      href: 'member-home.html',
+      createdAt: usage.used_at || '',
+    })));
 
     return items;
   }
