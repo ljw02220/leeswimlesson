@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let slots = [];
   let requests = [];
   let members = [];
+  let showAllSlots = false;
 
   function formatDate(date) {
     return new Intl.DateTimeFormat('ko-KR', {
@@ -70,7 +71,21 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .filter(Boolean);
 
-    const rows = slots.map((slot) => {
+    const sortedSlots = [...slots].sort((a, b) => {
+      const aHasRequest = requests.some(
+        (item) => item.slot_id === a.id && ['pending', 'approved'].includes(item.status)
+      );
+      const bHasRequest = requests.some(
+        (item) => item.slot_id === b.id && ['pending', 'approved'].includes(item.status)
+      );
+
+      if (aHasRequest !== bHasRequest) return aHasRequest ? -1 : 1;
+      return `${a.slot_date}_${formatTime(a.slot_time)}`.localeCompare(
+        `${b.slot_date}_${formatTime(b.slot_time)}`
+      );
+    });
+    const visibleSlots = showAllSlots ? sortedSlots : sortedSlots.slice(0, 5);
+    const rows = visibleSlots.map((slot) => {
       const request = requests.find(
         (item) =>
           item.slot_id === slot.id &&
@@ -108,8 +123,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     list.innerHTML = rows.length
-      ? rows.join('')
+      ? `${rows.join('')}${sortedSlots.length > 5 ? `
+          <button type="button" class="makeup-list-toggle" id="makeup-list-toggle">
+            ${showAllSlots ? '접기' : `더보기 (${sortedSlots.length - 5})`}
+          </button>
+        ` : ''}`
       : '<p class="today-empty">등록된 보강 가능 시간이 없습니다.</p>';
+
+    document.getElementById('makeup-list-toggle')?.addEventListener('click', () => {
+      showAllSlots = !showAllSlots;
+      render();
+    });
 
     if (typeof window.refreshLessonRecordState === 'function') {
       window.refreshLessonRecordState();
@@ -161,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function openModal() {
+    showAllSlots = false;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     loadData();
