@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let slots = [];
   let requests = [];
   let members = [];
-  let showAllSlots = false;
+  let selectedDate = getTodayKey();
 
   function formatDate(date) {
     return new Intl.DateTimeFormat('ko-KR', {
@@ -32,6 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function getTodayKey() {
     const date = new Date();
 
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
+  }
+
+  function addDays(dateKey, amount) {
+    const date = new Date(`${dateKey}T00:00:00`);
+    date.setDate(date.getDate() + amount);
     return [
       date.getFullYear(),
       String(date.getMonth() + 1).padStart(2, '0'),
@@ -71,21 +81,53 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .filter(Boolean);
 
-    const sortedSlots = [...slots].sort((a, b) => {
-      const aHasRequest = requests.some(
-        (item) => item.slot_id === a.id && ['pending', 'approved'].includes(item.status)
-      );
-      const bHasRequest = requests.some(
-        (item) => item.slot_id === b.id && ['pending', 'approved'].includes(item.status)
-      );
+    const requestRows = activeRequests.map((request) => {
+      const slot = slots.find((item) => item.id === request.slot_id);
+      if (!slot) return '';
+      const pending = request.status === 'pending';
 
-      if (aHasRequest !== bHasRequest) return aHasRequest ? -1 : 1;
-      return `${a.slot_date}_${formatTime(a.slot_time)}`.localeCompare(
-        `${b.slot_date}_${formatTime(b.slot_time)}`
-      );
+      return `
+        <article class="makeup-admin-item">
+          <div>
+            <strong>${getMemberName(request.member_id)}</strong>
+            <span>${formatDate(slot.slot_date)} ${formatTime(slot.slot_time)} · ${pending ? '승인 대기' : '승인 완료'}</span>
+          </div>
+          <div class="makeup-admin-actions">
+            ${pending ? `
+              <button type="button" onclick="handleMakeupAdminAction('approve', '${request.id}', this)">승인</button>
+              <button type="button" class="danger" onclick="handleMakeupAdminAction('reject', '${request.id}', this)">반려</button>
+            ` : `
+              <button type="button" class="danger" onclick="handleMakeupAdminAction('cancel', '${request.id}', this)">취소</button>
+            `}
+          </div>
+        </article>`;
+    }).join('');
+
+    const dateKeys = Array.from({ length: 15 }, (_, index) => addDays(getTodayKey(), index));
+    const calendar = dateKeys.map((dateKey) => {
+      const daySlots = slots.filter((slot) => slot.slot_date === dateKey);
+      const openCount = daySlots.filter((slot) => {
+        const hasRequest = activeRequests.some((request) => request.slot_id === slot.id);
+        return slot.status === 'open' && !hasRequest;
+      }).length;
+      const closedCount = daySlots.length - openCount;
+      const date = new Date(`${dateKey}T00:00:00`);
+
+      return `
+        <button type="button" class="makeup-date-cell ${dateKey === selectedDate ? 'selected' : ''}"
+          data-makeup-date="${dateKey}">
+          <span>${date.getMonth() + 1}/${date.getDate()}</span>
+          <strong>${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}</strong>
+          <small>${daySlots.length ? `가능 ${openCount}${closedCount ? ` · 마감 ${closedCount}` : ''}` : '시간 없음'}</small>
+        </button>`;
+    }).join('');
+
+    const selectedSlots = slots.filter((slot) => slot.slot_date === selectedDate);
+    const allClosed = selectedSlots.length > 0 && selectedSlots.every((slot) => {
+      const hasRequest = activeRequests.some((request) => request.slot_id === slot.id);
+      return slot.status !== 'open' || hasRequest;
     });
-    const visibleSlots = showAllSlots ? sortedSlots : sortedSlots.slice(0, 5);
-    const rows = visibleSlots.map((slot) => {
+    const slotRows = selectedSlots.map((slot) => {
       const request = requests.find(
         (item) =>
           item.slot_id === slot.id &&
@@ -101,38 +143,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }[status];
 
       return `
-        <article class="makeup-admin-item">
-          <div>
-            <strong>${formatDate(slot.slot_date)} ${formatTime(slot.slot_time)}</strong>
-            <span>${request ? getMemberName(request.member_id) : statusText}</span>
-          </div>
-          <div class="makeup-admin-actions">
-            ${request?.status === 'pending' ? `
-              <button type="button" onclick="handleMakeupAdminAction('approve', '${request.id}', this)">승인</button>
-              <button type="button" class="danger" onclick="handleMakeupAdminAction('reject', '${request.id}', this)">반려</button>
-            ` : ''}
-            ${request?.status === 'approved' ? `
-              <button type="button" class="danger" onclick="handleMakeupAdminAction('cancel', '${request.id}', this)">취소</button>
-            ` : ''}
-            ${!request ? `
-              <button type="button" class="danger" onclick="handleMakeupAdminAction('close', '${slot.id}', this)">마감</button>
-            ` : `<em>${statusText}</em>`}
-          </div>
-        </article>
-      `;
-    });
+        <div class="makeup-slot-toggle-row">
+          <div><strong>${formatTime(slot.slot_time)}</strong><span>${request ? `${getMemberName(request.member_id)} · ${statusText}` : statusText}</span></div>
+          ${request ? `<em>${statusText}</em>` : `
+            <button type="button" class="${slot.status === 'open' ? 'danger' : ''}"
+              onclick="handleMakeupAdminAction('${slot.status === 'open' ? 'close' : 'reopen'}', '${slot.id}', this)">
+              ${slot.status === 'open' ? '마감' : '다시 열기'}
+            </button>`}
+        </div>`;
+    }).join('');
 
-    list.innerHTML = rows.length
-      ? `${rows.join('')}${sortedSlots.length > 5 ? `
-          <button type="button" class="makeup-list-toggle" id="makeup-list-toggle">
-            ${showAllSlots ? '접기' : `더보기 (${sortedSlots.length - 5})`}
-          </button>
-        ` : ''}`
-      : '<p class="today-empty">등록된 보강 가능 시간이 없습니다.</p>';
+    list.innerHTML = `
+      <section class="makeup-request-section">
+        <h4>신청 대기·확정</h4>
+        ${requestRows || '<p class="today-empty">처리할 보강 신청이 없습니다.</p>'}
+      </section>
+      <section class="makeup-calendar-section">
+        <div class="makeup-section-heading"><h4>마감 관리</h4><span>오늘부터 2주</span></div>
+        <div class="makeup-two-week-calendar">${calendar}</div>
+        <div class="makeup-selected-date-heading">
+          <strong>${formatDate(selectedDate)}</strong>
+          ${selectedSlots.length ? `<button type="button" onclick="handleMakeupDayAction('${selectedDate}', '${allClosed ? 'open' : 'close'}', this)">${allClosed ? '전체 다시 열기' : '이 날짜 전체 마감'}</button>` : ''}
+        </div>
+        <div class="makeup-selected-slots">${slotRows || '<p class="today-empty">보강 시간이 없는 날짜입니다.</p>'}</div>
+      </section>`;
 
-    document.getElementById('makeup-list-toggle')?.addEventListener('click', () => {
-      showAllSlots = !showAllSlots;
-      render();
+    list.querySelectorAll('[data-makeup-date]').forEach((button) => {
+      button.addEventListener('click', () => {
+        selectedDate = button.dataset.makeupDate;
+        render();
+      });
     });
 
     if (typeof window.refreshLessonRecordState === 'function') {
@@ -185,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function openModal() {
-    showAllSlots = false;
+    selectedDate = getTodayKey();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     loadData();
@@ -212,6 +252,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target === modal) closeModal();
   });
 
+  window.handleMakeupDayAction = async (dateKey, action, button) => {
+    const targetSlots = slots.filter((slot) => {
+      const hasRequest = requests.some(
+        (request) => request.slot_id === slot.id && ['pending', 'approved'].includes(request.status)
+      );
+      return slot.slot_date === dateKey && !hasRequest;
+    });
+    if (!targetSlots.length) return;
+
+    const opening = action === 'open';
+    if (!confirm(`${formatDate(dateKey)}의 보강 시간을 ${opening ? '모두 다시 열까요?' : '모두 마감할까요?'}`)) return;
+    button.disabled = true;
+    const { error } = await client
+      .from('makeup_slots')
+      .update({ status: opening ? 'open' : 'closed' })
+      .in('id', targetSlots.map((slot) => slot.id));
+
+    if (error) {
+      alert(`날짜별 보강 시간을 변경하지 못했습니다. ${error.message}`);
+      button.disabled = false;
+      return;
+    }
+    await loadData();
+  };
+
   window.handleMakeupAdminAction = async (action, id, button) => {
     const originalText = button?.textContent || '';
 
@@ -221,10 +286,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      if (action === 'close') {
+      if (action === 'close' || action === 'reopen') {
         const { error } = await client
           .from('makeup_slots')
-          .update({ status: 'closed' })
+          .update({ status: action === 'close' ? 'closed' : 'open' })
           .eq('id', id);
         if (error) throw error;
       } else if (action === 'cancel') {
