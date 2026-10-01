@@ -115,6 +115,12 @@ for insert to authenticated
 with check (
   status = 'pending'
   and exists (
+    select 1 from public.makeup_slots slot
+    where slot.id = makeup_requests.slot_id
+      and slot.status = 'open'
+      and slot.slot_date between current_date and current_date + 21
+  )
+  and exists (
     select 1 from public.members
     where members.id = makeup_requests.member_id
       and members.auth_user_id = auth.uid()

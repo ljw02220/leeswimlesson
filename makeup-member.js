@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderPicker() {
     const selectedSlot = availableSlots.find((slot) => slot.id === selectedSlotId);
     slotList.innerHTML = `
+      <p class="makeup-booking-window">오늘부터 3주 이내의 보강을 신청할 수 있습니다.</p>
       <section class="makeup-picker-section">
         <span class="makeup-picker-label">요일과 시간</span>
         <div class="makeup-weekday-time-list">${weekdays.map((day) => `
@@ -95,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadMakeupData() {
     const today = new Date();
     const endDate = new Date(today);
-    endDate.setMonth(endDate.getMonth() + 1);
+    endDate.setDate(endDate.getDate() + 21);
     const [slotResult, requestResult] = await Promise.all([
       client.from('makeup_slots').select('*').eq('status', 'open')
         .gte('slot_date', toDateKey(today)).lte('slot_date', toDateKey(endDate))

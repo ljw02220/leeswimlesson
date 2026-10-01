@@ -13,6 +13,7 @@
 }
 
 .makeup-member-status { margin-top: 8px; }
+.makeup-booking-window { margin: 0 0 14px; color: #64748b; font-size: 12px; }
 .makeup-credit-counts { display: flex; gap: 18px; padding: 8px 0; color: #64748b; font-size: 13px; }
 .makeup-credit-counts strong { margin-left: 4px; color: #2563eb; font-size: 16px; }
 .makeup-credit-history { display: grid; gap: 7px; margin-top: 6px; }
