@@ -6,7 +6,7 @@
 
     <title>수업관리</title>
 
-    <link rel="stylesheet" href="common.css?v=20261001-makeup-calendar" />
+    <link rel="stylesheet" href="common.css?v=20261001-admin-credit" />
   </head>
 
   <body>
@@ -180,7 +180,16 @@
         <div id="makeup-admin-message" class="makeup-admin-message"></div>
         <div id="makeup-request-list" class="makeup-request-list"></div>
         <div class="makeup-credit-admin-section">
-          <h4>보강 횟수 확인 요청</h4>
+          <h4>보강 횟수 관리</h4>
+          <form id="makeup-credit-admin-form" class="makeup-credit-admin-form">
+            <select name="member_id" aria-label="회원 선택" required>
+              <option value="">회원 선택</option>
+            </select>
+            <input type="number" name="quantity" min="1" max="20" value="1" aria-label="추가 횟수" required />
+            <input type="date" name="missed_date" aria-label="빠진 수업 날짜" />
+            <input type="text" name="reason" maxlength="500" placeholder="사유 또는 메모" />
+            <button type="submit">직접 추가</button>
+          </form>
           <div id="makeup-credit-admin-list"></div>
         </div>
       </div>
@@ -285,7 +294,7 @@
     <script src="common.js?v=20260913-role-guard"></script>
     <script src="lessons.js?v=20260919-detail-actions"></script>
     <script src="makeup-admin.js?v=20261001-calendar"></script>
-    <script src="makeup-credit.js?v=20261001-usage"></script>
+    <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
     <script src="notifications.js?v=20261001-credit-usage"></script>
   </body>
 </html>

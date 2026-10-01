@@ -42,6 +42,11 @@
 .makeup-slot-toggle-row button.danger { border-color: #fecaca; background: #fff; color: #dc2626; }
 .makeup-credit-admin-section { margin-top: 22px; padding-top: 18px; border-top: 1px solid #e2e8f0; }
 .makeup-credit-admin-section h4 { margin: 0 0 10px; color: #0f172a; font-size: 15px; }
+.makeup-credit-admin-form { display: grid; grid-template-columns: minmax(130px, 1.4fr) 70px minmax(130px, 1fr); gap: 7px; margin-bottom: 12px; padding: 10px; border: 1px solid #dbeafe; border-radius: 7px; background: #f8fbff; }
+.makeup-credit-admin-form select, .makeup-credit-admin-form input { min-width: 0; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font: inherit; }
+.makeup-credit-admin-form input[name='reason'] { grid-column: 1 / 3; }
+.makeup-credit-admin-form button { border: 0; border-radius: 6px; background: #2563eb; color: #fff; font-weight: 700; cursor: pointer; }
+@media (max-width: 640px) { .makeup-credit-admin-form { grid-template-columns: 1fr 70px; } .makeup-credit-admin-form input[name='missed_date'], .makeup-credit-admin-form input[name='reason'], .makeup-credit-admin-form button { grid-column: 1 / -1; min-height: 38px; } }
 .makeup-credit-use-actions { grid-column: 1 / -1; display: flex; gap: 6px; width: 100%; }
 .makeup-credit-use-actions input { width: 64px; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; }
 .makeup-credit-use-actions button { padding: 7px 9px; border: 1px solid #93c5fd; border-radius: 6px; background: #eff6ff; color: #1d4ed8; font-weight: 700; cursor: pointer; }

@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const memberSummary = document.getElementById('makeupCreditSummary');
   const memberModal = document.getElementById('makeupCreditModal');
   const adminList = document.getElementById('makeup-credit-admin-list');
+  const adminForm = document.getElementById('makeup-credit-admin-form');
   let currentMember = null;
+  let adminMembers = [];
 
   const statusText = {
     pending: '확인 중',
@@ -138,7 +140,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminList.innerHTML = '<p class="today-empty">보강 권리 SQL을 먼저 실행해주세요.</p>';
       return;
     }
-    const names = new Map((members || []).map((member) => [member.id, member.name]));
+    adminMembers = members || [];
+    const names = new Map(adminMembers.map((member) => [member.id, member.name]));
+    const memberSelect = adminForm?.elements.member_id;
+    if (memberSelect) {
+      const selectedValue = memberSelect.value;
+      memberSelect.innerHTML = `
+        <option value="">회원 선택</option>
+        ${adminMembers
+          .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko'))
+          .map((member) => `<option value="${member.id}">${escapeHTML(member.name)}</option>`)
+          .join('')}`;
+      memberSelect.value = selectedValue;
+    }
     adminList.innerHTML = (credits || []).map((item) => `
       <article class="makeup-admin-item">
         <div>
@@ -229,6 +243,39 @@ document.addEventListener('DOMContentLoaded', async () => {
       p_decision: button.dataset.creditReview,
     });
     if (error) alert(`보강 확인 요청을 처리하지 못했습니다. ${error.message}`);
+    await loadAdminCredits();
+  });
+
+  adminForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const quantity = Number(form.elements.quantity.value);
+    const memberId = form.elements.member_id.value;
+    if (!memberId || !quantity) return;
+
+    button.disabled = true;
+    const now = new Date().toISOString();
+    const { error } = await client.from('makeup_credits').insert({
+      member_id: memberId,
+      missed_date: form.elements.missed_date.value || null,
+      quantity,
+      remaining_quantity: quantity,
+      reason: form.elements.reason.value.trim() || '관리자 직접 추가',
+      status: 'approved',
+      requested_by: 'admin',
+      reviewed_at: now,
+      updated_at: now,
+    });
+    button.disabled = false;
+
+    if (error) {
+      alert(`보강 횟수를 추가하지 못했습니다. ${error.message}`);
+      return;
+    }
+
+    form.reset();
+    form.elements.quantity.value = '1';
     await loadAdminCredits();
   });
 
