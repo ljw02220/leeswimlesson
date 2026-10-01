@@ -20,6 +20,8 @@
 .makeup-weekly-summary span { color: #475569; font-size: 14px; }
 .makeup-admin-message { color: #64748b; font-size: 14px; margin: 14px 0; }
 .makeup-admin-message[data-tone='error'] { color: #dc2626; }
+.makeup-credit-admin-section { margin-top: 22px; padding-top: 18px; border-top: 1px solid #e2e8f0; }
+.makeup-credit-admin-section h4 { margin: 0 0 10px; color: #0f172a; font-size: 15px; }
 .makeup-request-list { display: grid; gap: 10px; margin-top: 14px; }
 .makeup-admin-item {
   align-items: center; background: #f8fafc; border: 1px solid #e2e8f0;

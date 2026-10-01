@@ -13,6 +13,20 @@
 }
 
 .makeup-member-status { margin-top: 8px; }
+.makeup-credit-counts { display: flex; gap: 18px; padding: 8px 0; color: #64748b; font-size: 13px; }
+.makeup-credit-counts strong { margin-left: 4px; color: #2563eb; font-size: 16px; }
+.makeup-credit-history { display: grid; gap: 7px; margin-top: 6px; }
+.makeup-credit-history > div { display: flex; align-items: center; gap: 8px; padding-top: 7px; border-top: 1px solid #edf2f7; font-size: 12px; }
+.makeup-credit-history em { margin-left: auto; color: #64748b; font-style: normal; }
+.makeup-credit-history em.approved { color: #16a34a; }
+.makeup-credit-history em.rejected { color: #dc2626; }
+.makeup-credit-history button { border: 0; background: transparent; color: #dc2626; cursor: pointer; }
+.makeup-credit-form { display: grid; gap: 15px; padding: 20px; }
+.makeup-credit-form label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 700; }
+.makeup-credit-form label small { color: #94a3b8; font-weight: 400; }
+.makeup-credit-form input, .makeup-credit-form textarea { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #dbe3ee; border-radius: 7px; font: inherit; }
+.makeup-credit-form textarea { min-height: 90px; resize: vertical; }
+.makeup-credit-form .member-primary-button { padding: 13px; border: 0; border-radius: 7px; background: #2563eb; color: #fff; font-weight: 800; cursor: pointer; }
 .makeup-status-row, .makeup-slot-item {
   align-items: center; background: #f8fafc; border: 1px solid #e2e8f0;
   border-radius: 8px; display: flex; gap: 12px; justify-content: space-between;

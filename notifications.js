@@ -133,9 +133,10 @@
   }
 
   async function loadAdminNotifications() {
-    const [signupResult, makeupResult] = await Promise.all([
+    const [signupResult, makeupResult, creditResult] = await Promise.all([
       client.from('signup_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       client.from('makeup_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      client.from('makeup_credits').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     ]);
 
     const items = [];
@@ -157,23 +158,41 @@
         count: makeupResult.count,
       });
     }
+    if (!creditResult.error && creditResult.count) {
+      items.push({
+        title: `보강 횟수 확인 ${creditResult.count}건`,
+        message: '회원의 누락 보강 요청을 확인해주세요.',
+        href: 'lessons.html',
+        persistent: true,
+        count: creditResult.count,
+      });
+    }
     return items;
   }
 
   async function loadMemberNotifications() {
     if (!loginData.memberId) return [];
 
-    const { data, error } = await client
-      .from('makeup_requests')
-      .select('id, status, reviewed_at, makeup_slots(slot_date, slot_time)')
-      .eq('member_id', loginData.memberId)
-      .in('status', ['approved', 'rejected'])
-      .order('reviewed_at', { ascending: false })
-      .limit(8);
+    const [requestResult, creditResult] = await Promise.all([
+      client
+        .from('makeup_requests')
+        .select('id, status, reviewed_at, makeup_slots(slot_date, slot_time)')
+        .eq('member_id', loginData.memberId)
+        .in('status', ['approved', 'rejected'])
+        .order('reviewed_at', { ascending: false })
+        .limit(8),
+      client
+        .from('makeup_credits')
+        .select('id, status, quantity, reviewed_at')
+        .eq('member_id', loginData.memberId)
+        .in('status', ['approved', 'rejected'])
+        .order('reviewed_at', { ascending: false })
+        .limit(8),
+    ]);
 
-    if (error) return [];
+    const items = [];
 
-    return (data || []).map((request) => {
+    if (!requestResult.error) items.push(...(requestResult.data || []).map((request) => {
       const approved = request.status === 'approved';
       const date = request.makeup_slots?.slot_date || '';
       const time = String(request.makeup_slots?.slot_time || '').slice(0, 5);
@@ -183,7 +202,23 @@
         href: 'member-home.html',
         createdAt: request.reviewed_at || '',
       };
-    });
+    }));
+
+    if (!creditResult.error) items.push(...(creditResult.data || []).map((credit) => {
+      const approved = credit.status === 'approved';
+      return {
+        title: approved
+          ? `보강 ${credit.quantity}회가 승인되었습니다.`
+          : '보강 횟수 확인 요청이 반려되었습니다.',
+        message: approved
+          ? '사용 가능한 보강 횟수에 추가되었습니다.'
+          : '보강 횟수 현황에서 결과를 확인해주세요.',
+        href: 'member-home.html',
+        createdAt: credit.reviewed_at || '',
+      };
+    }));
+
+    return items;
   }
 
   async function loadCommentNotifications() {
