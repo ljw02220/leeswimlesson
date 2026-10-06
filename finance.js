@@ -84,6 +84,8 @@ const reportMemberName = document.getElementById('reportMemberName');
 const reportPaymentAmount = document.getElementById('reportPaymentAmount');
 const reportPaymentDate = document.getElementById('reportPaymentDate');
 const reportReportedAt = document.getElementById('reportReportedAt');
+const reportResidenceType = document.getElementById('reportResidenceType');
+const reportPaymentMethod = document.getElementById('reportPaymentMethod');
 
 /* ==================================================
   3. 현재 조회 월
@@ -1106,11 +1108,45 @@ function openPersonalReportModal() {
     reportReportedAt.value = getDefaultReportedAt(currentYear, currentMonth);
   }
 
+  if (reportResidenceType) {
+    reportResidenceType.value = '7단지';
+  }
+
+  if (reportPaymentMethod) {
+    reportPaymentMethod.value = '계좌이체';
+  }
+
   personalReportModal.classList.add('open');
   personalReportModal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
 
   reportMemberName?.focus();
+}
+
+async function fillManualReportMemberDefaults() {
+  const memberName = reportMemberName?.value.trim() || '';
+
+  if (!memberName) {
+    return;
+  }
+
+  const member = await findMemberForManualReport(memberName);
+
+  if (!member) {
+    return;
+  }
+
+  if (reportPaymentAmount && !parseMoney(reportPaymentAmount.value)) {
+    reportPaymentAmount.value = formatMoneyInputValue(member.payment_amount);
+  }
+
+  if (reportResidenceType) {
+    reportResidenceType.value = member.residence_type || '7단지';
+  }
+
+  if (reportPaymentMethod) {
+    reportPaymentMethod.value = member.payment_method || '계좌이체';
+  }
 }
 
 function closeManualReportModal() {
@@ -1130,6 +1166,8 @@ async function handleManualReportSubmit(event) {
   const amount = parseMoney(reportPaymentAmount?.value);
   const paymentDate = normalizeDateInput(reportPaymentDate?.value);
   const reportedAt = normalizeDateInput(reportReportedAt?.value);
+  const residenceType = reportResidenceType?.value || '';
+  const paymentMethod = reportPaymentMethod?.value || '';
 
   if (!memberName) {
     alert('이름을 입력해주세요.');
@@ -1185,6 +1223,8 @@ async function handleManualReportSubmit(event) {
       payment_amount: amount,
       payment_date: paymentDate,
       reported_at: reportedAt,
+      residence_type: residenceType,
+      payment_method: paymentMethod,
     });
 
     closeManualReportModal();
@@ -1402,6 +1442,11 @@ if (monthlyReport) {
 
 if (addPersonalReportButton) {
   addPersonalReportButton.addEventListener('click', openPersonalReportModal);
+}
+
+if (reportMemberName) {
+  reportMemberName.addEventListener('change', fillManualReportMemberDefaults);
+  reportMemberName.addEventListener('blur', fillManualReportMemberDefaults);
 }
 
 if (closePersonalReportModal) {

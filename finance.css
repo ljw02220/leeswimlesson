@@ -393,7 +393,8 @@
   color: #344054;
 }
 
-.finance-form .form-group input {
+.finance-form .form-group input,
+.finance-form .form-group select {
   width: 100%;
 
   padding: 11px 12px;
@@ -408,7 +409,8 @@
   outline: none;
 }
 
-.finance-form .form-group input:focus {
+.finance-form .form-group input:focus,
+.finance-form .form-group select:focus {
   border-color: #4f8df7;
   box-shadow: 0 0 0 3px rgba(79, 141, 247, 0.12);
 }
