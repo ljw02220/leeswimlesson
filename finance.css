@@ -145,6 +145,7 @@
   gap: 12px;
 }
 
+.report-edit-button,
 .report-delete-button {
   flex: 0 0 auto;
 
@@ -162,6 +163,19 @@
   font-weight: 800;
 
   cursor: pointer;
+}
+
+.report-edit-button {
+  margin-left: auto;
+
+  border-color: #bfd3f6;
+
+  background: #eef5ff;
+  color: #356fca;
+}
+
+.report-edit-button:hover {
+  background: #e1edff;
 }
 
 .report-delete-button:hover {

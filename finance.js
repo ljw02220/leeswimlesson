@@ -80,6 +80,9 @@ const cancelPersonalReportButton = document.getElementById(
   'cancelPersonalReportButton'
 );
 const personalReportForm = document.getElementById('personalReportForm');
+const personalReportModalTitle = document.getElementById(
+  'personalReportModalTitle'
+);
 const reportMemberName = document.getElementById('reportMemberName');
 const reportPaymentAmount = document.getElementById('reportPaymentAmount');
 const reportPaymentDate = document.getElementById('reportPaymentDate');
@@ -96,6 +99,7 @@ const today = new Date();
 let currentYear = today.getFullYear();
 let currentMonth = today.getMonth();
 let latestReportMembers = [];
+let editingReportId = null;
 
 /* ==================================================
   4. 공통 함수
@@ -923,6 +927,14 @@ function renderMonthlyReport(personalMembers) {
 
             <button
               type="button"
+              class="report-edit-button"
+              data-report-edit-id="${member.id}"
+            >
+              수정
+            </button>
+
+            <button
+              type="button"
               class="report-delete-button"
               data-report-delete-id="${member.id}"
             >
@@ -1099,6 +1111,15 @@ function openPersonalReportModal() {
   }
 
   personalReportForm.reset();
+  editingReportId = null;
+
+  if (personalReportModalTitle) {
+    personalReportModalTitle.textContent = '개인레슨 보고 추가';
+  }
+
+  if (reportMemberName) {
+    reportMemberName.readOnly = false;
+  }
 
   if (reportPaymentDate) {
     reportPaymentDate.value = getDefaultReportedAt(currentYear, currentMonth);
@@ -1121,6 +1142,34 @@ function openPersonalReportModal() {
   document.body.style.overflow = 'hidden';
 
   reportMemberName?.focus();
+}
+
+function openPersonalReportEditModal(reportId) {
+  const report = latestReportMembers.find(
+    (item) => String(item.id) === String(reportId)
+  );
+
+  if (!report || !personalReportModal || !personalReportForm) {
+    return;
+  }
+
+  editingReportId = report.id;
+
+  if (personalReportModalTitle) {
+    personalReportModalTitle.textContent = '개인레슨 보고 수정';
+  }
+
+  reportMemberName.value = report.name || '';
+  reportMemberName.readOnly = true;
+  reportPaymentAmount.value = formatMoneyInputValue(report.payment_amount);
+  reportPaymentDate.value = report.payment_date || '';
+  reportReportedAt.value = report.personal_reported_at || '';
+  reportResidenceType.value = report.residence_type || '7단지';
+  reportPaymentMethod.value = report.payment_method || '계좌이체';
+
+  personalReportModal.classList.add('open');
+  personalReportModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
 }
 
 async function fillManualReportMemberDefaults() {
@@ -1157,6 +1206,53 @@ function closeManualReportModal() {
   personalReportModal.classList.remove('open');
   personalReportModal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
+  editingReportId = null;
+}
+
+async function saveEditedPersonalReport(report, previousReport) {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    const reports = getStorageData(REPORT_STORAGE_KEY, []);
+    const index = reports.findIndex(
+      (item) => String(item.id) === String(previousReport.id)
+    );
+
+    if (index !== -1) {
+      reports[index] = { ...reports[index], ...report };
+      saveStorageData(REPORT_STORAGE_KEY, reports);
+    }
+
+    return;
+  }
+
+  const { error } = await client
+    .from('personal_lesson_reports')
+    .update(report)
+    .eq('id', previousReport.id);
+
+  if (error) {
+    throw error;
+  }
+
+  if (previousReport.member_id) {
+    const { error: memberError } = await client
+      .from('members')
+      .update({
+        personal_reported_at: report.reported_at,
+        personal_reported_payment_date: report.payment_date,
+      })
+      .eq('id', previousReport.member_id)
+      .eq('personal_reported_at', previousReport.personal_reported_at)
+      .eq(
+        'personal_reported_payment_date',
+        previousReport.personal_reported_payment_date
+      );
+
+    if (memberError) {
+      throw memberError;
+    }
+  }
 }
 
 async function handleManualReportSubmit(event) {
@@ -1215,17 +1311,40 @@ async function handleManualReportSubmit(event) {
   }
 
   try {
-    const matchedMember = await findMemberForManualReport(memberName);
-    const baseReport = mapMemberToManualReport(matchedMember, memberName);
+    const previousReport = latestReportMembers.find(
+      (item) => String(item.id) === String(editingReportId)
+    );
 
-    await saveManualPersonalReport({
-      ...baseReport,
-      payment_amount: amount,
-      payment_date: paymentDate,
-      reported_at: reportedAt,
-      residence_type: residenceType,
-      payment_method: paymentMethod,
-    });
+    if (previousReport) {
+      await saveEditedPersonalReport(
+        {
+          member_name: previousReport.name,
+          phone: previousReport.phone || null,
+          lesson_format: previousReport.lesson_format || '개인레슨',
+          days: previousReport.days || [],
+          lesson_time: previousReport.lesson_time || null,
+          payment_amount: amount,
+          payment_date: paymentDate,
+          payment_status: previousReport.payment_status || '완납',
+          reported_at: reportedAt,
+          residence_type: residenceType,
+          payment_method: paymentMethod,
+        },
+        previousReport
+      );
+    } else {
+      const matchedMember = await findMemberForManualReport(memberName);
+      const baseReport = mapMemberToManualReport(matchedMember, memberName);
+
+      await saveManualPersonalReport({
+        ...baseReport,
+        payment_amount: amount,
+        payment_date: paymentDate,
+        reported_at: reportedAt,
+        residence_type: residenceType,
+        payment_method: paymentMethod,
+      });
+    }
 
     closeManualReportModal();
 
@@ -1430,6 +1549,13 @@ if (copyReportButton) {
 
 if (monthlyReport) {
   monthlyReport.addEventListener('click', (event) => {
+    const editButton = event.target.closest('[data-report-edit-id]');
+
+    if (editButton) {
+      openPersonalReportEditModal(editButton.dataset.reportEditId);
+      return;
+    }
+
     const deleteButton = event.target.closest('[data-report-delete-id]');
 
     if (!deleteButton) {

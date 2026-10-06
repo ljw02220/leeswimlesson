@@ -1579,10 +1579,6 @@ function setupModalEvents() {
 
   const paymentAmountInput = document.getElementById('paymentAmount');
 
-  const paymentDateInput = document.getElementById('paymentDate');
-
-  const reportStatusInput = document.getElementById('personalReportStatus');
-
   if (!modal) {
     console.error('memberModal을 찾을 수 없습니다.');
 
@@ -1601,21 +1597,6 @@ function setupModalEvents() {
 
   if (cancelButton) {
     cancelButton.addEventListener('click', closeMemberModal);
-  }
-
-  if (paymentDateInput && reportStatusInput) {
-    paymentDateInput.addEventListener('change', () => {
-      const member = members.find(
-        (item) => String(item.id) === String(editingMemberId)
-      );
-
-      reportStatusInput.value =
-        member &&
-        paymentDateInput.value === member.paymentDate &&
-        isCurrentPaymentReported(member)
-          ? 'reported'
-          : 'unreported';
-    });
   }
 
   if (deleteButton) {
@@ -1737,8 +1718,6 @@ function openAddMemberModal() {
 
   document.getElementById('paymentMethod').value = '계좌이체';
 
-  document.getElementById('personalReportStatus').value = 'unreported';
-
   document.getElementById('memberStatus').value = '수강중';
 
   setSelectedGroupLessons([]);
@@ -1808,9 +1787,6 @@ function openMemberDetail(memberId) {
 
   document.getElementById('paymentMethod').value =
     member.paymentMethod || '계좌이체';
-
-  document.getElementById('personalReportStatus').value =
-    isCurrentPaymentReported(member) ? 'reported' : 'unreported';
 
   document.getElementById('memberStatus').value = member.status || '수강중';
 
@@ -1883,32 +1859,16 @@ async function handleMemberSubmit(event) {
   const usedLessons = Number(document.getElementById('usedLessons').value) || 0;
   const paymentDate = document.getElementById('paymentDate').value;
   const paymentStatus = document.getElementById('paymentStatus').value;
-  const reportStatus = document.getElementById('personalReportStatus').value;
   const previousMember = members.find(
     (member) => String(member.id) === String(editingMemberId)
   );
   const personalReportedAt =
-    reportStatus === 'reported'
-      ? isCurrentPaymentReported(previousMember || {}) &&
-        previousMember.paymentDate === paymentDate
-        ? previousMember.personalReportedAt
-        : getDateKey(new Date())
+    previousMember?.paymentDate === paymentDate
+      ? previousMember.personalReportedAt || ''
       : '';
 
   if (usedLessons > totalLessons) {
     alert('진행 횟수는 등록 횟수보다 많을 수 없습니다.');
-
-    return;
-  }
-
-  if (personalReportedAt && !paymentDate) {
-    alert('보고함으로 저장하려면 입금일도 입력해주세요.');
-
-    return;
-  }
-
-  if (personalReportedAt && paymentStatus === '미납') {
-    alert('미납 회원은 보고 완료 처리할 수 없습니다.');
 
     return;
   }
