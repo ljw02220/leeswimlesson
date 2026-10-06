@@ -453,6 +453,9 @@ function mapLocalMember(member) {
     payment_amount: Number(member.paymentAmount ?? member.payment_amount ?? 0),
     payment_date: member.paymentDate || member.payment_date || '',
     payment_status: member.paymentStatus || member.payment_status || '확인필요',
+    residence_type: member.residenceType || member.residence_type || '7단지',
+    payment_method:
+      member.paymentMethod || member.payment_method || '계좌이체',
     personal_reported_at:
       member.personalReportedAt || member.personal_reported_at || '',
     personal_reported_payment_date:
@@ -506,6 +509,7 @@ function getLocalPersonalMembers() {
 function mapPersonalReport(report) {
   return {
     id: report.id,
+    member_id: report.member_id || null,
     name: report.member_name || report.name || '',
     phone: report.phone || '',
     lesson_format: report.lesson_format || '1:1',
@@ -514,6 +518,8 @@ function mapPersonalReport(report) {
     payment_amount: Number(report.payment_amount || 0),
     payment_date: report.payment_date || '',
     payment_status: report.payment_status || '완납',
+    residence_type: report.residence_type || '',
+    payment_method: report.payment_method || '',
     personal_reported_at: report.reported_at || '',
     personal_reported_payment_date: report.payment_date || '',
     status: '보고완료',
@@ -529,6 +535,10 @@ function mapMemberToManualReport(member, fallbackName) {
     days: member?.days || [],
     lesson_time: member?.lesson_time || member?.time || null,
     payment_status: '완납',
+    residence_type:
+      member?.residence_type || member?.residenceType || '7단지',
+    payment_method:
+      member?.payment_method || member?.paymentMethod || '계좌이체',
     memo: '재무 화면에서 직접 추가',
   };
 }
@@ -564,7 +574,7 @@ async function findMemberForManualReport(name) {
     const { data, error } = await client
       .from('members')
       .select(
-        'id, name, phone, lesson_format, days, lesson_time, payment_amount, payment_date'
+        'id, name, phone, lesson_format, days, lesson_time, payment_amount, payment_date, residence_type, payment_method'
       )
       .eq('name', name)
       .limit(1);
@@ -829,28 +839,35 @@ function renderFinanceSummary(result) {
 function createReportText(member) {
   const dayText = formatDays(member.days);
   const timeText = formatTime(member.lesson_time);
-  const firstLine = [dayText, timeText, member.name].filter(Boolean).join(' ');
-  const paymentAmount = Number(member.payment_amount) || 0;
-  const lessonLine = [
-    member.lesson_format,
-    paymentAmount ? `${paymentAmount.toLocaleString('ko-KR')}원` : '',
+  const firstLine = [
+    dayText,
+    timeText,
+    member.name,
+    member.residence_type,
   ]
     .filter(Boolean)
     .join(' ');
-  const paymentLine = [
-    member.payment_date ? `${formatDate(member.payment_date)} 입금` : '',
-    member.personal_reported_at
-      ? `${formatDate(member.personal_reported_at)} 보고`
-      : '',
+  const paymentAmount = Number(member.payment_amount) || 0;
+  const paymentMethod =
+    member.payment_method === '계좌이체'
+      ? '계좌'
+      : member.payment_method || '';
+  const lessonLine = [
+    member.lesson_format,
+    paymentAmount ? `${paymentAmount.toLocaleString('ko-KR')}원` : '',
+    paymentMethod ? `(${paymentMethod})` : '',
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(' ');
+  const paymentLine = member.payment_date
+    ? `${formatDate(member.payment_date)} 입금`
+    : member.payment_status || '확인필요';
 
   return [
     firstLine,
     member.phone || '',
     lessonLine,
-    paymentLine || member.payment_status || '확인필요',
+    paymentLine,
   ]
     .filter(Boolean)
     .join('\n');
@@ -880,19 +897,36 @@ function renderMonthlyReport(personalMembers) {
       const dayText = formatDays(member.days);
       const timeText = formatTime(member.lesson_time);
       const paymentAmount = Number(member.payment_amount) || 0;
-      const paymentShare = paymentAmount * PERSONAL_LESSON_SHARE;
+      const paymentMethod =
+        member.payment_method === '계좌이체'
+          ? '계좌'
+          : member.payment_method || '';
       const paymentLabel = member.payment_date
         ? `${formatDate(member.payment_date)} 입금`
         : member.payment_status || '확인필요';
-      const reportLabel = member.personal_reported_at
-        ? `${formatDate(member.personal_reported_at)} 보고`
-        : '보고일 미등록';
 
       return `
         <article class="report-item">
-          <strong>
-            ${[dayText, timeText, member.name].filter(Boolean).join(' ')}
-          </strong>
+          <div class="report-item-header">
+            <strong>
+              ${[
+                dayText,
+                timeText,
+                member.name,
+                member.residence_type,
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            </strong>
+
+            <button
+              type="button"
+              class="report-delete-button"
+              data-report-delete-id="${member.id}"
+            >
+              삭제
+            </button>
+          </div>
 
           ${
             member.phone
@@ -906,17 +940,102 @@ function renderMonthlyReport(personalMembers) {
 
           <p class="report-line">
             ${member.lesson_format || '수업 형태 미등록'}
-            · 수강료 ${paymentAmount.toLocaleString('ko-KR')}원
-            · 정산 ${formatCurrency(paymentShare)}
+            ${paymentAmount.toLocaleString('ko-KR')}원
+            ${paymentMethod ? `(${paymentMethod})` : ''}
           </p>
 
           <p class="report-line">
-            ${paymentLabel} · ${reportLabel}
+            ${paymentLabel}
           </p>
         </article>
       `;
     })
     .join('');
+}
+
+async function deletePersonalReport(reportId) {
+  const report = latestReportMembers.find(
+    (item) => String(item.id) === String(reportId)
+  );
+
+  if (!report) {
+    return;
+  }
+
+  if (!confirm(`${report.name} 회원의 개인레슨 보고를 삭제할까요?`)) {
+    return;
+  }
+
+  const client = getSupabaseClient();
+
+  try {
+    if (client) {
+      const { error } = await client
+        .from('personal_lesson_reports')
+        .delete()
+        .eq('id', report.id);
+
+      if (error) {
+        throw error;
+      }
+
+      if (report.member_id) {
+        const { error: memberError } = await client
+          .from('members')
+          .update({
+            personal_reported_at: null,
+            personal_reported_payment_date: null,
+          })
+          .eq('id', report.member_id)
+          .eq('personal_reported_at', report.personal_reported_at)
+          .eq(
+            'personal_reported_payment_date',
+            report.personal_reported_payment_date
+          );
+
+        if (memberError) {
+          throw memberError;
+        }
+      }
+    } else {
+      const reports = getStorageData(REPORT_STORAGE_KEY, []).filter(
+        (item) => String(item.id) !== String(report.id)
+      );
+      const members = getStorageData(MEMBER_STORAGE_KEY, []).map((member) => {
+        const memberId = member.id;
+        const reportedAt =
+          member.personalReportedAt || member.personal_reported_at || '';
+        const reportedPaymentDate =
+          member.personalReportedPaymentDate ||
+          member.personal_reported_payment_date ||
+          '';
+
+        if (
+          String(memberId) !== String(report.member_id) ||
+          reportedAt !== report.personal_reported_at ||
+          reportedPaymentDate !== report.personal_reported_payment_date
+        ) {
+          return member;
+        }
+
+        return {
+          ...member,
+          personalReportedAt: '',
+          personalReportedPaymentDate: '',
+          personal_reported_at: null,
+          personal_reported_payment_date: null,
+        };
+      });
+
+      saveStorageData(REPORT_STORAGE_KEY, reports);
+      saveStorageData(MEMBER_STORAGE_KEY, members);
+    }
+
+    await loadFinance();
+  } catch (error) {
+    console.error('개인레슨 보고 삭제 실패:', error);
+    alert(`개인레슨 보고를 삭제하지 못했습니다.\n${getErrorMessage(error)}`);
+  }
 }
 
 function renderPersonalReportSummary(personalMembers, result) {
@@ -1267,6 +1386,18 @@ if (nextMonthButton) {
 
 if (copyReportButton) {
   copyReportButton.addEventListener('click', copyMonthlyReport);
+}
+
+if (monthlyReport) {
+  monthlyReport.addEventListener('click', (event) => {
+    const deleteButton = event.target.closest('[data-report-delete-id]');
+
+    if (!deleteButton) {
+      return;
+    }
+
+    deletePersonalReport(deleteButton.dataset.reportDeleteId);
+  });
 }
 
 if (addPersonalReportButton) {

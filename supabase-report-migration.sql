@@ -8,6 +8,12 @@ add column if not exists personal_reported_payment_date date;
 alter table public.members
 add column if not exists lesson_start_date date;
 
+alter table public.members
+add column if not exists residence_type text;
+
+alter table public.members
+add column if not exists payment_method text;
+
 create table if not exists public.personal_lesson_reports (
   id uuid primary key default gen_random_uuid(),
 
@@ -24,6 +30,8 @@ create table if not exists public.personal_lesson_reports (
   payment_amount integer not null default 0,
   payment_date date not null,
   payment_status text not null default '완납',
+  residence_type text,
+  payment_method text,
 
   reported_at date not null,
   memo text,
@@ -33,6 +41,12 @@ create table if not exists public.personal_lesson_reports (
 
 alter table public.personal_lesson_reports
 enable row level security;
+
+alter table public.personal_lesson_reports
+add column if not exists residence_type text;
+
+alter table public.personal_lesson_reports
+add column if not exists payment_method text;
 
 grant select, insert, update, delete
 on public.personal_lesson_reports
@@ -48,6 +62,17 @@ to authenticated
 using (true)
 with check (true);
 
+update public.personal_lesson_reports as report
+set
+  residence_type = coalesce(report.residence_type, member.residence_type),
+  payment_method = coalesce(report.payment_method, member.payment_method)
+from public.members as member
+where report.member_id = member.id
+  and (
+    report.residence_type is null
+    or report.payment_method is null
+  );
+
 insert into public.personal_lesson_reports (
   member_id,
   member_name,
@@ -58,6 +83,8 @@ insert into public.personal_lesson_reports (
   payment_amount,
   payment_date,
   payment_status,
+  residence_type,
+  payment_method,
   reported_at,
   memo
 )
@@ -71,6 +98,8 @@ select
   payment_amount,
   payment_date,
   payment_status,
+  residence_type,
+  payment_method,
   personal_reported_at,
   memo
 from public.members

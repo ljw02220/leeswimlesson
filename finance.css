@@ -137,6 +137,37 @@
   color: #26364d;
 }
 
+.report-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+.report-delete-button {
+  flex: 0 0 auto;
+
+  height: 28px;
+
+  padding: 0 10px;
+
+  border: 1px solid #f2b8b8;
+  border-radius: 7px;
+
+  background: #fff0f0;
+  color: #c93c3c;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.report-delete-button:hover {
+  background: #ffe1e1;
+}
+
 .report-line {
   margin-top: 3px;
 

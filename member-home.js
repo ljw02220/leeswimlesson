@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const approvedMakeupLessons = await portal.getApprovedMakeupLessons(member);
 
     allUpcomingLessons = getLessonsWithinOneMonth([
-      ...portal.getUpcomingLessons(member, 100),
+      ...(await portal.getUpcomingLessons(member, 100)),
       ...approvedMakeupLessons,
     ]).sort((a, b) =>
       `${a.date}_${a.time}`.localeCompare(`${b.date}_${b.time}`)

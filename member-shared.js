@@ -633,7 +633,37 @@
     };
   }
 
-  function createLessonDatePlan(member) {
+  function getPersonalLessonRecordKey(date, time) {
+    return `${date}_${formatTime(time)}`;
+  }
+
+  async function loadCancelledPersonalLessonKeys(member) {
+    const client = getClient();
+
+    if (!client || !member?.id) {
+      return new Set();
+    }
+
+    const { data, error } = await client
+      .from('lessons')
+      .select('lesson_date, lesson_time')
+      .eq('member_id', member.id)
+      .eq('lesson_type', 'personal')
+      .eq('status', 'cancelled');
+
+    if (error) {
+      console.warn('개인레슨 취소 기록을 불러오지 못했습니다.', error);
+      return new Set();
+    }
+
+    return new Set(
+      (data || []).map((record) =>
+        getPersonalLessonRecordKey(record.lesson_date, record.lesson_time)
+      )
+    );
+  }
+
+  function createLessonDatePlan(member, cancelledLessonKeys = new Set()) {
     const scheduleWindow = getPersonalScheduleWindow(member);
     const dayIndexes = getLessonDayIndexes(member);
 
@@ -644,14 +674,24 @@
     const dates = [];
     const currentDate = new Date(`${scheduleWindow.startKey}T00:00:00`);
 
-    while (dates.length < scheduleWindow.count) {
+    let activeLessonCount = 0;
+
+    while (activeLessonCount < scheduleWindow.count) {
       const dateKey = toDateKey(currentDate);
 
       if (
         dayIndexes.includes(currentDate.getDay()) &&
         !HOLIDAY_OVERRIDES[dateKey]
       ) {
-        dates.push(dateKey);
+        const lessonKey = getPersonalLessonRecordKey(
+          dateKey,
+          member.lesson_time
+        );
+
+        if (!cancelledLessonKeys.has(lessonKey)) {
+          dates.push(dateKey);
+          activeLessonCount += 1;
+        }
       }
 
       currentDate.setDate(currentDate.getDate() + 1);
@@ -669,7 +709,7 @@
     });
   }
 
-  function createLessonSchedule(member) {
+  function createLessonSchedule(member, cancelledLessonKeys = new Set()) {
     const scheduleWindow = getPersonalScheduleWindow(member);
     const dayIndexes = getLessonDayIndexes(member);
 
@@ -698,6 +738,17 @@
             holidayName,
           });
         } else {
+          const lessonKey = getPersonalLessonRecordKey(
+            dateKey,
+            member.lesson_time
+          );
+
+          if (cancelledLessonKeys.has(lessonKey)) {
+            currentDate.setDate(currentDate.getDate() + 1);
+            guard += 1;
+            continue;
+          }
+
           lessons.push({
             id: `${member.id}-${dateKey}-${member.lesson_time || lessonIndex}`,
             date: dateKey,
@@ -953,13 +1004,14 @@
       .slice(0, limit);
   }
 
-  function getMergedUpcomingLessons(member, options = {}) {
+  async function getMergedUpcomingLessons(member, options = {}) {
     const todayKey = getTodayKey();
     const includeHolidays = Boolean(options.includeHolidays);
     const limit = Number(options.limit || 4);
+    const cancelledLessonKeys = await loadCancelledPersonalLessonKeys(member);
     const personalLessons = (includeHolidays
-      ? createLessonSchedule(member)
-      : createLessonDatePlan(member)
+      ? createLessonSchedule(member, cancelledLessonKeys)
+      : createLessonDatePlan(member, cancelledLessonKeys)
     ).filter(
       (lesson) => lesson.date >= todayKey && lesson.status !== 'completed'
     );
@@ -994,11 +1046,11 @@
     return limitedLessons;
   }
 
-  function getUpcomingLessons(member, limit = 4) {
+  async function getUpcomingLessons(member, limit = 4) {
     return getMergedUpcomingLessons(member, { limit });
   }
 
-  function getUpcomingLessonsWithHolidays(member, limit = 4) {
+  async function getUpcomingLessonsWithHolidays(member, limit = 4) {
     return getMergedUpcomingLessons(member, {
       includeHolidays: true,
       limit,

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link rel="stylesheet" href="common.css" />
-    <link rel="stylesheet" href="members.css" />
+    <link rel="stylesheet" href="members.css?v=20261001" />
 
     <title>회원관리</title>
   </head>
@@ -382,9 +382,30 @@
             </div>
 
             <div class="form-group">
-              <label for="personalReportedAt"> 보고 완료일 </label>
+              <label for="residenceType"> 단지 구분 </label>
 
-              <input type="date" id="personalReportedAt" />
+              <select id="residenceType">
+                <option value="7단지">7단지</option>
+                <option value="타단지">타단지</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="paymentMethod"> 결제 방식 </label>
+
+              <select id="paymentMethod">
+                <option value="계좌이체">계좌이체</option>
+                <option value="카드">카드</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="personalReportStatus"> 보고 상태 </label>
+
+              <select id="personalReportStatus">
+                <option value="unreported">보고 안 함</option>
+                <option value="reported">보고함</option>
+              </select>
             </div>
 
             <!-- 회원 상태 -->
@@ -398,12 +419,6 @@
 
                 <option value="종료">종료</option>
               </select>
-            </div>
-
-            <div class="form-group">
-              <label for="lastLessonDate"> 최근 수업일 </label>
-
-              <input type="date" id="lastLessonDate" />
             </div>
 
             <!-- 메모 -->
@@ -452,7 +467,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20260913-role-guard"></script>
-    <script src="members.js?v=20260930-preview-session"></script>
+    <script src="members.js?v=20261007-report-fields"></script>
     <script src="notifications.js?v=20261001-credit-usage"></script>
   </body>
 </html>

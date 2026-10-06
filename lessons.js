@@ -655,13 +655,24 @@ function getPersonalLessonDates(lesson, holidaysByDate) {
 
   const currentDate = new Date(startDate);
   const dayIndexes = Array.isArray(lesson.days) ? lesson.days : [lesson.day];
+  let activeLessonCount = 0;
   let guard = 0;
 
-  while (lessonDates.length < lesson.totalCount && guard < 700) {
+  while (activeLessonCount < lesson.totalCount && guard < 700) {
     const dateKey = getDateKey(currentDate);
 
     if (dayIndexes.includes(currentDate.getDay()) && !holidaysByDate[dateKey]) {
       lessonDates.push(dateKey);
+
+      const lessonKey = getLessonKey(dateKey, {
+        id: lesson.id,
+        time: lesson.time,
+        type: 'personal',
+      });
+
+      if (cancelledLessons[lessonKey] !== true) {
+        activeLessonCount += 1;
+      }
     }
 
     currentDate.setDate(currentDate.getDate() + 1);

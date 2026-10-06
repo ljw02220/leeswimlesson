@@ -649,7 +649,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const used = portal.getEffectiveUsedLessons(member);
     const remaining = portal.getRemainingLessons(member);
     const progressRate = total > 0 ? Math.round((used / total) * 100) : 0;
-    const upcomingLessonPool = portal.getUpcomingLessonsWithHolidays(
+    const upcomingLessonPool = await portal.getUpcomingLessonsWithHolidays(
       member,
       Math.max(remaining, 100)
     );

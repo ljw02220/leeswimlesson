@@ -42,6 +42,8 @@ const OPTIONAL_MEMBER_COLUMNS = [
   'personal_reported_at',
   'personal_reported_payment_date',
   'group_lessons',
+  'residence_type',
+  'payment_method',
 ];
 
 let members = [];
@@ -307,6 +309,8 @@ function mapMemberFromDatabase(row) {
     paymentAmount: Number(row.payment_amount || 0),
     paymentDate: row.payment_date || '',
     paymentStatus: row.payment_status || '확인필요',
+    residenceType: row.residence_type || '7단지',
+    paymentMethod: row.payment_method || '계좌이체',
     personalReportedAt: row.personal_reported_at || '',
     personalReportedPaymentDate: row.personal_reported_payment_date || '',
     lastLessonDate: row.last_lesson_date || '',
@@ -330,6 +334,8 @@ function mapMemberToDatabase(member) {
     payment_amount: Number(member.paymentAmount || 0),
     payment_date: normalizeDateValue(member.paymentDate),
     payment_status: member.paymentStatus || '확인필요',
+    residence_type: member.residenceType || '7단지',
+    payment_method: member.paymentMethod || '계좌이체',
     personal_reported_at: normalizeDateValue(member.personalReportedAt),
     personal_reported_payment_date: member.personalReportedAt
       ? normalizeDateValue(member.paymentDate)
@@ -351,6 +357,8 @@ function mapMemberToReport(member, reportedAt) {
     payment_amount: Number(member.paymentAmount || 0),
     payment_date: normalizeDateValue(member.paymentDate),
     payment_status: member.paymentStatus || '완납',
+    residence_type: member.residenceType || '7단지',
+    payment_method: member.paymentMethod || '계좌이체',
     reported_at: normalizeDateValue(reportedAt),
     memo: removeLessonFeedbackBlocks(member.memo) || null,
   };
@@ -458,6 +466,8 @@ async function approveSignupRequest(requestId) {
         paymentAmount: 0,
         paymentDate: '',
         paymentStatus: '확인필요',
+        residenceType: '7단지',
+        paymentMethod: '계좌이체',
         personalReportedAt: '',
         status: '수강중',
         lastLessonDate: '',
@@ -631,15 +641,7 @@ async function createPersonalLessonReport(member, reportedAt) {
   }
 
   if (existing.data && existing.data.length > 0) {
-    const { error } = await window.swimDb.client
-      .from('personal_lesson_reports')
-      .update(report)
-      .eq('id', existing.data[0].id);
-
-    if (error) {
-      throw error;
-    }
-
+    // 보고 내역은 당시 결제 정보의 스냅샷이므로 회원 수정으로 덮어쓰지 않는다.
     return;
   }
 
@@ -982,9 +984,7 @@ function isCurrentPaymentReported(member) {
 function hasReportStateChanged(previousMember, currentMember) {
   return (
     previousMember.personalReportedAt !== currentMember.personalReportedAt ||
-    previousMember.paymentDate !== currentMember.paymentDate ||
-    Number(previousMember.paymentAmount || 0) !==
-      Number(currentMember.paymentAmount || 0)
+    previousMember.paymentDate !== currentMember.paymentDate
   );
 }
 
@@ -1427,6 +1427,10 @@ async function addMember(memberData) {
 
     paymentStatus: memberData.paymentStatus || '확인필요',
 
+    residenceType: memberData.residenceType || '7단지',
+
+    paymentMethod: memberData.paymentMethod || '계좌이체',
+
     personalReportedAt: memberData.personalReportedAt || '',
 
     personalReportedPaymentDate: memberData.personalReportedAt
@@ -1485,11 +1489,10 @@ async function updateMember(memberId, updatedData) {
       savedMember
     );
     const shouldDeletePreviousReport =
-      reportStateChanged &&
       isCurrentPaymentReported(previousMember) &&
+      previousMember.paymentDate === savedMember.paymentDate &&
       (!savedMember.personalReportedAt ||
-        previousMember.personalReportedAt !== savedMember.personalReportedAt ||
-        previousMember.paymentDate !== savedMember.paymentDate);
+        previousMember.personalReportedAt !== savedMember.personalReportedAt);
 
     if (shouldDeletePreviousReport) {
       await deletePersonalLessonReport(previousMember);
@@ -1576,6 +1579,10 @@ function setupModalEvents() {
 
   const paymentAmountInput = document.getElementById('paymentAmount');
 
+  const paymentDateInput = document.getElementById('paymentDate');
+
+  const reportStatusInput = document.getElementById('personalReportStatus');
+
   if (!modal) {
     console.error('memberModal을 찾을 수 없습니다.');
 
@@ -1594,6 +1601,21 @@ function setupModalEvents() {
 
   if (cancelButton) {
     cancelButton.addEventListener('click', closeMemberModal);
+  }
+
+  if (paymentDateInput && reportStatusInput) {
+    paymentDateInput.addEventListener('change', () => {
+      const member = members.find(
+        (item) => String(item.id) === String(editingMemberId)
+      );
+
+      reportStatusInput.value =
+        member &&
+        paymentDateInput.value === member.paymentDate &&
+        isCurrentPaymentReported(member)
+          ? 'reported'
+          : 'unreported';
+    });
   }
 
   if (deleteButton) {
@@ -1711,6 +1733,12 @@ function openAddMemberModal() {
 
   document.getElementById('paymentStatus').value = '완납';
 
+  document.getElementById('residenceType').value = '7단지';
+
+  document.getElementById('paymentMethod').value = '계좌이체';
+
+  document.getElementById('personalReportStatus').value = 'unreported';
+
   document.getElementById('memberStatus').value = '수강중';
 
   setSelectedGroupLessons([]);
@@ -1775,12 +1803,16 @@ function openMemberDetail(memberId) {
   document.getElementById('paymentStatus').value =
     member.paymentStatus || '완납';
 
-  document.getElementById('personalReportedAt').value =
-    member.personalReportedAt || '';
+  document.getElementById('residenceType').value =
+    member.residenceType || '7단지';
+
+  document.getElementById('paymentMethod').value =
+    member.paymentMethod || '계좌이체';
+
+  document.getElementById('personalReportStatus').value =
+    isCurrentPaymentReported(member) ? 'reported' : 'unreported';
 
   document.getElementById('memberStatus').value = member.status || '수강중';
-
-  document.getElementById('lastLessonDate').value = member.lastLessonDate || '';
 
   document.getElementById('memberMemo').value = member.memo || '';
 
@@ -1851,8 +1883,17 @@ async function handleMemberSubmit(event) {
   const usedLessons = Number(document.getElementById('usedLessons').value) || 0;
   const paymentDate = document.getElementById('paymentDate').value;
   const paymentStatus = document.getElementById('paymentStatus').value;
+  const reportStatus = document.getElementById('personalReportStatus').value;
+  const previousMember = members.find(
+    (member) => String(member.id) === String(editingMemberId)
+  );
   const personalReportedAt =
-    document.getElementById('personalReportedAt').value;
+    reportStatus === 'reported'
+      ? isCurrentPaymentReported(previousMember || {}) &&
+        previousMember.paymentDate === paymentDate
+        ? previousMember.personalReportedAt
+        : getDateKey(new Date())
+      : '';
 
   if (usedLessons > totalLessons) {
     alert('진행 횟수는 등록 횟수보다 많을 수 없습니다.');
@@ -1861,7 +1902,7 @@ async function handleMemberSubmit(event) {
   }
 
   if (personalReportedAt && !paymentDate) {
-    alert('보고 완료일을 입력하려면 결제일도 입력해주세요.');
+    alert('보고함으로 저장하려면 입금일도 입력해주세요.');
 
     return;
   }
@@ -1897,11 +1938,15 @@ async function handleMemberSubmit(event) {
 
     paymentStatus,
 
+    residenceType: document.getElementById('residenceType').value,
+
+    paymentMethod: document.getElementById('paymentMethod').value,
+
     personalReportedAt,
 
     status: document.getElementById('memberStatus').value,
 
-    lastLessonDate: document.getElementById('lastLessonDate').value,
+    lastLessonDate: previousMember?.lastLessonDate || '',
 
     memo: document.getElementById('memberMemo').value.trim(),
   };

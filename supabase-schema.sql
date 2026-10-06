@@ -21,6 +21,8 @@ create table if not exists public.members (
   payment_amount integer not null default 0,
   payment_date date,
   payment_status text not null default '확인필요',
+  residence_type text,
+  payment_method text,
   personal_reported_at date,
   personal_reported_payment_date date,
 
@@ -47,6 +49,12 @@ add column if not exists auth_user_id uuid;
 
 alter table public.members
 add column if not exists group_lessons jsonb not null default '[]'::jsonb;
+
+alter table public.members
+add column if not exists residence_type text;
+
+alter table public.members
+add column if not exists payment_method text;
 
 -- =========================================
 -- 2. 수업 테이블
@@ -97,12 +105,20 @@ create table if not exists public.personal_lesson_reports (
   payment_amount integer not null default 0,
   payment_date date not null,
   payment_status text not null default '완납',
+  residence_type text,
+  payment_method text,
 
   reported_at date not null,
   memo text,
 
   created_at timestamptz not null default now()
 );
+
+alter table public.personal_lesson_reports
+add column if not exists residence_type text;
+
+alter table public.personal_lesson_reports
+add column if not exists payment_method text;
 
 -- =========================================
 -- 4. 회원가입 신청 테이블
