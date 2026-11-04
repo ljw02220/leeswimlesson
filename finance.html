@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#2563eb" />
     <link rel="manifest" href="site.webmanifest" />
 
-    <link rel="stylesheet" href="common.css" />
-    <link rel="stylesheet" href="finance.css?v=20261104-finance-payments" />
+    <link rel="stylesheet" href="common.css?v=20261104-admin-nav" />
+    <link rel="stylesheet" href="finance.css?v=20261104-finance-date" />
 
     <title>재무관리</title>
   </head>
@@ -22,9 +22,12 @@
 
       <a href="finance.html" class="nav-link active"> 재무관리 </a>
 
-      <button id="logoutButton" class="logout-button" type="button">
-        로그아웃
-      </button>
+      <details class="admin-account">
+        <summary class="admin-account-trigger">관리자 <span aria-hidden="true">⌄</span></summary>
+        <div class="admin-account-menu">
+          <button id="logoutButton" class="admin-logout-button" type="button">로그아웃</button>
+        </div>
+      </details>
     </nav>
 
     <main class="management-page">
@@ -177,6 +180,20 @@
               <p>회원이 알린 입금을 확인하면 결제정보에 반영됩니다.</p>
             </div>
           </div>
+          <form id="memberPaymentDateForm" class="payment-date-form">
+            <label for="paymentDateMember">회원</label>
+            <select id="paymentDateMember" required>
+              <option value="">회원을 선택해주세요</option>
+            </select>
+            <label for="financePaymentDate">입금일</label>
+            <input type="date" id="financePaymentDate" required />
+            <button type="submit" class="secondary-action">입금일 저장</button>
+            <p id="paymentDateMessage" role="status"></p>
+          </form>
+          <div class="payment-status-tabs" aria-label="입금 확인 상태">
+            <button type="button" class="secondary-action active" data-payment-status="pending" aria-pressed="true">확인 대기</button>
+            <button type="button" class="secondary-action" data-payment-status="confirmed" aria-pressed="false">확인 완료</button>
+          </div>
           <div id="paymentRequestList" aria-live="polite">
             <p class="report-empty">입금 알림을 불러오는 중입니다.</p>
           </div>
@@ -298,8 +315,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="common.js?v=20260913-role-guard"></script>
-    <script src="finance.js?v=20261104-finance-payments"></script>
-    <script src="notifications.js?v=20261104-change-dots"></script>
+    <script src="common.js?v=20261104-admin-nav"></script>
+    <script src="finance.js?v=20261104-payment-date-display"></script>
+    <script src="notifications.js?v=20261104-admin-nav"></script>
   </body>
 </html>

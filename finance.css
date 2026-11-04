@@ -565,3 +565,12 @@
 .payment-request-item button { flex-shrink: 0; }
 .payment-request-item button:disabled { opacity: .6; cursor: wait; }
 #paymentRequests { scroll-margin-top: 24px; }
+
+.payment-status-tabs { display: flex; gap: 8px; margin-bottom: 8px; }
+.payment-status-tabs .active { background: #2563eb; border-color: #2563eb; color: #fff; }
+.payment-confirmed-label { flex-shrink: 0; font-size: 12px; color: #15803d; font-weight: 700; }
+
+.payment-date-form { display: grid; gap: 7px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+.payment-date-form label { font-size: 12px; font-weight: 700; color: #475569; }
+.payment-date-form select, .payment-date-form input { width: 100%; min-width: 0; height: 36px; padding: 6px 9px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font: inherit; font-size: 13px; box-sizing: border-box; }
+.payment-date-form p { margin: 0; font-size: 12px; color: #475569; }

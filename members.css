@@ -1087,3 +1087,6 @@
     flex: 1;
   }
 }
+
+.member-list-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e8eef5; font-size: 13px; color: #64748b; }
+.member-list-footer [hidden] { display: none; }

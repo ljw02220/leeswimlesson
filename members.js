@@ -265,6 +265,8 @@ async function insertMemberPayload(payload) {
 
 async function updateMemberPayload(memberId, payload) {
   const mutablePayload = { ...payload };
+  // Deposit dates are managed in Finance; never send a stale form value.
+  delete mutablePayload.payment_date;
 
   while (true) {
     const { data, error } = await window.swimDb.client
@@ -1069,6 +1071,12 @@ function sortMembers(memberList) {
 // 회원 목록 출력
 // ======================================================
 
+let memberListExpanded = false;
+document.getElementById('toggleMemberList')?.addEventListener('click', () => {
+  memberListExpanded = !memberListExpanded;
+  renderMembers();
+});
+
 function renderMembers() {
   const tbody = document.getElementById('memberTableBody');
 
@@ -1086,6 +1094,15 @@ function renderMembers() {
 
   const filteredMembers = getFilteredMembers();
   const sortedMembers = sortMembers(filteredMembers);
+  const count = document.getElementById('memberListCount');
+  const toggle = document.getElementById('toggleMemberList');
+  if (count) count.textContent = sortedMembers.length === members.length
+    ? `총 ${members.length}명` : `총 ${members.length}명 · 검색 결과 ${sortedMembers.length}명`;
+  if (toggle) {
+    toggle.hidden = sortedMembers.length <= 4;
+    toggle.textContent = memberListExpanded ? '접기' : '전체보기';
+    toggle.setAttribute('aria-expanded', String(memberListExpanded));
+  }
 
   tbody.innerHTML = '';
 
@@ -1104,7 +1121,7 @@ function renderMembers() {
     return;
   }
 
-  sortedMembers.forEach((member) => {
+  (memberListExpanded ? sortedMembers : sortedMembers.slice(0, 4)).forEach((member) => {
     const remaining = getRemainingLessons(member);
 
     const row = document.createElement('tr');
@@ -1184,7 +1201,7 @@ async function markMemberReported(memberId) {
   }
 
   if (!member.paymentDate) {
-    alert('결제일을 먼저 입력해주세요.');
+    alert('재무관리에서 입금일을 먼저 입력해주세요.');
 
     return;
   }
@@ -1309,72 +1326,15 @@ function setupReportButtons() {
   });
 }
 
+
 // ======================================================
-// 상단 통계
-// ======================================================
-
-function renderMetrics() {
-  const cards = document.querySelectorAll('.metric-card');
-
-  if (cards.length < 4) {
-    return;
-  }
-
-  const totalMembers = members.length;
-
-  const activeMembers = members.filter(
-    (member) => member.status === '수강중'
-  ).length;
-
-  const renewalMembers = members.filter(
-    (member) => member.status === '수강중' && getRemainingLessons(member) <= 2
-  ).length;
-
-  const unpaidMembers = members.filter(
-    (member) =>
-      member.paymentStatus === '미납' || member.paymentStatus === '확인필요'
-  );
-
-  const unpaidAmount = members
-    .filter((member) => member.paymentStatus === '미납')
-    .reduce((sum, member) => sum + Number(member.paymentAmount || 0), 0);
-
-  // 전체 회원
-  cards[0].querySelector('span').textContent = '전체 회원';
-
-  cards[0].querySelector('strong').textContent = `${totalMembers}명`;
-
-  cards[0].querySelector('small').textContent = '등록된 개인레슨 회원';
-
-  // 수강중
-  cards[1].querySelector('span').textContent = '수강중';
-
-  cards[1].querySelector('strong').textContent = `${activeMembers}명`;
-
-  cards[1].querySelector('small').textContent = '현재 수업 진행중';
-
-  // 재등록 예정
-  cards[2].querySelector('span').textContent = '재등록 예정';
-
-  cards[2].querySelector('strong').textContent = `${renewalMembers}명`;
-
-  cards[2].querySelector('small').textContent = '잔여 수업 2회 이하';
-
-  // 미납
-  cards[3].querySelector('span').textContent = '미납 회원';
-
-  cards[3].querySelector('strong').textContent = `${unpaidMembers.length}명`;
-
-  cards[3].querySelector('small').textContent =
-    unpaidAmount > 0 ? `총 ${formatMoney(unpaidAmount)}원` : '미납 내역 없음';
-}
 
 // ======================================================
 // 필터 / 정렬
 // ======================================================
 
 function setupFilters() {
-  const buttons = document.querySelectorAll('.filter-chip');
+  const buttons = document.querySelectorAll('.filter-chip[data-filter]');
 
   buttons.forEach((button) => {
     button.addEventListener('click', () => {
@@ -1777,7 +1737,6 @@ function openMemberDetail(memberId) {
     member.paymentAmount
   );
 
-  document.getElementById('paymentDate').value = member.paymentDate || '';
 
   document.getElementById('paymentStatus').value =
     member.paymentStatus || '완납';
@@ -1857,11 +1816,11 @@ async function handleMemberSubmit(event) {
     Number(document.getElementById('totalLessons').value) || 0;
 
   const usedLessons = Number(document.getElementById('usedLessons').value) || 0;
-  const paymentDate = document.getElementById('paymentDate').value;
   const paymentStatus = document.getElementById('paymentStatus').value;
   const previousMember = members.find(
     (member) => String(member.id) === String(editingMemberId)
   );
+  const paymentDate = previousMember?.paymentDate || '';
   const personalReportedAt =
     previousMember?.paymentDate === paymentDate
       ? previousMember.personalReportedAt || ''
@@ -2041,7 +2000,6 @@ async function renderLessonPeriods() {
 function renderAll() {
   renderSignupRequests();
   renderMembers();
-  renderMetrics();
   renderLessonPeriods();
 }
 
@@ -2078,6 +2036,15 @@ window.addEventListener('swim-payment-confirmed', async () => {
     renderAll();
   } catch (error) {
     console.error('입금 확인 후 회원정보를 새로고침하지 못했습니다.', error);
+  }
+});
+
+window.addEventListener('focus', async () => {
+  try {
+    await loadMembers();
+    renderAll();
+  } catch (error) {
+    console.error('회원정보를 새로고침하지 못했습니다.', error);
   }
 });
 

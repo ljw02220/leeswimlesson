@@ -1782,3 +1782,21 @@ body {
     padding: 17px;
   }
 }
+
+/* 관리자 계정 메뉴 */
+.admin-account { position: relative; margin-left: auto; flex-shrink: 0; }
+.top-nav .swim-notification-wrap + .admin-account { margin-left: 0; }
+.admin-account-trigger { display: flex; align-items: center; gap: 7px; padding: 10px 12px; border-radius: 8px; color: #344054; font-size: 14px; font-weight: 700; list-style: none; cursor: pointer; }
+.admin-account-trigger::-webkit-details-marker { display: none; }
+.admin-account-trigger:hover, .admin-account[open] .admin-account-trigger { background: #eef5ff; }
+.admin-account-menu { position: absolute; z-index: 1001; top: calc(100% + 8px); right: 0; min-width: 130px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; box-shadow: 0 10px 30px rgba(15,23,42,.12); }
+.admin-logout-button { width: 100%; border: 0; border-radius: 5px; padding: 10px 12px; background: transparent; color: #dc2626; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.admin-logout-button:hover { background: #fef2f2; }
+.top-nav .swim-notification-trigger { display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 700px) { .admin-account-trigger { padding: 8px; font-size: 12px; } }
+
+.calendar-date-search { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.calendar-date-search label { font-size: 13px; font-weight: 700; color: #475569; }
+.calendar-date-search input, .calendar-date-search button { min-height: 36px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #334155; font: inherit; font-size: 13px; }
+.calendar-date-search button { cursor: pointer; }
+.calendar-date-search button[type="submit"] { background: #2563eb; border-color: #2563eb; color: white; }

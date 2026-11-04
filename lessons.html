@@ -19,9 +19,12 @@
       <a href="members.html" class="nav-link">회원관리</a>
       <a href="finance.html" class="nav-link">재무관리</a>
 
-      <button id="logoutButton" class="logout-button" type="button">
-        로그아웃
-      </button>
+      <details class="admin-account">
+        <summary class="admin-account-trigger">관리자 <span aria-hidden="true">⌄</span></summary>
+        <div class="admin-account-menu">
+          <button id="logoutButton" class="admin-logout-button" type="button">로그아웃</button>
+        </div>
+      </details>
     </nav>
 
     <!-- 수업관리 -->
@@ -43,12 +46,18 @@
           <!-- 달력 상단 -->
           <header class="calendar-header">
             <div class="nav">
-              <button type="button" id="prev" aria-label="이전 달">‹</button>
+              <button type="button" id="prev" aria-label="이전 2주">‹</button>
 
               <p class="current-date"></p>
 
-              <button type="button" id="next" aria-label="다음 달">›</button>
+              <button type="button" id="next" aria-label="다음 2주">›</button>
             </div>
+            <form id="calendarDateSearch" class="calendar-date-search">
+              <label for="calendarSearchDate">날짜 찾기</label>
+              <input type="text" id="calendarSearchDate" placeholder="예: 20261104" aria-label="이동할 날짜, 예: 20261104 또는 2026-11-04" autocomplete="off" required />
+              <button type="submit">이동</button>
+              <button type="button" id="calendarTodayButton">오늘</button>
+            </form>
           </header>
 
           <!-- 달력 -->
@@ -293,10 +302,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="common.js?v=20260913-role-guard"></script>
-    <script src="lessons.js?v=20261104-completed-history"></script>
+    <script src="common.js?v=20261104-admin-nav"></script>
+    <script src="lessons.js?v=20261104-date-text"></script>
     <script src="makeup-admin.js?v=20261001-calendar"></script>
     <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
-    <script src="notifications.js?v=20261104-change-dots"></script>
+    <script src="notifications.js?v=20261104-admin-nav"></script>
   </body>
 </html>

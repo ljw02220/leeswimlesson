@@ -52,7 +52,22 @@ function setupLogout() {
   });
 }
 
+function setupAdminMenu() {
+  const account = document.querySelector('.admin-account');
+  if (!account) return;
+  document.addEventListener('click', (event) => {
+    if (!account.contains(event.target)) account.open = false;
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && account.open) {
+      account.open = false;
+      account.querySelector('summary')?.focus();
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   requireAuthSession();
   setupLogout();
+  setupAdminMenu();
 });

@@ -59,6 +59,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderMember(member);
   }
 
+  window.addEventListener('focus', () => {
+    loadProfile().catch((error) => console.error('회원정보 새로고침 실패:', error));
+  });
+
   const todayKey = new Date().toISOString().slice(0, 10);
   const paymentDate = document.getElementById('paymentReportDate');
 

@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#2563eb" />
     <link rel="manifest" href="site.webmanifest" />
 
-    <link rel="stylesheet" href="common.css" />
-    <link rel="stylesheet" href="members.css?v=20261001" />
+    <link rel="stylesheet" href="common.css?v=20261104-admin-nav" />
+    <link rel="stylesheet" href="members.css?v=20261104-list-status" />
 
     <title>회원관리</title>
   </head>
@@ -22,9 +22,12 @@
 
       <a href="finance.html" class="nav-link"> 재무관리 </a>
 
-      <button id="logoutButton" class="logout-button" type="button">
-        로그아웃
-      </button>
+      <details class="admin-account">
+        <summary class="admin-account-trigger">관리자 <span aria-hidden="true">⌄</span></summary>
+        <div class="admin-account-menu">
+          <button id="logoutButton" class="admin-logout-button" type="button">로그아웃</button>
+        </div>
+      </details>
     </nav>
 
     <main class="management-page">
@@ -39,33 +42,6 @@
         <button type="button" class="primary-action" id="addMemberButton">
           회원 추가
         </button>
-      </section>
-
-      <!-- 상단 통계 -->
-      <section class="metric-grid">
-        <article class="metric-card">
-          <span>전체 회원</span>
-          <strong>0명</strong>
-          <small>등록된 개인레슨 회원</small>
-        </article>
-
-        <article class="metric-card">
-          <span>수강중</span>
-          <strong>0명</strong>
-          <small>현재 수업 진행중</small>
-        </article>
-
-        <article class="metric-card">
-          <span>재등록 예정</span>
-          <strong>0명</strong>
-          <small>잔여 수업 2회 이하</small>
-        </article>
-
-        <article class="metric-card">
-          <span>보고 미완료</span>
-          <strong>0명</strong>
-          <small>월말 보고 확인 필요</small>
-        </article>
       </section>
 
       <section class="manager-card signup-request-card">
@@ -146,6 +122,10 @@
 
               <tbody id="memberTableBody"></tbody>
             </table>
+          </div>
+          <div class="member-list-footer">
+            <span id="memberListCount" aria-live="polite"></span>
+            <button type="button" class="filter-chip" id="toggleMemberList" aria-expanded="false" aria-controls="memberTableBody">전체보기</button>
           </div>
         </div>
 
@@ -365,11 +345,6 @@
             </div>
 
             <!-- 결제 / 보고 정보 -->
-            <div class="form-group">
-              <label for="paymentDate"> 입금일 </label>
-
-              <input type="date" id="paymentDate" />
-            </div>
 
             <div class="form-group">
               <label for="paymentStatus"> 입금 상태 </label>
@@ -459,8 +434,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="common.js?v=20260913-role-guard"></script>
-    <script src="members.js?v=20261104-payment-confirm"></script>
-    <script src="notifications.js?v=20261104-change-dots"></script>
+    <script src="common.js?v=20261104-admin-nav"></script>
+    <script src="members.js?v=20261104-finance-date"></script>
+    <script src="notifications.js?v=20261104-admin-nav"></script>
   </body>
 </html>

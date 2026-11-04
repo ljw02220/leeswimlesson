@@ -116,15 +116,16 @@
 
   function createAdminButton() {
     const nav = document.querySelector('.top-nav');
-    const logout = document.getElementById('logoutButton');
-    if (!nav || !logout) return null;
+    const account = nav?.querySelector('.admin-account');
+    if (!nav || !account) return null;
 
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'swim-notification-trigger';
     button.setAttribute('aria-label', '알림');
-    button.textContent = '알림';
-    nav.insertBefore(button, logout);
+    button.title = '알림';
+    button.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>';
+    nav.insertBefore(button, account);
     return button;
   }
 

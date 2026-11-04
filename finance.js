@@ -1461,7 +1461,92 @@ function escapePaymentText(value) {
   })[character]);
 }
 
+let paymentDateMembers = [];
+const paymentDateForm = document.getElementById('memberPaymentDateForm');
+const paymentDateMember = document.getElementById('paymentDateMember');
+const financePaymentDate = document.getElementById('financePaymentDate');
+const paymentDateMessage = document.getElementById('paymentDateMessage');
+
+async function loadPaymentDateMembers() {
+  if (!paymentDateMember) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+  try {
+    const { data, error } = await client.from('members').select('id, name, phone, payment_date').order('name');
+    if (error) throw error;
+    paymentDateMembers = data || [];
+    const selectedId = paymentDateMember.value;
+    paymentDateMember.innerHTML = '<option value="">회원을 선택해주세요</option>' + paymentDateMembers.map((member) =>
+      `<option value="${escapePaymentText(member.id)}">${escapePaymentText(member.name)}${member.phone ? ` · ${escapePaymentText(member.phone)}` : ''}</option>`
+    ).join('');
+    paymentDateMember.value = selectedId;
+  } catch (error) {
+    if (paymentDateMessage) paymentDateMessage.textContent = '입금일 관리용 회원을 불러오지 못했습니다.';
+  }
+}
+
+paymentDateMember?.addEventListener('change', () => {
+  const member = paymentDateMembers.find((item) => String(item.id) === paymentDateMember.value);
+  financePaymentDate.value = member?.payment_date || '';
+  paymentDateMessage.textContent = '';
+});
+
+paymentDateForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const button = paymentDateForm.querySelector('[type="submit"]');
+  if (button.disabled) return;
+  const memberId = paymentDateMember.value;
+  const paymentDate = financePaymentDate.value;
+  if (!memberId || !paymentDate) return;
+  button.disabled = true;
+  try {
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase 연결이 필요합니다.');
+    const { error } = await client.from('members').update({ payment_date: paymentDate })
+      .eq('id', memberId).select('id').single();
+    if (error) throw error;
+    paymentDateMessage.textContent = '입금일을 저장했습니다.';
+    await loadFinance();
+  } catch (error) {
+    paymentDateMessage.textContent = error.message || '입금일을 저장하지 못했습니다.';
+  } finally {
+    button.disabled = false;
+  }
+});
+
+let paymentRequestStatus = 'pending';
+let paymentRequestLoadVersion = 0;
+document.querySelectorAll('[data-payment-status]').forEach((button) => {
+  button.addEventListener('click', () => {
+    paymentRequestStatus = button.dataset.paymentStatus;
+    document.querySelectorAll('[data-payment-status]').forEach((tab) => {
+      const active = tab.dataset.paymentStatus === paymentRequestStatus;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-pressed', String(active));
+    });
+    loadPaymentRequests();
+  });
+});
+
+function getPaymentRequestDisplayRows(requests, status) {
+  const seenMembers = new Set();
+  return requests.map((request) => {
+    if (status !== 'confirmed' || !request.member_id || seenMembers.has(request.member_id)) return request;
+    seenMembers.add(request.member_id);
+    const member = request.members;
+    // The latest confirmed payment uses the same current values as Finance's
+    // deposit editor. Earlier payment cycles retain their own dates and amounts.
+    return {
+      ...request,
+      payment_date: member?.payment_date || request.payment_date,
+      payment_amount: member?.payment_amount ?? request.payment_amount,
+    };
+  });
+}
+
 async function loadPaymentRequests() {
+  const version = ++paymentRequestLoadVersion;
+  const status = paymentRequestStatus;
   const list = document.getElementById('paymentRequestList');
   if (!list) return;
   const client = window.swimDb?.client;
@@ -1471,18 +1556,22 @@ async function loadPaymentRequests() {
   }
   try {
     const { data, error } = await client.from('payment_requests')
-      .select('id, payment_date, payment_amount, requested_at, members(name)')
-      .eq('status', 'pending').order('requested_at', { ascending: false });
+      .select('id, member_id, payment_date, payment_amount, requested_at, reviewed_at, members(name, payment_date, payment_amount)')
+      .eq('status', status).order(status === 'confirmed' ? 'reviewed_at' : 'requested_at', { ascending: false })
+      .order('requested_at', { ascending: false }).order('id', { ascending: false });
+    if (version !== paymentRequestLoadVersion) return;
     if (error) throw error;
-    list.innerHTML = (data || []).length ? data.map((request) => `
+    const displayRows = getPaymentRequestDisplayRows(data || [], status);
+    list.innerHTML = displayRows.length ? displayRows.map((request) => `
       <article class="payment-request-item">
         <div><strong>${escapePaymentText(request.members?.name || '회원')}</strong>
           <span>${escapePaymentText(request.payment_date)} · ${formatCurrency(request.payment_amount)}</span>
         </div>
-        <button type="button" class="secondary-action" data-confirm-payment="${escapePaymentText(request.id)}">확인</button>
+        ${status === 'pending' ? `<button type="button" class="secondary-action" data-confirm-payment="${escapePaymentText(request.id)}">확인</button>` : '<span class="payment-confirmed-label">입금 확인 완료</span>'}
       </article>
-    `).join('') : '<p class="report-empty">확인 대기 중인 입금이 없습니다.</p>';
+    `).join('') : `<p class="report-empty">${status === 'pending' ? '확인 대기 중인 입금이 없습니다.' : '확인 완료한 입금이 없습니다.'}</p>`;
   } catch (error) {
+    if (version !== paymentRequestLoadVersion) return;
     console.error('입금 알림 조회 실패:', error);
     list.innerHTML = '<p class="report-empty">입금 알림을 불러오지 못했습니다.</p><button type="button" class="secondary-action" data-retry-payments>다시 불러오기</button>';
   }
@@ -1521,6 +1610,7 @@ async function loadFinance() {
       getPersonalMembers(),
       getPaidSalary(),
       loadPaymentRequests(),
+      loadPaymentDateMembers(),
     ]);
 
     latestReportMembers = personalMembers;
@@ -1552,6 +1642,7 @@ async function loadFinance() {
 }
 
 window.addEventListener('swim-payment-confirmed', loadFinance);
+window.addEventListener('focus', loadFinance);
 
 /* ==================================================
   16. 이벤트
