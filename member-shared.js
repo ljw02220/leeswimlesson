@@ -1156,22 +1156,18 @@
       throw new Error('Supabase 연결이 필요합니다.');
     }
 
-    const { data, error } = await client
-      .from('members')
-      .update({
-        payment_date: paymentData.paymentDate,
-        payment_amount: paymentData.paymentAmount,
-        payment_status: '확인필요',
-      })
-      .eq('id', member.id)
-      .select()
-      .single();
+    const { error } = await client.rpc('request_member_payment', {
+      p_member_id: member.id,
+      p_payment_date: paymentData.paymentDate,
+      p_payment_amount: paymentData.paymentAmount,
+    });
 
     if (error) {
       throw error;
     }
 
-    return mapMember(data);
+    // Payment fields change only after the administrator confirms the request.
+    return member;
   }
 
   async function updateMemberMemo(member, message) {

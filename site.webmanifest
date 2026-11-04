@@ -1,0 +1,11 @@
+{
+  "name": "수영관리",
+  "short_name": "수영관리",
+  "description": "수업 일정과 회원 정보를 확인하는 수영관리 앱",
+  "lang": "ko",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef6ff",
+  "theme_color": "#2563eb"
+}

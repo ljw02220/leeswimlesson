@@ -198,19 +198,32 @@
           </div>
 
           <div class="profile-form-group">
-            <label for="paymentReportAmount"> 결제금액 </label>
+            <label for="paymentReportAmountChoice"> 결제금액 </label>
 
-            <div class="amount-input-wrap">
+            <select id="paymentReportAmountChoice" required>
+              <option value="">금액을 선택해주세요</option>
+              <option value="50000">5만 원</option>
+              <option value="100000">10만 원</option>
+              <option value="150000">15만 원</option>
+              <option value="200000">20만 원</option>
+              <option value="250000">25만 원</option>
+              <option value="300000">30만 원</option>
+              <option value="350000">35만 원</option>
+              <option value="400000">40만 원</option>
+              <option value="450000">45만 원</option>
+              <option value="500000">50만 원</option>
+              <option value="custom">직접 입력</option>
+            </select>
+            <div class="amount-input-wrap" id="paymentReportCustomAmount" hidden>
+              <label for="paymentReportAmount">직접 입력 금액</label>
               <input
                 type="text"
                 id="paymentReportAmount"
                 inputmode="numeric"
-                placeholder="150,000"
+                placeholder="금액을 입력해주세요"
                 autocomplete="off"
-                required
+                disabled
               />
-
-              <span> 원 </span>
             </div>
           </div>
 
@@ -316,10 +329,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="member-shared.js?v=20260917-fixed-member-session"></script>
-    <script src="member-profile.js?v=20260917-renewed-schedule"></script>
-    <script src="notifications.js?v=20260922"></script>
+    <script src="supabase.js?v=20260911"></script>
+    <script src="member-shared.js?v=20261104-payment-confirm"></script>
+    <script src="member-profile.js?v=20261104-payment-amount"></script>
+    <script src="notifications.js?v=20261104-change-dots"></script>
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {

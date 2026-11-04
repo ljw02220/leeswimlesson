@@ -53,7 +53,7 @@ const detailMemo = document.querySelector('#detail-memo');
 
 const confirmDetailBtn = document.querySelector('#confirm-detail-btn');
 
-const cancelDetailBtn = document.querySelector('#cancel-detail-btn');
+const dismissDetailBtn = document.querySelector('#dismiss-detail-btn');
 
 const deleteLessonBtn = document.querySelector('#delete-lesson-btn');
 
@@ -375,20 +375,31 @@ async function loadLessonRecordState() {
     return;
   }
 
-  let { data, error } = await window.swimDb.client
-    .from('lessons')
-    .select(
-      'member_id, lesson_date, lesson_time, title, lesson_type, status, source, memo'
-    )
-    .in('status', ['completed', 'cancelled', 'deleted']);
+  // Read all historical records, including those beyond the API row limit.
+  async function readRecords(columns) {
+    const records = [];
+    const pageSize = 500;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await window.swimDb.client
+        .from('lessons')
+        .select(columns)
+        .in('status', ['completed', 'cancelled', 'deleted'])
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) return { data: null, error };
+      records.push(...(data || []));
+      if ((data || []).length < pageSize) return { data: records, error: null };
+    }
+  }
+
+  let { data, error } = await readRecords(
+    'member_id, lesson_date, lesson_time, title, lesson_type, status, source, memo'
+  );
 
   if (error && getErrorText(error).includes('memo')) {
-    const fallbackResult = await window.swimDb.client
-      .from('lessons')
-      .select(
-        'member_id, lesson_date, lesson_time, title, lesson_type, status, source'
-      )
-      .in('status', ['completed', 'cancelled', 'deleted']);
+    const fallbackResult = await readRecords(
+      'member_id, lesson_date, lesson_time, title, lesson_type, status, source'
+    );
 
     data = fallbackResult.data;
     error = fallbackResult.error;
@@ -429,7 +440,12 @@ async function loadLessonRecordState() {
           (item.memberIds || []).map(String).includes(String(row.member_id)) &&
           normalizeTimeValue(item.time) === time
         );
-      });
+      }) || (row.member_id ? {
+        id: row.member_id,
+        memberId: row.member_id,
+        memberIds: [row.member_id],
+        name: row.title || '개인레슨',
+      } : null);
 
       if (schedule) {
         lessonKey = `${row.lesson_date}_personal_${schedule.id}_${time}`;
@@ -1248,12 +1264,13 @@ async function deleteLessonRecord(lesson) {
 function getDaySchedule(date, dateKey, holidayName, personalLessonsByDate) {
   const daySchedule = [];
 
+  // Saved lessons remain visible even when their date is now a holiday.
+  if (personalLessonsByDate[dateKey]) {
+    daySchedule.push(...personalLessonsByDate[dateKey]);
+  }
+
   // 공휴일에는 기본 수업 없음
   if (!holidayName) {
-    if (personalLessonsByDate[dateKey]) {
-      daySchedule.push(...personalLessonsByDate[dateKey]);
-    }
-
     recurringSchedule.forEach((item) => {
       if (date.getDay() === item.day) {
         daySchedule.push({
@@ -1319,6 +1336,10 @@ async function renderCalendar() {
   try {
     personalScheduleLoaded = false;
     await loadPersonalSchedule();
+    // Remaining schedules change after completion, including their grouped IDs.
+    // Rebuild saved records against the current schedules on every refresh.
+    lessonRecordStateLoaded = false;
+    recordedPersonalLessons = {};
     await loadLessonRecordState();
   } catch (error) {
     console.error('회원관리 개인레슨 일정을 불러오지 못했습니다.', error);
@@ -1668,6 +1689,10 @@ function findLesson(dateKey, lessonKey) {
     return addedLesson;
   }
 
+  if (recordedPersonalLessons[lessonKey]) {
+    return recordedPersonalLessons[lessonKey];
+  }
+
   if (lessonKey.includes('_personal_')) {
     const personalLesson = personalSchedule.find((item) => {
       const key = `${dateKey}_personal_` + `${item.id}_${item.time}`;
@@ -1753,7 +1778,7 @@ function openLessonDetail(dateKey, lessonKey) {
 
   if (detailStatus) {
     if (cancelledLessons[lessonKey]) {
-      detailStatus.value = 'scheduled';
+      detailStatus.value = 'cancelled';
     } else if (completedLessons[lessonKey]) {
       detailStatus.value = 'completed';
     } else {
@@ -1873,34 +1898,8 @@ if (confirmDetailBtn && detailStatus) {
   });
 }
 
-if (cancelDetailBtn) {
-  cancelDetailBtn.addEventListener('click', async () => {
-    if (!selectedLesson || !confirm('이 수업을 취소할까요?')) return;
-
-    const lessonKey = selectedLesson.lessonKey;
-    const wasCompleted = completedLessons[lessonKey] === true;
-
-    try {
-      await saveLessonRecord(
-        selectedLesson,
-        'cancelled',
-        detailMemo?.value.trim() || ''
-      );
-
-      if (wasCompleted) {
-        await syncPersonalLessonCount(selectedLesson, -1);
-      }
-
-      delete completedLessons[lessonKey];
-      cancelledLessons[lessonKey] = true;
-      saveStorageData('completedLessons', completedLessons);
-      saveStorageData('cancelledLessons', cancelledLessons);
-      closeLessonDetailModal();
-      renderCalendar();
-    } catch (error) {
-      alert(`수업을 취소하지 못했습니다.\n${getErrorText(error)}`);
-    }
-  });
+if (dismissDetailBtn) {
+  dismissDetailBtn.addEventListener('click', closeLessonDetailModal);
 }
 
 /* ==================================================

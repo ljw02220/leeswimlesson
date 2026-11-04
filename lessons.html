@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="site.webmanifest" />
 
     <title>수업관리</title>
 
@@ -246,6 +248,7 @@
             <select id="detail-status">
               <option value="scheduled">예정</option>
               <option value="completed">완료</option>
+              <option value="cancelled">취소</option>
             </select>
           </div>
 
@@ -271,18 +274,17 @@
 
           <button
             type="button"
-            id="cancel-detail-btn"
-            class="cancel-detail-btn"
-          >
-            취소
-          </button>
-
-          <button
-            type="button"
             id="delete-lesson-btn"
             class="delete-lesson-btn"
           >
             삭제
+          </button>
+          <button
+            type="button"
+            id="dismiss-detail-btn"
+            class="cancel-detail-btn"
+          >
+            닫기
           </button>
         </div>
       </div>
@@ -292,9 +294,9 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20260913-role-guard"></script>
-    <script src="lessons.js?v=20261007-cancel-extension"></script>
+    <script src="lessons.js?v=20261104-completed-history"></script>
     <script src="makeup-admin.js?v=20261001-calendar"></script>
     <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
-    <script src="notifications.js?v=20261001-credit-usage"></script>
+    <script src="notifications.js?v=20261104-change-dots"></script>
   </body>
 </html>

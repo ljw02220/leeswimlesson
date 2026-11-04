@@ -556,3 +556,12 @@
     text-align: right;
   }
 }
+
+.report-header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.report-card > .card-header { flex-wrap: wrap; gap: 12px; }
+.payment-request-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid #e8eef5; }
+.payment-request-item strong, .payment-request-item span { display: block; }
+.payment-request-item span { margin-top: 5px; font-size: 13px; color: #64748b; }
+.payment-request-item button { flex-shrink: 0; }
+.payment-request-item button:disabled { opacity: .6; cursor: wait; }
+#paymentRequests { scroll-margin-top: 24px; }

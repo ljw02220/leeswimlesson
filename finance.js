@@ -1078,26 +1078,6 @@ function renderPersonalReportSummary(personalMembers, result) {
       <small>수강료 ${formatCurrency(result.personalBaseAmount)} × 70%</small>
     </div>
 
-    <div class="report-summary-list">
-      ${personalMembers
-        .map((member) => {
-          const reportDate = member.personal_reported_at
-            ? formatDate(member.personal_reported_at)
-            : '보고일 없음';
-
-          return `
-            <article class="report-summary-item">
-              <div>
-                <strong>${member.name || '이름 없음'}</strong>
-                <span>${reportDate}</span>
-              </div>
-
-              <b>${formatCurrency(Number(member.payment_amount) || 0)}</b>
-            </article>
-          `;
-        })
-        .join('')}
-    </div>
   `;
 }
 
@@ -1475,6 +1455,63 @@ async function registerPaidSalary() {
   15. 전체 데이터 불러오기
 ================================================== */
 
+function escapePaymentText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character]);
+}
+
+async function loadPaymentRequests() {
+  const list = document.getElementById('paymentRequestList');
+  if (!list) return;
+  const client = window.swimDb?.client;
+  if (!client) {
+    list.innerHTML = '<p class="report-empty">입금 확인은 Supabase 연결 후 사용할 수 있습니다.</p>';
+    return;
+  }
+  try {
+    const { data, error } = await client.from('payment_requests')
+      .select('id, payment_date, payment_amount, requested_at, members(name)')
+      .eq('status', 'pending').order('requested_at', { ascending: false });
+    if (error) throw error;
+    list.innerHTML = (data || []).length ? data.map((request) => `
+      <article class="payment-request-item">
+        <div><strong>${escapePaymentText(request.members?.name || '회원')}</strong>
+          <span>${escapePaymentText(request.payment_date)} · ${formatCurrency(request.payment_amount)}</span>
+        </div>
+        <button type="button" class="secondary-action" data-confirm-payment="${escapePaymentText(request.id)}">확인</button>
+      </article>
+    `).join('') : '<p class="report-empty">확인 대기 중인 입금이 없습니다.</p>';
+  } catch (error) {
+    console.error('입금 알림 조회 실패:', error);
+    list.innerHTML = '<p class="report-empty">입금 알림을 불러오지 못했습니다.</p><button type="button" class="secondary-action" data-retry-payments>다시 불러오기</button>';
+  }
+}
+
+let confirmingPayment = false;
+document.getElementById('paymentRequestList')?.addEventListener('click', async (event) => {
+  if (event.target.closest('[data-retry-payments]')) return loadPaymentRequests();
+  const button = event.target.closest('[data-confirm-payment]');
+  if (!button || confirmingPayment) return;
+  confirmingPayment = true;
+  button.disabled = true;
+  button.textContent = '확인 중…';
+  try {
+    const { error } = await window.swimDb.client.rpc('confirm_member_payment', {
+      p_request_id: button.dataset.confirmPayment,
+    });
+    if (error) throw error;
+    button.closest('.payment-request-item')?.remove();
+    window.dispatchEvent(new CustomEvent('swim-payment-confirmed'));
+  } catch (error) {
+    alert(error.message || '입금을 확인하지 못했습니다.');
+  } finally {
+    confirmingPayment = false;
+    button.disabled = false;
+    button.textContent = '확인';
+  }
+});
+
 async function loadFinance() {
   updateMonthText();
 
@@ -1483,6 +1520,7 @@ async function loadFinance() {
       getGroupLessons(),
       getPersonalMembers(),
       getPaidSalary(),
+      loadPaymentRequests(),
     ]);
 
     latestReportMembers = personalMembers;
@@ -1512,6 +1550,8 @@ async function loadFinance() {
     }
   }
 }
+
+window.addEventListener('swim-payment-confirmed', loadFinance);
 
 /* ==================================================
   16. 이벤트

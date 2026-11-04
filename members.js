@@ -2072,6 +2072,15 @@ function setupSignupRequestActions() {
 // 최초 실행
 // ======================================================
 
+window.addEventListener('swim-payment-confirmed', async () => {
+  try {
+    await loadMembers();
+    renderAll();
+  } catch (error) {
+    console.error('입금 확인 후 회원정보를 새로고침하지 못했습니다.', error);
+  }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   setupFilters();
   setupAddButton();

@@ -3,9 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="site.webmanifest" />
 
     <link rel="stylesheet" href="common.css" />
-    <link rel="stylesheet" href="finance.css?v=20261007-report-edit" />
+    <link rel="stylesheet" href="finance.css?v=20261104-finance-payments" />
 
     <title>재무관리</title>
   </head>
@@ -168,26 +170,15 @@
           </div>
         </div>
 
-        <!-- 개인레슨 보고 완료 -->
-        <aside class="manager-card side-card">
+        <aside class="manager-card side-card" id="paymentRequests">
           <div class="card-header compact">
             <div>
-              <h2>개인레슨 보고 완료</h2>
-
-              <p id="summaryMonth">2026년 9월</p>
+              <h2>입금 확인</h2>
+              <p>회원이 알린 입금을 확인하면 결제정보에 반영됩니다.</p>
             </div>
-
-            <button
-              id="addPersonalReportButton"
-              class="secondary-action compact-action"
-              type="button"
-            >
-              보고 추가
-            </button>
           </div>
-
-          <div id="personalReportSummary" class="report-summary-panel">
-            <p class="report-empty">보고 완료 내역을 불러오는 중입니다.</p>
+          <div id="paymentRequestList" aria-live="polite">
+            <p class="report-empty">입금 알림을 불러오는 중입니다.</p>
           </div>
         </aside>
       </section>
@@ -196,18 +187,21 @@
       <section class="manager-card report-card">
         <div class="card-header">
           <div>
-            <h2>개인레슨 보고 내역</h2>
+            <h2>개인레슨 보고</h2>
+            <p id="summaryMonth"></p>
 
             <p>
               보고 완료된 개인레슨 내역을 기준으로 월급 계산에 반영합니다.
             </p>
           </div>
 
-          <button id="copyReportButton" class="secondary-action" type="button">
-            보고서 복사
-          </button>
+          <div class="report-header-actions">
+            <button id="addPersonalReportButton" class="secondary-action" type="button">보고 추가</button>
+            <button id="copyReportButton" class="secondary-action" type="button">보고서 복사</button>
+          </div>
         </div>
 
+        <div id="personalReportSummary" class="report-summary-panel"></div>
         <div id="monthlyReport" class="monthly-report">
           <p class="report-empty">개인레슨 정보를 불러오는 중입니다.</p>
         </div>
@@ -305,7 +299,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20260913-role-guard"></script>
-    <script src="finance.js?v=20261007-report-edit"></script>
-    <script src="notifications.js?v=20261001-credit-usage"></script>
+    <script src="finance.js?v=20261104-finance-payments"></script>
+    <script src="notifications.js?v=20261104-change-dots"></script>
   </body>
 </html>

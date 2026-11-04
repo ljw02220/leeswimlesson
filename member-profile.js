@@ -67,6 +67,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const paymentForm = document.getElementById('paymentReportForm');
+  const amountChoice = document.getElementById('paymentReportAmountChoice');
+  const customAmount = document.getElementById('paymentReportCustomAmount');
+  const amountInput = document.getElementById('paymentReportAmount');
+
+  function syncAmountInput(focus = false) {
+    const isCustom = amountChoice?.value === 'custom';
+    if (customAmount) customAmount.hidden = !isCustom;
+    if (amountInput) {
+      amountInput.disabled = !isCustom;
+      amountInput.required = isCustom;
+      if (isCustom && focus) amountInput.focus();
+    }
+  }
+
+  amountChoice?.addEventListener('change', () => syncAmountInput(true));
+  syncAmountInput();
 
   if (paymentForm) {
     paymentForm.addEventListener('submit', async (event) => {
@@ -77,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       const paymentAmount = portal.parseMoney(
-        document.getElementById('paymentReportAmount')?.value
+        amountChoice?.value === 'custom' ? amountInput?.value : amountChoice?.value
       );
       const paymentDateValue =
         document.getElementById('paymentReportDate')?.value || '';
@@ -88,6 +104,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
+      const submitButton = paymentForm.querySelector('[type="submit"]');
+      if (submitButton?.disabled) return;
+      if (submitButton) submitButton.disabled = true;
       try {
         currentMember = await portal.updateMemberPayment(currentMember, {
           paymentDate: paymentDateValue,
@@ -96,16 +115,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         renderMember(currentMember);
         paymentForm.reset();
+        syncAmountInput();
 
         if (paymentDate) {
           paymentDate.value = todayKey;
         }
 
         setMessage('결제 알림을 저장했습니다. 관리자 확인 후 반영됩니다.');
+        window.dispatchEvent(new CustomEvent('swim-payment-requested'));
       } catch (error) {
         console.error('결제 알림 저장 실패:', error);
 
-        setMessage('결제 알림을 저장하지 못했습니다.', 'error');
+        setMessage(error.message || '결제 알림을 저장하지 못했습니다.', 'error');
+      } finally {
+        const submitButton = paymentForm.querySelector('[type="submit"]');
+        if (submitButton) submitButton.disabled = false;
       }
     });
   }
