@@ -7,7 +7,7 @@
     <link rel="manifest" href="site.webmanifest" />
 
     <link rel="stylesheet" href="common.css?v=20261104-admin-nav" />
-    <link rel="stylesheet" href="finance.css?v=20261104-finance-date" />
+    <link rel="stylesheet" href="finance.css?v=20261104-report-layout" />
 
     <title>재무관리</title>
   </head>
@@ -23,9 +23,13 @@
       <a href="finance.html" class="nav-link active"> 재무관리 </a>
 
       <details class="admin-account">
-        <summary class="admin-account-trigger">관리자 <span aria-hidden="true">⌄</span></summary>
+        <summary class="admin-account-trigger">
+          관리자 <span aria-hidden="true">⌄</span>
+        </summary>
         <div class="admin-account-menu">
-          <button id="logoutButton" class="admin-logout-button" type="button">로그아웃</button>
+          <button id="logoutButton" class="admin-logout-button" type="button">
+            로그아웃
+          </button>
         </div>
       </details>
     </nav>
@@ -62,48 +66,24 @@
         </div>
       </section>
 
-      <!-- 급여 요약 -->
-      <section class="metric-grid">
-        <article class="metric-card income">
-          <span id="expectedSalaryLabel"> 8월달 월급 </span>
-
-          <strong id="expectedSalary"> 0원 </strong>
-
-          <small> 3.3% 공제 후 예상 금액 </small>
-        </article>
-
-        <article id="paidSalaryCard" class="metric-card">
-          <span>입금 완료</span>
-
-          <strong id="paidSalary"> 0원 </strong>
-
-          <small id="paidSalaryStatus"> 미입금 </small>
-        </article>
-
-        <article class="metric-card">
-          <span>단체강습 수입</span>
-
-          <strong id="groupIncome"> 0원 </strong>
-
-          <small id="groupLessonCount"> 총 0회 </small>
-        </article>
-
-        <article class="metric-card">
-          <span>개인레슨 수입</span>
-
-          <strong id="personalIncome"> 0원 </strong>
-
-          <small id="personalMemberCount"> 0명 </small>
-        </article>
-      </section>
-
-      <!-- 월급 상세 -->
-      <section class="content-grid finance-grid">
-        <div class="manager-card">
+      <section class="salary-guide-section">
+        <dialog
+          class="salary-guide-dialog"
+          id="salaryGuideContent"
+          aria-labelledby="salaryGuideTitle"
+        >
           <div class="card-header">
             <div>
-              <h2>월급 계산</h2>
+              <h2 id="salaryGuideTitle">월급 안내</h2>
             </div>
+            <button
+              type="button"
+              id="closeSalaryGuide"
+              class="salary-guide-close"
+              aria-label="월급 안내 닫기"
+            >
+              ×
+            </button>
           </div>
 
           <div class="table-wrap">
@@ -171,8 +151,54 @@
               </tbody>
             </table>
           </div>
-        </div>
+          <form id="actualSalaryForm" class="actual-salary-form">
+            <label for="actualSalaryAmount">실제로 받은 급여</label>
+            <div class="actual-salary-input-row">
+              <input
+                id="actualSalaryAmount"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="예: 1,250,000"
+                required
+              />
+              <button type="submit" class="secondary-action">저장</button>
+            </div>
+            <p id="actualSalaryComparison" aria-live="polite"></p>
+            <p id="actualSalaryMessage" role="status"></p>
+          </form>
+        </dialog>
+      </section>
 
+      <section class="manager-card income-history-card">
+        <div class="card-header"></div>
+        <div class="table-wrap">
+          <table class="data-table income-history-table">
+            <thead>
+              <tr>
+                <th>급여월</th>
+                <th>단체강습</th>
+                <th>개인레슨</th>
+                <th>세금</th>
+                <th>합계</th>
+                <th>실제 급여</th>
+                <th>차이</th>
+              </tr>
+            </thead>
+            <tbody id="incomeHistoryBody">
+              <tr>
+                <td colspan="7">불러오는 중입니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="income-table-hint">
+          표를 좌우로 밀면 모든 금액을 볼 수 있어요.
+        </p>
+      </section>
+
+      <!-- 월급 상세 -->
+      <section class="finance-payment-section">
         <aside class="manager-card side-card" id="paymentRequests">
           <div class="card-header compact">
             <div>
@@ -191,8 +217,22 @@
             <p id="paymentDateMessage" role="status"></p>
           </form>
           <div class="payment-status-tabs" aria-label="입금 확인 상태">
-            <button type="button" class="secondary-action active" data-payment-status="pending" aria-pressed="true">확인 대기</button>
-            <button type="button" class="secondary-action" data-payment-status="confirmed" aria-pressed="false">확인 완료</button>
+            <button
+              type="button"
+              class="secondary-action active"
+              data-payment-status="pending"
+              aria-pressed="true"
+            >
+              확인 대기
+            </button>
+            <button
+              type="button"
+              class="secondary-action"
+              data-payment-status="confirmed"
+              aria-pressed="false"
+            >
+              확인 완료
+            </button>
           </div>
           <div id="paymentRequestList" aria-live="polite">
             <p class="report-empty">입금 알림을 불러오는 중입니다.</p>
@@ -200,27 +240,35 @@
         </aside>
       </section>
 
-      <!-- 개인레슨 월말 보고 -->
+      <!-- 개인레슨 보고 -->
       <section class="manager-card report-card">
         <div class="card-header">
-          <div>
-            <h2>개인레슨 보고</h2>
-            <p id="summaryMonth"></p>
-
-            <p>
-              보고 완료된 개인레슨 내역을 기준으로 월급 계산에 반영합니다.
-            </p>
+          <div><h2>개인레슨 보고</h2><p>입금 확인한 내역을 보고하고, 월별 보고서를 확인하세요.</p></div>
+          <button id="addPersonalReportButton" class="secondary-action" type="button">보고 추가</button>
+        </div>
+        <div class="payment-status-tabs personal-report-tabs" aria-label="개인레슨 보고 상태">
+          <button type="button" class="secondary-action active" data-report-view="pending" aria-pressed="true" aria-controls="pendingReportPanel">보고 예정 <span id="pendingReportCount" class="report-tab-count">0</span></button>
+          <button type="button" class="secondary-action" data-report-view="completed" aria-pressed="false" aria-controls="completedPersonalReports">보고서 <span id="completedReportCount" class="report-tab-count">0</span></button>
+        </div>
+        <div id="pendingReportPanel">
+          <div class="report-pending-overview">
+            <div><span>보고 대기 금액</span><strong id="pendingReportAmount">—</strong></div>
+            <p>결제월과 관계없이 남아 있어요. 보고 완료한 달의 다음 달 급여에 반영됩니다.</p>
           </div>
-
-          <div class="report-header-actions">
-            <button id="addPersonalReportButton" class="secondary-action" type="button">보고 추가</button>
+          <div id="pendingPersonalReports" aria-live="polite"></div>
+        </div>
+        <div id="completedPersonalReports" hidden>
+          <div class="report-completed-toolbar">
+            <div class="finance-month-control report-month-control">
+              <button type="button" class="month-button" id="prevReportMonth" aria-label="이전 달 보고">‹</button>
+              <strong id="reportMonthLabel" aria-live="polite"></strong>
+              <button type="button" class="month-button" id="nextReportMonth" aria-label="다음 달 보고">›</button>
+            </div>
             <button id="copyReportButton" class="secondary-action" type="button">보고서 복사</button>
           </div>
-        </div>
-
-        <div id="personalReportSummary" class="report-summary-panel"></div>
-        <div id="monthlyReport" class="monthly-report">
-          <p class="report-empty">개인레슨 정보를 불러오는 중입니다.</p>
+          <p id="reportSettlementRange" class="report-period-description"></p>
+          <div id="personalReportSummary" class="report-summary-panel"></div>
+          <div id="monthlyReport" class="monthly-report"><p class="report-empty">보고서를 불러오는 중입니다.</p></div>
         </div>
       </section>
     </main>
@@ -316,7 +364,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20261104-admin-nav"></script>
-    <script src="finance.js?v=20261104-payment-date-display"></script>
+    <script src="finance.js?v=20261104-report-layout"></script>
     <script src="notifications.js?v=20261104-admin-nav"></script>
   </body>
 </html>

@@ -22,6 +22,28 @@ const RECURRING_GROUP_SCHEDULE = [
 
 const MEMBER_STORAGE_KEY = 'personalLessonMembers';
 const REPORT_STORAGE_KEY = 'personalLessonReports';
+const salaryGuideButton = document.getElementById('salaryGuideButton');
+const salaryGuideContent = document.getElementById('salaryGuideContent');
+salaryGuideButton?.addEventListener('click', () => {
+  showMonthlySalaryGuide(currentYear, currentMonth);
+});
+document
+  .getElementById('closeSalaryGuide')
+  ?.addEventListener('click', () => salaryGuideContent?.close());
+salaryGuideContent?.addEventListener('close', () =>
+  salaryGuideButton?.setAttribute('aria-expanded', 'false')
+);
+salaryGuideContent?.addEventListener('click', (event) => {
+  if (event.target !== salaryGuideContent) return;
+  const bounds = salaryGuideContent.getBoundingClientRect();
+  if (
+    event.clientX < bounds.left ||
+    event.clientX > bounds.right ||
+    event.clientY < bounds.top ||
+    event.clientY > bounds.bottom
+  )
+    salaryGuideContent.close();
+});
 const HOLIDAY_API_URL =
   'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
 const HOLIDAY_SERVICE_KEY = window.SWIM_CONFIG?.HOLIDAY_API_KEY || '';
@@ -175,8 +197,9 @@ function getMonthRange(year, month) {
 }
 
 function getSalarySettlementRange(year, month) {
-  const startDate = new Date(year, month - 1, 15);
-  const endDate = new Date(year, month, 15);
+  // Salary is based on the month actually reported, regardless of payment date.
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 1);
 
   const start = toDateKey(startDate);
   const end = toDateKey(endDate);
@@ -206,7 +229,9 @@ function getSalaryActivityMonthLabel(year, month) {
 function getSalaryReportLabel(year, month) {
   const reportMonth = getSalaryReportMonth(year, month);
 
-  return `${reportMonth.getFullYear()}년 ${reportMonth.getMonth() + 1}월달 월급`;
+  return `${reportMonth.getFullYear()}년 ${
+    reportMonth.getMonth() + 1
+  }월 보고분 · ${year}년 ${month + 1}월 15일 입금`;
 }
 
 function getDefaultReportedAt(year, month) {
@@ -263,7 +288,7 @@ function normalizeDateInput(value) {
 
 function updateMonthText() {
   const monthNumber = currentMonth + 1;
-  const monthText = `${currentYear}년 ${monthNumber}월 입금`;
+  const monthText = `${currentYear}년 ${monthNumber}월 급여`;
   const salaryLabel = getSalaryReportLabel(currentYear, currentMonth);
 
   if (financeMonth) {
@@ -272,6 +297,19 @@ function updateMonthText() {
 
   if (summaryMonth) {
     summaryMonth.textContent = salaryLabel;
+  }
+  const reportMonthLabel = document.getElementById('reportMonthLabel');
+  const reportMonth = getSalaryReportMonth(currentYear, currentMonth);
+  if (reportMonthLabel)
+    reportMonthLabel.textContent = `${reportMonth.getFullYear()}년 ${
+      reportMonth.getMonth() + 1
+    }월 보고`;
+  const reportPeriod = document.getElementById('reportSettlementRange');
+  if (reportPeriod) {
+    const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
+    const lastDate = new Date(`${end}T00:00:00`);
+    lastDate.setDate(lastDate.getDate() - 1);
+    reportPeriod.textContent = `${start} ~ ${toDateKey(lastDate)} 보고분 · ${currentYear}.${monthNumber}.15 급여 반영`;
   }
 
   if (expectedSalaryLabel) {
@@ -396,9 +434,9 @@ async function createRecurringGroupLessons(year, month) {
   return lessons;
 }
 
-async function getGroupLessons() {
+async function getGroupLessons(year = currentYear, month = currentMonth) {
   const client = getSupabaseClient();
-  const activityMonth = getSalaryActivityMonth(currentYear, currentMonth);
+  const activityMonth = getSalaryActivityMonth(year, month);
 
   if (!client) {
     return await createRecurringGroupLessons(
@@ -460,8 +498,7 @@ function mapLocalMember(member) {
     payment_date: member.paymentDate || member.payment_date || '',
     payment_status: member.paymentStatus || member.payment_status || '확인필요',
     residence_type: member.residenceType || member.residence_type || '7단지',
-    payment_method:
-      member.paymentMethod || member.payment_method || '계좌이체',
+    payment_method: member.paymentMethod || member.payment_method || '계좌이체',
     personal_reported_at:
       member.personalReportedAt || member.personal_reported_at || '',
     personal_reported_payment_date:
@@ -541,8 +578,7 @@ function mapMemberToManualReport(member, fallbackName) {
     days: member?.days || [],
     lesson_time: member?.lesson_time || member?.time || null,
     payment_status: '완납',
-    residence_type:
-      member?.residence_type || member?.residenceType || '7단지',
+    residence_type: member?.residence_type || member?.residenceType || '7단지',
     payment_method:
       member?.payment_method || member?.paymentMethod || '계좌이체',
     memo: '재무 화면에서 직접 추가',
@@ -845,19 +881,12 @@ function renderFinanceSummary(result) {
 function createReportText(member) {
   const dayText = formatDays(member.days);
   const timeText = formatTime(member.lesson_time);
-  const firstLine = [
-    dayText,
-    timeText,
-    member.name,
-    member.residence_type,
-  ]
+  const firstLine = [dayText, timeText, member.name, member.residence_type]
     .filter(Boolean)
     .join(' ');
   const paymentAmount = Number(member.payment_amount) || 0;
   const paymentMethod =
-    member.payment_method === '계좌이체'
-      ? '계좌'
-      : member.payment_method || '';
+    member.payment_method === '계좌이체' ? '계좌' : member.payment_method || '';
   const lessonLine = [
     member.lesson_format,
     paymentAmount ? `${paymentAmount.toLocaleString('ko-KR')}원` : '',
@@ -869,17 +898,14 @@ function createReportText(member) {
     ? `${formatDate(member.payment_date)} 입금`
     : member.payment_status || '확인필요';
 
-  return [
-    firstLine,
-    member.phone || '',
-    lessonLine,
-    paymentLine,
-  ]
+  return [firstLine, member.phone || '', lessonLine, paymentLine]
     .filter(Boolean)
     .join('\n');
 }
 
 function renderMonthlyReport(personalMembers) {
+  const count = document.getElementById('completedReportCount');
+  if (count) count.textContent = String(personalMembers.length);
   if (!monthlyReport) {
     return;
   }
@@ -915,12 +941,7 @@ function renderMonthlyReport(personalMembers) {
         <article class="report-item">
           <div class="report-item-header">
             <strong>
-              ${[
-                dayText,
-                timeText,
-                member.name,
-                member.residence_type,
-              ]
+              ${[dayText, timeText, member.name, member.residence_type]
                 .filter(Boolean)
                 .join(' ')}
             </strong>
@@ -1106,7 +1127,7 @@ function openPersonalReportModal() {
   }
 
   if (reportReportedAt) {
-    reportReportedAt.value = getDefaultReportedAt(currentYear, currentMonth);
+    reportReportedAt.value = toDateKey(new Date());
   }
 
   if (reportResidenceType) {
@@ -1281,7 +1302,7 @@ async function handleManualReportSubmit(event) {
 
   if (reportedAt < start || reportedAt >= end) {
     const shouldContinue = confirm(
-      `현재 화면의 정산 범위는 ${start}부터 ${end} 전까지입니다.\n` +
+      `선택한 보고 기간은 ${start}부터 ${end} 전까지입니다.\n` +
         '그래도 이 보고 내역을 추가할까요?'
     );
 
@@ -1456,9 +1477,17 @@ async function registerPaidSalary() {
 ================================================== */
 
 function escapePaymentText(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  })[character]);
+  return String(value ?? '').replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[character])
+  );
 }
 
 let paymentDateMembers = [];
@@ -1472,21 +1501,37 @@ async function loadPaymentDateMembers() {
   const client = getSupabaseClient();
   if (!client) return;
   try {
-    const { data, error } = await client.from('members').select('id, name, phone, payment_date').order('name');
+    const { data, error } = await client
+      .from('members')
+      .select('id, name, phone, payment_date')
+      .order('name');
     if (error) throw error;
     paymentDateMembers = data || [];
     const selectedId = paymentDateMember.value;
-    paymentDateMember.innerHTML = '<option value="">회원을 선택해주세요</option>' + paymentDateMembers.map((member) =>
-      `<option value="${escapePaymentText(member.id)}">${escapePaymentText(member.name)}${member.phone ? ` · ${escapePaymentText(member.phone)}` : ''}</option>`
-    ).join('');
+    paymentDateMember.innerHTML =
+      '<option value="">회원을 선택해주세요</option>' +
+      paymentDateMembers
+        .map(
+          (member) =>
+            `<option value="${escapePaymentText(
+              member.id
+            )}">${escapePaymentText(member.name)}${
+              member.phone ? ` · ${escapePaymentText(member.phone)}` : ''
+            }</option>`
+        )
+        .join('');
     paymentDateMember.value = selectedId;
   } catch (error) {
-    if (paymentDateMessage) paymentDateMessage.textContent = '입금일 관리용 회원을 불러오지 못했습니다.';
+    if (paymentDateMessage)
+      paymentDateMessage.textContent =
+        '입금일 관리용 회원을 불러오지 못했습니다.';
   }
 }
 
 paymentDateMember?.addEventListener('change', () => {
-  const member = paymentDateMembers.find((item) => String(item.id) === paymentDateMember.value);
+  const member = paymentDateMembers.find(
+    (item) => String(item.id) === paymentDateMember.value
+  );
   financePaymentDate.value = member?.payment_date || '';
   paymentDateMessage.textContent = '';
 });
@@ -1502,13 +1547,18 @@ paymentDateForm?.addEventListener('submit', async (event) => {
   try {
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase 연결이 필요합니다.');
-    const { error } = await client.from('members').update({ payment_date: paymentDate })
-      .eq('id', memberId).select('id').single();
+    const { error } = await client
+      .from('members')
+      .update({ payment_date: paymentDate })
+      .eq('id', memberId)
+      .select('id')
+      .single();
     if (error) throw error;
     paymentDateMessage.textContent = '입금일을 저장했습니다.';
     await loadFinance();
   } catch (error) {
-    paymentDateMessage.textContent = error.message || '입금일을 저장하지 못했습니다.';
+    paymentDateMessage.textContent =
+      error.message || '입금일을 저장하지 못했습니다.';
   } finally {
     button.disabled = false;
   }
@@ -1531,7 +1581,12 @@ document.querySelectorAll('[data-payment-status]').forEach((button) => {
 function getPaymentRequestDisplayRows(requests, status) {
   const seenMembers = new Set();
   return requests.map((request) => {
-    if (status !== 'confirmed' || !request.member_id || seenMembers.has(request.member_id)) return request;
+    if (
+      status !== 'confirmed' ||
+      !request.member_id ||
+      seenMembers.has(request.member_id)
+    )
+      return request;
     seenMembers.add(request.member_id);
     const member = request.members;
     // The latest confirmed payment uses the same current values as Finance's
@@ -1551,55 +1606,477 @@ async function loadPaymentRequests() {
   if (!list) return;
   const client = window.swimDb?.client;
   if (!client) {
-    list.innerHTML = '<p class="report-empty">입금 확인은 Supabase 연결 후 사용할 수 있습니다.</p>';
+    list.innerHTML =
+      '<p class="report-empty">입금 확인은 Supabase 연결 후 사용할 수 있습니다.</p>';
     return;
   }
   try {
-    const { data, error } = await client.from('payment_requests')
-      .select('id, member_id, payment_date, payment_amount, requested_at, reviewed_at, members(name, payment_date, payment_amount)')
-      .eq('status', status).order(status === 'confirmed' ? 'reviewed_at' : 'requested_at', { ascending: false })
-      .order('requested_at', { ascending: false }).order('id', { ascending: false });
+    const { data, error } = await client
+      .from('payment_requests')
+      .select(
+        'id, member_id, payment_date, payment_amount, requested_at, reviewed_at, members(name, payment_date, payment_amount)'
+      )
+      .eq('status', status)
+      .order(status === 'confirmed' ? 'reviewed_at' : 'requested_at', {
+        ascending: false,
+      })
+      .order('requested_at', { ascending: false })
+      .order('id', { ascending: false });
     if (version !== paymentRequestLoadVersion) return;
     if (error) throw error;
     const displayRows = getPaymentRequestDisplayRows(data || [], status);
-    list.innerHTML = displayRows.length ? displayRows.map((request) => `
+    list.innerHTML = displayRows.length
+      ? displayRows
+          .map(
+            (request) => `
       <article class="payment-request-item">
-        <div><strong>${escapePaymentText(request.members?.name || '회원')}</strong>
-          <span>${escapePaymentText(request.payment_date)} · ${formatCurrency(request.payment_amount)}</span>
+        <div><strong>${escapePaymentText(
+          request.members?.name || '회원'
+        )}</strong>
+          <span>${escapePaymentText(request.payment_date)} · ${formatCurrency(
+              request.payment_amount
+            )}</span>
         </div>
-        ${status === 'pending' ? `<button type="button" class="secondary-action" data-confirm-payment="${escapePaymentText(request.id)}">확인</button>` : '<span class="payment-confirmed-label">입금 확인 완료</span>'}
+        ${
+          status === 'pending'
+            ? `<button type="button" class="secondary-action" data-confirm-payment="${escapePaymentText(
+                request.id
+              )}">확인</button>`
+            : '<span class="payment-confirmed-label">입금 확인 완료</span>'
+        }
       </article>
-    `).join('') : `<p class="report-empty">${status === 'pending' ? '확인 대기 중인 입금이 없습니다.' : '확인 완료한 입금이 없습니다.'}</p>`;
+    `
+          )
+          .join('')
+      : `<p class="report-empty">${
+          status === 'pending'
+            ? '확인 대기 중인 입금이 없습니다.'
+            : '확인 완료한 입금이 없습니다.'
+        }</p>`;
   } catch (error) {
     if (version !== paymentRequestLoadVersion) return;
     console.error('입금 알림 조회 실패:', error);
-    list.innerHTML = '<p class="report-empty">입금 알림을 불러오지 못했습니다.</p><button type="button" class="secondary-action" data-retry-payments>다시 불러오기</button>';
+    list.innerHTML =
+      '<p class="report-empty">입금 알림을 불러오지 못했습니다.</p><button type="button" class="secondary-action" data-retry-payments>다시 불러오기</button>';
   }
 }
 
 let confirmingPayment = false;
-document.getElementById('paymentRequestList')?.addEventListener('click', async (event) => {
-  if (event.target.closest('[data-retry-payments]')) return loadPaymentRequests();
-  const button = event.target.closest('[data-confirm-payment]');
-  if (!button || confirmingPayment) return;
-  confirmingPayment = true;
-  button.disabled = true;
-  button.textContent = '확인 중…';
-  try {
-    const { error } = await window.swimDb.client.rpc('confirm_member_payment', {
-      p_request_id: button.dataset.confirmPayment,
-    });
-    if (error) throw error;
-    button.closest('.payment-request-item')?.remove();
-    window.dispatchEvent(new CustomEvent('swim-payment-confirmed'));
-  } catch (error) {
-    alert(error.message || '입금을 확인하지 못했습니다.');
-  } finally {
-    confirmingPayment = false;
-    button.disabled = false;
-    button.textContent = '확인';
-  }
+document
+  .getElementById('paymentRequestList')
+  ?.addEventListener('click', async (event) => {
+    if (event.target.closest('[data-retry-payments]'))
+      return loadPaymentRequests();
+    const button = event.target.closest('[data-confirm-payment]');
+    if (!button || confirmingPayment) return;
+    confirmingPayment = true;
+    button.disabled = true;
+    button.textContent = '확인 중…';
+    try {
+      const { error } = await window.swimDb.client.rpc(
+        'confirm_member_payment',
+        {
+          p_request_id: button.dataset.confirmPayment,
+        }
+      );
+      if (error) throw error;
+      button.closest('.payment-request-item')?.remove();
+      setPersonalReportView('pending');
+      window.dispatchEvent(new CustomEvent('swim-payment-confirmed'));
+    } catch (error) {
+      alert(error.message || '입금을 확인하지 못했습니다.');
+    } finally {
+      confirmingPayment = false;
+      button.disabled = false;
+      button.textContent = '확인';
+    }
+  });
+
+function setPersonalReportView(view) {
+  document.getElementById('pendingReportPanel').hidden = view !== 'pending';
+  document.getElementById('completedPersonalReports').hidden =
+    view !== 'completed';
+  document.querySelectorAll('[data-report-view]').forEach((tab) => {
+    const active = tab.dataset.reportView === view;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-pressed', String(active));
+  });
+}
+
+document.querySelectorAll('[data-report-view]').forEach((tab) => {
+  tab.addEventListener('click', () =>
+    setPersonalReportView(tab.dataset.reportView)
+  );
 });
+
+function isPendingPersonalReport(member) {
+  return Boolean(
+    member.payment_date &&
+      Number(member.payment_amount) > 0 &&
+      member.payment_status === '완납' &&
+      !(
+        member.personal_reported_at &&
+        member.personal_reported_payment_date === member.payment_date
+      )
+  );
+}
+
+let pendingReportMembers = [];
+async function loadPendingPersonalReports() {
+  const list = document.getElementById('pendingPersonalReports');
+  if (!list) return;
+  try {
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase 연결이 필요합니다.');
+    const { data, error } = await client
+      .from('members')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    pendingReportMembers = (data || []).filter(isPendingPersonalReport);
+    document.getElementById('pendingReportCount').textContent = String(pendingReportMembers.length);
+    document.getElementById('pendingReportAmount').textContent = formatCurrency(
+      pendingReportMembers.reduce((sum, member) => sum + Number(member.payment_amount || 0), 0)
+    );
+    list.innerHTML = pendingReportMembers.length
+      ? pendingReportMembers
+          .map(
+            (member) => `
+      <article class="payment-request-item">
+        <div><strong>${escapePaymentText(member.name)}</strong>
+          <span>${escapePaymentText(member.payment_date)} · ${formatCurrency(
+              member.payment_amount
+            )}</span>
+        </div>
+        <button type="button" class="secondary-action" data-complete-report="${escapePaymentText(
+          member.id
+        )}">보고 완료</button>
+      </article>
+    `
+          )
+          .join('')
+      : '<p class="report-empty">보고 예정인 입금이 없습니다. 입금 확인을 마친 건이 여기에 표시됩니다.</p>';
+  } catch (error) {
+    document.getElementById('pendingReportCount').textContent = '—';
+    document.getElementById('pendingReportAmount').textContent = '—';
+    list.innerHTML =
+      '<p class="report-empty">보고 예정 목록을 불러오지 못했습니다.</p>';
+    console.error('보고 예정 조회 실패:', error);
+  }
+}
+
+let completingPersonalReport = false;
+document
+  .getElementById('pendingPersonalReports')
+  ?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-complete-report]');
+    if (!button || completingPersonalReport) return;
+    const member = pendingReportMembers.find(
+      (item) => String(item.id) === button.dataset.completeReport
+    );
+    if (!member) return;
+    completingPersonalReport = true;
+    button.disabled = true;
+    button.textContent = '처리 중…';
+    try {
+      const reportedAt = toDateKey(new Date());
+      const { error } = await getSupabaseClient().rpc(
+        'complete_personal_payment_report',
+        {
+          p_member_id: member.id,
+          p_payment_date: member.payment_date,
+          p_payment_amount: member.payment_amount,
+          p_reported_at: reportedAt,
+        }
+      );
+      if (error) throw error;
+      // Show the report just created, even if the user was browsing an older month.
+      const salaryMonth = new Date(`${reportedAt}T00:00:00`);
+      salaryMonth.setDate(1);
+      salaryMonth.setMonth(salaryMonth.getMonth() + 1);
+      currentYear = salaryMonth.getFullYear();
+      currentMonth = salaryMonth.getMonth();
+      await loadFinance();
+      setPersonalReportView('completed');
+    } catch (error) {
+      alert(error.message || '보고 완료 처리에 실패했습니다.');
+    } finally {
+      completingPersonalReport = false;
+      button.disabled = false;
+      button.textContent = '보고 완료';
+    }
+  });
+
+function calculateMonthlyIncome(groupLessons, reports) {
+  const groupAmount =
+    groupLessons.filter(
+      (lesson) => !['cancelled', 'deleted'].includes(lesson.status)
+    ).length * GROUP_LESSON_RATE;
+  const personalAmount =
+    reports.reduce(
+      (sum, report) => sum + Number(report.payment_amount || 0),
+      0
+    ) * PERSONAL_LESSON_SHARE;
+  const total = groupAmount + personalAmount;
+  return {
+    groupAmount,
+    personalAmount,
+    total,
+    tax: total * TAX_RATE,
+    netSalary: total * NET_RATE,
+  };
+}
+
+const monthlySalaryGuides = new Map();
+let salaryGuideMonth = null;
+
+function renderMonthlySalaryGuide(year, month) {
+  const income = monthlySalaryGuides.get(`${year}-${month}`);
+  const title = document.getElementById('salaryGuideTitle');
+  if (title) title.textContent = `${year}년 ${month + 1}월 급여 안내`;
+  const values = income
+    ? {
+        groupCalculation: `${
+          income.groupAmount / GROUP_LESSON_RATE
+        }회 × ${formatCurrency(GROUP_LESSON_RATE)}`,
+        groupCalculationAmount: formatCurrency(income.groupAmount),
+        personalCalculationAmount: formatCurrency(income.personalAmount),
+        grossIncome: formatCurrency(income.total),
+        taxAmount: `-${formatCurrency(income.tax)}`,
+        netIncome: formatCurrency(income.netSalary),
+      }
+    : {};
+  for (const id of [
+    'groupCalculation',
+    'groupCalculationAmount',
+    'personalCalculationAmount',
+    'grossIncome',
+    'taxAmount',
+    'netIncome',
+  ]) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = values[id] || '불러오는 중…';
+  }
+  const input = document.getElementById('actualSalaryAmount');
+  if (input)
+    input.value =
+      income?.paidAmount != null
+        ? Number(income.paidAmount).toLocaleString('ko-KR')
+        : '';
+  const comparison = document.getElementById('actualSalaryComparison');
+  if (comparison)
+    comparison.textContent =
+      income?.paidAmount != null
+        ? `예상 ${formatCurrency(income.netSalary)} · 실제 ${formatCurrency(
+            income.paidAmount
+          )} · ${salaryDifferenceText(income.paidAmount, income.netSalary)}`
+        : '실제 급여를 입력하면 예상 금액과 비교할 수 있어요.';
+}
+
+function salaryDifferenceText(actual, expected) {
+  const difference = Math.round(actual) - Math.round(expected);
+  return difference === 0 ? '0원' : `${difference > 0 ? '+' : '−'}${formatCurrency(Math.abs(difference))}`;
+}
+
+function salaryEntryId(year, month) {
+  return `00000000-0000-4000-8000-${String(year).padStart(8, '0')}${String(
+    month + 1
+  ).padStart(2, '0')}00`;
+}
+
+document
+  .getElementById('actualSalaryAmount')
+  ?.addEventListener('input', (event) => {
+    const digits = event.target.value.replace(/[^0-9]/g, '');
+    event.target.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+  });
+
+document
+  .getElementById('actualSalaryForm')
+  ?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!salaryGuideMonth) return;
+    const button = event.target.querySelector('[type="submit"]');
+    if (button.disabled) return;
+    const input = document.getElementById('actualSalaryAmount');
+    const text = input.value.replace(/,/g, '').trim();
+    const amount = Number(text);
+    const message = document.getElementById('actualSalaryMessage');
+    if (
+      !/^\d+$/.test(text) ||
+      !Number.isSafeInteger(amount) ||
+      amount > 2147483647
+    ) {
+      message.textContent = '올바른 급여 금액을 입력해주세요.';
+      return;
+    }
+    const { year, month } = salaryGuideMonth;
+    button.disabled = true;
+    try {
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Supabase 연결이 필요합니다.');
+      const { start, end } = getMonthRange(year, month);
+      const id = salaryEntryId(year, month);
+      const { data, error } = await client
+        .from('transactions')
+        .select('id, amount')
+        .eq('type', 'salary')
+        .gte('transaction_date', start)
+        .lt('transaction_date', end);
+      if (error) throw error;
+      // Keep any previously recorded salary installments. A stable monthly entry
+      // adjusts their sum to the entered total, so repeated saves never add twice.
+      const previousAmount = (data || [])
+        .filter((row) => row.id !== id)
+        .reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      const result = await client.from('transactions').upsert(
+        {
+          id,
+          type: 'salary',
+          category: '급여 정산',
+          transaction_date: toDateKey(new Date(year, month, 15)),
+          amount: amount - previousAmount,
+          memo: `${year}년 ${month + 1}월 실제 급여 총액 ${amount}원`,
+        },
+        { onConflict: 'id' }
+      );
+      if (result.error) throw result.error;
+      message.textContent = '실제 급여를 저장했습니다.';
+      await loadFinance();
+    } catch (error) {
+      message.textContent = error.message || '실제 급여 저장에 실패했습니다.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+function showMonthlySalaryGuide(year, month) {
+  if (!salaryGuideContent) return;
+  salaryGuideMonth = { year, month };
+  const message = document.getElementById('actualSalaryMessage');
+  if (message) message.textContent = '';
+  renderMonthlySalaryGuide(year, month);
+  if (!salaryGuideContent.open) salaryGuideContent.showModal();
+  salaryGuideButton?.setAttribute('aria-expanded', 'true');
+}
+
+let incomeHistoryVersion = 0;
+async function loadIncomeHistory() {
+  const body = document.getElementById('incomeHistoryBody');
+  if (!body) return;
+  const version = ++incomeHistoryVersion;
+  const months = Array.from(
+    { length: 5 },
+    (_, index) => new Date(currentYear, currentMonth - index, 1)
+  );
+  try {
+    const client = getSupabaseClient();
+    let reports = [];
+    let salaries = [];
+    if (client) {
+      const salaryRange = getMonthRange(
+        months[0].getFullYear(),
+        months[0].getMonth()
+      );
+      const salaryStart = getMonthRange(
+        months[4].getFullYear(),
+        months[4].getMonth()
+      ).start;
+      const salaryResult = await client
+        .from('transactions')
+        .select('id, transaction_date, amount')
+        .eq('type', 'salary')
+        .gte('transaction_date', salaryStart)
+        .lt('transaction_date', salaryRange.end);
+      if (salaryResult.error) throw salaryResult.error;
+      salaries = salaryResult.data || [];
+      const start = getSalarySettlementRange(
+        months[4].getFullYear(),
+        months[4].getMonth()
+      ).start;
+      const end = getSalarySettlementRange(
+        months[0].getFullYear(),
+        months[0].getMonth()
+      ).end;
+      for (let offset = 0; ; offset += 500) {
+        const result = await client
+          .from('personal_lesson_reports')
+          .select('id, payment_amount, reported_at')
+          .gte('reported_at', start)
+          .lt('reported_at', end)
+          .order('id')
+          .range(offset, offset + 499);
+        if (result.error) throw result.error;
+        reports.push(...(result.data || []));
+        if ((result.data || []).length < 500) break;
+      }
+    } else {
+      reports = getStorageData(REPORT_STORAGE_KEY, []);
+    }
+    const rows = await Promise.all(
+      months.map(async (date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const { start, end } = getSalarySettlementRange(year, month);
+        const groupLessons = await getGroupLessons(year, month);
+        const income = calculateMonthlyIncome(
+          groupLessons,
+          reports.filter(
+            (report) => report.reported_at >= start && report.reported_at < end
+          )
+        );
+        const salaryRange = getMonthRange(year, month);
+        const salaryRows = salaries.filter(
+          (row) =>
+            row.transaction_date >= salaryRange.start &&
+            row.transaction_date < salaryRange.end
+        );
+        income.paidAmount = salaryRows.length
+          ? salaryRows.reduce((sum, row) => sum + Number(row.amount || 0), 0)
+          : null;
+        if (version === incomeHistoryVersion)
+          monthlySalaryGuides.set(`${year}-${month}`, income);
+        return `<tr><td><button type="button" class="income-month-button" data-income-year="${year}" data-income-month="${month}">${year}.${String(
+          month + 1
+        ).padStart(
+          2,
+          '0'
+        )}</button></td><td data-label="단체강습">${formatCurrency(
+          income.groupAmount
+        )}</td><td data-label="개인레슨">${formatCurrency(
+          income.personalAmount
+        )}</td><td data-label="세금">-${formatCurrency(
+          income.tax
+        )}</td><td data-label="합계"><strong>${formatCurrency(
+          income.netSalary
+        )}</strong></td><td><button type="button" class="income-month-button" data-income-year="${year}" data-income-month="${month}">${
+          income.paidAmount == null ? '입력' : formatCurrency(income.paidAmount)
+        }</button></td><td>${
+          income.paidAmount == null
+            ? '미입력'
+            : salaryDifferenceText(income.paidAmount, income.netSalary)
+        }</td></tr>`;
+      })
+    );
+    if (version === incomeHistoryVersion) body.innerHTML = rows.join('');
+  } catch (error) {
+    if (version === incomeHistoryVersion)
+      body.innerHTML =
+        '<tr><td colspan="7">수입 내역을 불러오지 못했습니다. 새로고침 후 다시 확인해주세요.</td></tr>';
+    console.error('최근 5개월 수입 조회 실패:', error);
+  }
+}
+
+document
+  .getElementById('incomeHistoryBody')
+  ?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-income-year]');
+    if (!button) return;
+    showMonthlySalaryGuide(
+      Number(button.dataset.incomeYear),
+      Number(button.dataset.incomeMonth)
+    );
+  });
 
 async function loadFinance() {
   updateMonthText();
@@ -1611,6 +2088,8 @@ async function loadFinance() {
       getPaidSalary(),
       loadPaymentRequests(),
       loadPaymentDateMembers(),
+      loadPendingPersonalReports(),
+      loadIncomeHistory(),
     ]);
 
     latestReportMembers = personalMembers;
@@ -1618,6 +2097,9 @@ async function loadFinance() {
     const result = calculateFinance(groupLessons, personalMembers, paidAmount);
 
     renderFinanceSummary(result);
+    if (salaryGuideContent?.open && salaryGuideMonth) {
+      renderMonthlySalaryGuide(salaryGuideMonth.year, salaryGuideMonth.month);
+    }
     renderPersonalReportSummary(personalMembers, result);
     renderMonthlyReport(personalMembers);
   } catch (error) {
@@ -1648,31 +2130,21 @@ window.addEventListener('focus', loadFinance);
   16. 이벤트
 ================================================== */
 
-if (prevMonthButton) {
-  prevMonthButton.addEventListener('click', () => {
-    currentMonth--;
-
-    if (currentMonth < 0) {
-      currentMonth = 11;
-      currentYear--;
-    }
-
-    loadFinance();
-  });
+function moveFinanceMonth(change) {
+  const date = new Date(currentYear, currentMonth + change, 1);
+  currentYear = date.getFullYear();
+  currentMonth = date.getMonth();
+  loadFinance();
 }
 
-if (nextMonthButton) {
-  nextMonthButton.addEventListener('click', () => {
-    currentMonth++;
-
-    if (currentMonth > 11) {
-      currentMonth = 0;
-      currentYear++;
-    }
-
-    loadFinance();
-  });
-}
+prevMonthButton?.addEventListener('click', () => moveFinanceMonth(-1));
+nextMonthButton?.addEventListener('click', () => moveFinanceMonth(1));
+document
+  .getElementById('prevReportMonth')
+  ?.addEventListener('click', () => moveFinanceMonth(-1));
+document
+  .getElementById('nextReportMonth')
+  ?.addEventListener('click', () => moveFinanceMonth(1));
 
 if (copyReportButton) {
   copyReportButton.addEventListener('click', copyMonthlyReport);

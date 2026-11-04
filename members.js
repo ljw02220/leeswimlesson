@@ -113,7 +113,7 @@ function showMemberLoadError(message) {
   tbody.innerHTML = `
     <tr>
       <td
-        colspan="6"
+        colspan="5"
         class="empty-member-row"
       >
         ${escapeHTML(message)}
@@ -1110,7 +1110,7 @@ function renderMembers() {
     tbody.innerHTML = `
       <tr>
         <td
-          colspan="6"
+          colspan="5"
           class="empty-member-row"
         >
           등록된 회원이 없습니다.
@@ -1155,18 +1155,7 @@ function renderMembers() {
         </span>
       </td>
 
-      <td class="center-cell">
-        <button
-          type="button"
-          class="
-            report-button
-            ${isCurrentPaymentReported(member) ? 'reported' : ''}
-          "
-          data-report-member-id="${member.id}"
-        >
-          ${getReportButtonLabel(member)}
-        </button>
-      </td>
+
     `;
 
     row.addEventListener('click', () => {
@@ -2051,7 +2040,6 @@ window.addEventListener('focus', async () => {
 document.addEventListener('DOMContentLoaded', () => {
   setupFilters();
   setupAddButton();
-  setupReportButtons();
   setupSignupRequestActions();
   setupModalEvents();
 
