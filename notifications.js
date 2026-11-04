@@ -94,6 +94,15 @@
       .swim-notification-item strong .swim-change-dot { margin-left: 6px; }
       .swim-notification-panel { position: absolute; z-index: 1000; top: calc(100% + 10px); right: 0; width: min(340px, calc(100vw - 28px)); max-height: 420px; overflow: auto; padding: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; box-shadow: 0 16px 40px rgba(15, 23, 42, .18); }
       .swim-notification-panel[hidden] { display: none; }
+      .swim-notification-panel, .swim-notification-panel * { box-sizing: border-box; }
+      .swim-notification-item { overflow-wrap: anywhere; }
+      @media (max-width: 700px) {
+        .swim-notification-panel { position: fixed; left: 12px; right: 12px; top: var(--notification-top, 76px); width: auto; max-width: none; max-height: min(70dvh, calc(100dvh - var(--notification-top, 76px) - 12px)); padding: 8px; border-radius: 12px; }
+        .swim-notification-item { padding: 12px 10px; font-size: 13px; }
+        .swim-push-settings { gap: 8px; margin: 0 0 6px; }
+        .swim-push-copy { flex: 1; }
+        .swim-push-button { min-height: 38px; }
+      }
       .swim-notification-title { margin: 0; padding: 10px 10px 8px; color: #0f172a; font-size: 15px; }
       .swim-push-settings { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 4px 6px; padding: 11px 10px; border: 1px solid #dbeafe; border-radius: 7px; background: #f8fbff; }
       .swim-push-copy { min-width: 0; }
@@ -146,6 +155,9 @@
 
     const panel = document.createElement('section');
     panel.className = 'swim-notification-panel';
+    panel.id = 'swim-notification-panel';
+    trigger.setAttribute('aria-controls', panel.id);
+    trigger.setAttribute('aria-expanded', 'false');
     panel.hidden = true;
     panel.innerHTML = `
       <h2 class="swim-notification-title">알림</h2>
@@ -163,9 +175,17 @@
 
     setupPushSettings(panel);
 
+    function positionPanel() {
+      const bottom = trigger.getBoundingClientRect().bottom;
+      panel.style.setProperty('--notification-top', `${Math.max(8, Math.min(bottom + 8, window.innerHeight - 180))}px`);
+    }
     trigger.addEventListener('click', () => {
       panel.hidden = !panel.hidden;
+      trigger.setAttribute('aria-expanded', String(!panel.hidden));
+      if (!panel.hidden) positionPanel();
     });
+    window.addEventListener('resize', () => { if (!panel.hidden) positionPanel(); });
+    window.addEventListener('scroll', () => { if (!panel.hidden) positionPanel(); }, { passive: true });
 
     panel.addEventListener('click', (event) => {
       const link = event.target.closest('.swim-notification-item[href]');
@@ -177,7 +197,17 @@
     });
 
     document.addEventListener('click', (event) => {
-      if (!wrap.contains(event.target)) panel.hidden = true;
+      if (!wrap.contains(event.target)) {
+        panel.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !panel.hidden) {
+        panel.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.focus();
+      }
     });
 
     return panel;
@@ -348,7 +378,7 @@
       client.from('signup_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       client.from('makeup_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       client.from('makeup_credits').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      client.from('payment_requests').select('id, payment_date, payment_amount, requested_at, members(name)')
+      client.from('payment_requests').select('id, payment_date, payment_amount, requested_at, members!payment_requests_member_id_fkey(name)')
         .eq('status', 'pending').order('requested_at', { ascending: false }),
     ]);
 

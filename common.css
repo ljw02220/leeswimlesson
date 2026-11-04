@@ -1800,3 +1800,24 @@ body {
 .calendar-date-search input, .calendar-date-search button { min-height: 36px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #334155; font: inherit; font-size: 13px; }
 .calendar-date-search button { cursor: pointer; }
 .calendar-date-search button[type="submit"] { background: #2563eb; border-color: #2563eb; color: white; }
+
+/* 관리자 모바일 공통 레이아웃 */
+@media (max-width: 700px) {
+  .management-page { width: 100%; min-width: 0; }
+  .content-grid > *, .manager-card, .side-card, .wrapper { min-width: 0; max-width: 100%; }
+  .table-wrap { max-width: 100%; overscroll-behavior-x: contain; }
+  .top-nav { width: 100%; flex-wrap: nowrap; gap: 3px; padding: 4px; }
+  .top-nav .nav-link { min-width: 0; padding: 9px 3px; font-size: 11px; white-space: nowrap; }
+  .top-nav .swim-notification-wrap { flex: 0 0 auto; margin-left: 0; }
+  .top-nav .admin-account { margin-left: 0; }
+  .admin-account-trigger { padding: 9px 5px; gap: 3px; font-size: 11px; white-space: nowrap; }
+  .page-heading { gap: 12px; flex-wrap: wrap; }
+  .card-header > div { min-width: 0; }
+  .card-header p { overflow-wrap: anywhere; line-height: 1.5; }
+  .calendar-header .nav { width: 100%; gap: 8px; }
+  .calendar-header .current-date { min-width: 0; font-size: clamp(12px, 3.6vw, 16px); white-space: nowrap; }
+  .calendar-header .nav button { flex: 0 0 30px; width: 30px; }
+  .calendar-date-search { gap: 6px; }
+  .calendar-date-search input { min-width: 0; width: 145px; max-width: 100%; font-size: 16px; }
+  .lesson-modal-box, .member-modal { max-width: calc(100vw - 24px); max-height: calc(100dvh - 32px); overflow-y: auto; }
+}

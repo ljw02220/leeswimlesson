@@ -1090,3 +1090,66 @@
 
 .member-list-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e8eef5; font-size: 13px; color: #64748b; }
 .member-list-footer [hidden] { display: none; }
+
+@media (max-width: 700px) {
+  .members-page .filter-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .members-page .filter-chip { flex: 1 1 auto; min-height: 34px; height: auto; padding: 7px 10px; font-size: 12px; }
+  .members-page .member-sort { flex: 1 1 100%; width: 100%; height: 38px; padding: 6px 10px; font-size: 14px; }
+  .members-page .member-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .members-page .form-group input, .members-page .form-group select,
+  .members-page .form-group textarea { min-width: 0; max-width: 100%; font-size: 16px; }
+  .members-page .member-modal-actions button { white-space: normal; }
+  .members-page .member-list-footer { flex-wrap: wrap; }
+}
+
+/* 회원정보 팝업의 폼 요소와 버튼을 Safari에서도 동일하게 표시 */
+.members-page .member-modal .form-group > select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 44px;
+  padding: 10px 36px 10px 12px;
+  color: #344054;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364758b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+}
+.members-page .member-modal-actions .secondary-button {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+@media (max-width: 700px) {
+  .members-page .member-modal { padding: 16px; border-radius: 12px; }
+  .members-page .member-modal .form-group > select,
+  .members-page .member-modal .form-group > input:not([type="checkbox"]):not([type="radio"]) { width: 100%; min-height: 44px; height: 44px; font-size: 16px; border-radius: 8px; }
+  .members-page .member-modal .form-group textarea { min-height: 96px; font-size: 16px; }
+  .members-page .member-modal-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+  .members-page .modal-action-right { display: contents; }
+  .members-page #previewMemberButton { grid-column: 1 / -1; grid-row: 1; }
+  .members-page #cancelMemberButton { grid-column: 1; grid-row: 2; }
+  .members-page .member-modal-actions button[type="submit"] { grid-column: 2; grid-row: 2; }
+  .members-page #deleteMemberButton { grid-column: 1 / -1; grid-row: 3; margin-top: 4px; }
+  .members-page .member-modal-actions button { min-width: 0; width: 100%; height: 44px !important; min-height: 44px; margin: 0; padding: 8px 10px; font-size: 13px; border-radius: 8px; }
+}
+@media (max-width: 700px) {
+  .members-page #deleteMemberButton { width: 100% !important; min-width: 0 !important; }
+}
+
+/* 회원 목록 제목 오른쪽의 간결한 정렬 선택창 */
+.members-page .member-list-card > .card-header { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap; }
+.members-page .member-list-card > .card-header > .filter-group { display: block; flex: 0 0 auto; width: auto; margin-left: auto; }
+.members-page .member-list-card .member-sort { width: 136px; min-width: 0; height: 34px; padding: 6px 8px; font-size: 12px; }
+@media (max-width: 430px) {
+  .members-page .member-list-card .member-sort { width: 122px; height: 34px; font-size: 11px; }
+}

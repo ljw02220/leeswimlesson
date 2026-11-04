@@ -170,23 +170,7 @@ function renderTodayLessonSummary() {
 }
 
 /* ==================================================
-  6. 2주 수업 스케줄
-================================================== */
-
-function renderTwoWeekSchedule() {
-  const homeTwoWeekSchedule = document.getElementById('homeTwoWeekSchedule');
-
-  if (!homeTwoWeekSchedule) return;
-
-  homeTwoWeekSchedule.innerHTML = `
-    <div class="home-empty">
-      2주 수업 스케줄 연결 예정입니다.
-    </div>
-  `;
-}
-
-/* ==================================================
-  7. 이번 달 수입
+  6. 이번 달 수입
 ================================================== */
 
 function renderMonthlyIncome() {

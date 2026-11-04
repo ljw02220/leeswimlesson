@@ -1614,7 +1614,7 @@ async function loadPaymentRequests() {
     const { data, error } = await client
       .from('payment_requests')
       .select(
-        'id, member_id, payment_date, payment_amount, requested_at, reviewed_at, members(name, payment_date, payment_amount)'
+        'id, member_id, payment_date, payment_amount, requested_at, reviewed_at, members!payment_requests_member_id_fkey(name, payment_date, payment_amount)'
       )
       .eq('status', status)
       .order(status === 'confirmed' ? 'reviewed_at' : 'requested_at', {

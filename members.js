@@ -48,7 +48,6 @@ const OPTIONAL_MEMBER_COLUMNS = [
 
 let members = [];
 let signupRequests = [];
-let currentFilter = '전체';
 let editingMemberId = null;
 let memberLoadError = '';
 const holidayCache = {};
@@ -1003,23 +1002,7 @@ function getReportButtonLabel(member) {
 // ======================================================
 
 function getFilteredMembers() {
-  switch (currentFilter) {
-    case '수강중':
-      return members.filter((member) => member.status === '수강중');
-
-    case '재등록 예정':
-      return members.filter(
-        (member) =>
-          member.status === '수강중' && getRemainingLessons(member) <= 2
-      );
-
-    case '미완료':
-      return members.filter((member) => !isCurrentPaymentReported(member));
-
-    case '전체':
-    default:
-      return members;
-  }
+  return members;
 }
 
 // ======================================================
@@ -1323,22 +1306,6 @@ function setupReportButtons() {
 // ======================================================
 
 function setupFilters() {
-  const buttons = document.querySelectorAll('.filter-chip[data-filter]');
-
-  buttons.forEach((button) => {
-    button.addEventListener('click', () => {
-      currentFilter = button.dataset.filter;
-
-      buttons.forEach((item) => {
-        item.classList.remove('active');
-      });
-
-      button.classList.add('active');
-
-      renderMembers();
-    });
-  });
-
   const memberSort = document.getElementById('memberSort');
 
   if (memberSort) {

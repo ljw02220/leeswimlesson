@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#2563eb" />
     <link rel="manifest" href="site.webmanifest" />
 
-    <link rel="stylesheet" href="common.css?v=20261104-admin-nav" />
-    <link rel="stylesheet" href="members.css?v=20261104-list-status" />
+    <link rel="stylesheet" href="common.css?v=20261104-mobile-layout" />
+    <link rel="stylesheet" href="members.css?v=20261104-sort-right" />
 
     <title>회원관리</title>
   </head>
@@ -67,28 +67,7 @@
             </div>
 
             <div class="filter-group">
-              <button
-                type="button"
-                class="filter-chip active"
-                data-filter="전체"
-              >
-                전체
-              </button>
-
-              <button type="button" class="filter-chip" data-filter="수강중">
-                수강중
-              </button>
-
-              <button
-                type="button"
-                class="filter-chip"
-                data-filter="재등록 예정"
-              >
-                재등록 예정
-              </button>
-
-
-              <select id="memberSort" class="member-sort">
+              <select id="memberSort" class="member-sort" aria-label="회원 목록 정렬">
                 <option value="name-asc">이름 오름차순</option>
 
                 <option value="name-desc">이름 내림차순</option>
@@ -431,7 +410,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20261104-admin-nav"></script>
-    <script src="members.js?v=20261104-report-workflow"></script>
-    <script src="notifications.js?v=20261104-admin-nav"></script>
+    <script src="members.js?v=20261104-sort-only"></script>
+    <script src="notifications.js?v=20261104-mobile-layout"></script>
   </body>
 </html>
