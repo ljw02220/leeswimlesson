@@ -391,9 +391,10 @@ async function getHolidays(year, month) {
   6. 단체강습 조회
 ================================================== */
 
-async function createRecurringGroupLessons(year, month) {
-  const cancelledLessons = getStorageData('cancelledLessons', {});
-  const completedLessons = getStorageData('completedLessons', {});
+async function createRecurringGroupLessons(year, month, useStoredState = true) {
+  const cancelledLessons = useStoredState ? getStorageData('cancelledLessons', {}) : {};
+  const completedLessons = useStoredState ? getStorageData('completedLessons', {}) : {};
+  const deletedLessons = useStoredState ? getStorageData('deletedLessons', {}) : {};
   const holidaysByDate = await getHolidays(year, month);
   const lastDay = new Date(year, month + 1, 0).getDate();
   const lessons = [];
@@ -414,7 +415,9 @@ async function createRecurringGroupLessons(year, month) {
       const lessonKey = `${dateKey}_group_${item.time}`;
       let status = 'scheduled';
 
-      if (cancelledLessons[lessonKey]) {
+      if (deletedLessons[lessonKey]) {
+        status = 'deleted';
+      } else if (cancelledLessons[lessonKey]) {
         status = 'cancelled';
       } else if (completedLessons[lessonKey]) {
         status = 'completed';
@@ -434,50 +437,32 @@ async function createRecurringGroupLessons(year, month) {
   return lessons;
 }
 
+function mergeGroupLessonRecords(recurring, records) {
+  const key = (lesson) => `${lesson.lesson_date}_${String(lesson.lesson_time).slice(0, 5)}`;
+  const merged = new Map(recurring.map((lesson) => [key(lesson), lesson]));
+  const latest = new Map();
+  records.forEach((record) => {
+    const previous = latest.get(key(record));
+    if (!previous || String(record.updated_at || record.created_at || '') >=
+        String(previous.updated_at || previous.created_at || '')) latest.set(key(record), record);
+  });
+  latest.forEach((record, recordKey) => merged.set(recordKey, record));
+  return Array.from(merged.values());
+}
+
 async function getGroupLessons(year = currentYear, month = currentMonth) {
   const client = getSupabaseClient();
   const activityMonth = getSalaryActivityMonth(year, month);
-
-  if (!client) {
-    return await createRecurringGroupLessons(
-      activityMonth.year,
-      activityMonth.month
-    );
-  }
-
+  if (!client) return createRecurringGroupLessons(activityMonth.year, activityMonth.month);
   const { start, end } = getMonthRange(activityMonth.year, activityMonth.month);
-
-  const [holidayData, lessonResult] = await Promise.all([
-    getHolidays(activityMonth.year, activityMonth.month),
-    client
-      .from('lessons')
-      .select('id, lesson_date, lesson_time, lesson_type, status, source')
-      .eq('lesson_type', 'group')
-      .gte('lesson_date', start)
-      .lt('lesson_date', end),
+  const [recurring, result] = await Promise.all([
+    createRecurringGroupLessons(activityMonth.year, activityMonth.month, false),
+    client.from('lessons')
+      .select('id, lesson_date, lesson_time, lesson_type, status, source, created_at, updated_at')
+      .eq('lesson_type', 'group').gte('lesson_date', start).lt('lesson_date', end),
   ]);
-
-  const { data, error } = lessonResult;
-
-  if (error) {
-    console.error('Supabase 단체강습 데이터를 불러오지 못했습니다.', error);
-
-    return await createRecurringGroupLessons(
-      activityMonth.year,
-      activityMonth.month
-    );
-  }
-
-  const lessons = (data || []).filter(
-    (lesson) => !holidayData[lesson.lesson_date]
-  );
-
-  return lessons.length > 0
-    ? lessons
-    : await createRecurringGroupLessons(
-        activityMonth.year,
-        activityMonth.month
-      );
+  if (result.error) throw result.error;
+  return mergeGroupLessonRecords(recurring, result.data || []);
 }
 
 /* ==================================================
@@ -755,7 +740,7 @@ function calculateFinance(groupLessons, personalMembers, paidAmount) {
     currentMonth
   );
   const activeGroupLessons = groupLessons.filter(
-    (lesson) => lesson.status !== 'cancelled'
+    (lesson) => !['cancelled', 'deleted'].includes(lesson.status)
   );
   const completedGroupLessons = activeGroupLessons.filter(
     (lesson) => lesson.status === 'completed'
@@ -1503,7 +1488,7 @@ async function loadPaymentDateMembers() {
   try {
     const { data, error } = await client
       .from('members')
-      .select('id, name, phone, payment_date')
+      .select('id, name, phone, payment_date, payment_amount')
       .order('name');
     if (error) throw error;
     paymentDateMembers = data || [];
@@ -1547,14 +1532,16 @@ paymentDateForm?.addEventListener('submit', async (event) => {
   try {
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase 연결이 필요합니다.');
-    const { error } = await client
-      .from('members')
-      .update({ payment_date: paymentDate })
-      .eq('id', memberId)
-      .select('id')
-      .single();
+    const member = paymentDateMembers.find((item) => String(item.id) === memberId);
+    if (!member || Number(member.payment_amount) <= 0) throw new Error('회원의 수강료를 먼저 입력해주세요.');
+    const { error } = await client.rpc('admin_confirm_member_payment', {
+      p_member_id: memberId,
+      p_payment_date: paymentDate,
+      p_payment_amount: Number(member.payment_amount),
+    });
     if (error) throw error;
-    paymentDateMessage.textContent = '입금일을 저장했습니다.';
+    paymentDateMessage.textContent = '입금을 확인했습니다. 보고 예정에서 확인해주세요.';
+    setPersonalReportView('pending');
     await loadFinance();
   } catch (error) {
     paymentDateMessage.textContent =
@@ -1721,19 +1708,53 @@ function isPendingPersonalReport(member) {
   );
 }
 
+function getUnreportedPayments(members, reports) {
+  return members.filter((member) => member.payment_date && Number(member.payment_amount) > 0 &&
+    member.payment_status === '완납' && !reports.some((report) =>
+      String(report.member_id) === String(member.id) && report.payment_date === member.payment_date &&
+      Number(report.payment_amount) === Number(member.payment_amount)));
+}
+
+function buildPendingPaymentRows(members, requests, reports) {
+  const memberMap = new Map(members.map((member) => [String(member.id), member]));
+  const reportedIds = new Set(reports.map((report) => report.payment_request_id).filter(Boolean));
+  const confirmed = requests.filter((request) => request.status === 'confirmed');
+  const pending = confirmed.filter((request) => !reportedIds.has(request.id)).map((request) => ({
+    ...memberMap.get(String(request.member_id)),
+    id: request.member_id,
+    reportKey: `request:${request.id}`,
+    payment_request_id: request.id,
+    payment_date: request.payment_date,
+    payment_amount: request.payment_amount,
+    name: memberMap.get(String(request.member_id))?.name || '회원',
+  }));
+  // Support old manually entered payments which predate the request ledger.
+  const legacy = getUnreportedPayments(members, reports).filter((member) =>
+    !confirmed.some((request) => String(request.member_id) === String(member.id) &&
+      request.payment_date === member.payment_date && Number(request.payment_amount) === Number(member.payment_amount))
+  ).map((member) => ({ ...member, reportKey: `member:${member.id}` }));
+  return [...pending, ...legacy];
+}
+
+let pendingReportLoadVersion = 0;
 let pendingReportMembers = [];
 async function loadPendingPersonalReports() {
+  const version = ++pendingReportLoadVersion;
   const list = document.getElementById('pendingPersonalReports');
   if (!list) return;
   try {
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase 연결이 필요합니다.');
-    const { data, error } = await client
-      .from('members')
-      .select('*')
-      .order('name');
+    const [membersResult, requestsResult, reportsResult] = await Promise.all([
+      client.from('members').select('*').order('name'),
+      client.from('payment_requests').select('id, member_id, payment_date, payment_amount, status').eq('status', 'confirmed').order('reviewed_at'),
+      client.from('personal_lesson_reports').select('member_id, payment_date, payment_amount, payment_request_id'),
+    ]);
+    if (version !== pendingReportLoadVersion) return;
+    const error = membersResult.error || requestsResult.error || reportsResult.error;
     if (error) throw error;
-    pendingReportMembers = (data || []).filter(isPendingPersonalReport);
+    pendingReportMembers = buildPendingPaymentRows(membersResult.data || [], requestsResult.data || [], reportsResult.data || []);
+
     document.getElementById('pendingReportCount').textContent = String(pendingReportMembers.length);
     document.getElementById('pendingReportAmount').textContent = formatCurrency(
       pendingReportMembers.reduce((sum, member) => sum + Number(member.payment_amount || 0), 0)
@@ -1749,7 +1770,7 @@ async function loadPendingPersonalReports() {
             )}</span>
         </div>
         <button type="button" class="secondary-action" data-complete-report="${escapePaymentText(
-          member.id
+          member.reportKey
         )}">보고 완료</button>
       </article>
     `
@@ -1757,10 +1778,11 @@ async function loadPendingPersonalReports() {
           .join('')
       : '<p class="report-empty">보고 예정인 입금이 없습니다. 입금 확인을 마친 건이 여기에 표시됩니다.</p>';
   } catch (error) {
+    if (version !== pendingReportLoadVersion) return;
     document.getElementById('pendingReportCount').textContent = '—';
     document.getElementById('pendingReportAmount').textContent = '—';
     list.innerHTML =
-      '<p class="report-empty">보고 예정 목록을 불러오지 못했습니다.</p>';
+      '<p class="report-empty">보고 예정을 불러오지 못했습니다. 최신 05 입금·보고·동기화 SQL이 적용됐는지 확인해주세요.</p>';
     console.error('보고 예정 조회 실패:', error);
   }
 }
@@ -1772,7 +1794,7 @@ document
     const button = event.target.closest('[data-complete-report]');
     if (!button || completingPersonalReport) return;
     const member = pendingReportMembers.find(
-      (item) => String(item.id) === button.dataset.completeReport
+      (item) => item.reportKey === button.dataset.completeReport
     );
     if (!member) return;
     completingPersonalReport = true;
@@ -1780,15 +1802,14 @@ document
     button.textContent = '처리 중…';
     try {
       const reportedAt = toDateKey(new Date());
-      const { error } = await getSupabaseClient().rpc(
-        'complete_personal_payment_report',
-        {
-          p_member_id: member.id,
-          p_payment_date: member.payment_date,
-          p_payment_amount: member.payment_amount,
-          p_reported_at: reportedAt,
-        }
-      );
+      const { error } = member.payment_request_id
+        ? await getSupabaseClient().rpc('complete_confirmed_payment_report', {
+            p_request_id: member.payment_request_id, p_reported_at: reportedAt,
+          })
+        : await getSupabaseClient().rpc('complete_personal_payment_report', {
+            p_member_id: member.id, p_payment_date: member.payment_date,
+            p_payment_amount: member.payment_amount, p_reported_at: reportedAt,
+          });
       if (error) throw error;
       // Show the report just created, even if the user was browsing an older month.
       const salaryMonth = new Date(`${reportedAt}T00:00:00`);
