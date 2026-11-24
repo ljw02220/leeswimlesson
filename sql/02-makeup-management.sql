@@ -1,5 +1,5 @@
--- 02 보강 관리 · 예약/승인/취소/보강 횟수
--- Supabase SQL Editor에서 파일 전체를 실행하세요.
+-- 02 보강관리 · 슬롯/신청/승인/횟수
+-- Supabase SQL Editor: 파일 전체를 실행하세요.
 begin;
 
 create table if not exists public.makeup_slots (
@@ -60,10 +60,10 @@ create policy "makeup slots admin write"
 on public.makeup_slots
 for all to authenticated
 using (
-  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
+  public.is_swim_admin()
 )
 with check (
-  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
+  public.is_swim_admin()
 );
 
 drop policy if exists "authenticated makeup requests access" on public.makeup_requests;
@@ -91,7 +91,7 @@ with check (
     select 1 from public.makeup_slots slot
     where slot.id = makeup_requests.slot_id
       and slot.status = 'open'
-      and slot.slot_date between current_date and current_date + 14
+      and slot.slot_date between (now() at time zone 'Asia/Seoul')::date and (now() at time zone 'Asia/Seoul')::date + 14
   )
   and exists (
     select 1 from public.members
@@ -104,10 +104,10 @@ create policy "admin manages makeup requests"
 on public.makeup_requests
 for all to authenticated
 using (
-  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
+  public.is_swim_admin()
 )
 with check (
-  lower(auth.jwt() ->> 'email') = 'ljw022072@gmail.com'
+  public.is_swim_admin()
 );
 
 create or replace function public.cancel_makeup_request(p_request_id uuid)
@@ -130,7 +130,7 @@ begin
     raise exception '보강 신청을 찾을 수 없습니다.';
   end if;
 
-  is_admin := (auth.jwt() ->> 'email') = 'ljw022072@gmail.com';
+  is_admin := public.is_swim_admin();
   select exists (
     select 1 from public.members
     where members.id = target_request.member_id
@@ -155,8 +155,7 @@ begin
 end;
 $$;
 
-revoke all on function public.cancel_makeup_request(uuid) from public;
-grant execute on function public.cancel_makeup_request(uuid) to authenticated;
+
 
 create or replace function public.ensure_makeup_slots()
 returns void
@@ -176,8 +175,8 @@ as $$
   insert into public.makeup_slots (slot_date, slot_time)
   select calendar_date::date, recurring_times.slot_time
   from generate_series(
-    current_date,
-    current_date + interval '45 days',
+    (now() at time zone 'Asia/Seoul')::date,
+    (now() at time zone 'Asia/Seoul')::date + interval '45 days',
     interval '1 day'
   ) as calendar_date
   join recurring_times
@@ -185,13 +184,9 @@ as $$
   on conflict (slot_date, slot_time) do nothing;
 $$;
 
-revoke all on function public.ensure_makeup_slots() from public;
-grant execute on function public.ensure_makeup_slots() to authenticated;
 
 
 
-revoke all on function public.review_makeup_request(uuid, text) from public;
-grant execute on function public.review_makeup_request(uuid, text) to authenticated;
 
 create or replace function public.review_makeup_request(
   p_request_id uuid,
@@ -211,14 +206,11 @@ begin
   from auth.users
   where id = auth.uid();
 
-  if current_email not in (
-    'ljw022072@gmail.com',
-    'admin@admins.leeswimlesson.com'
-  ) then
+  if not public.is_swim_admin() then
     raise exception '관리자만 보강 신청을 처리할 수 있습니다.';
   end if;
 
-  if p_decision not in ('approved', 'rejected') then
+  if p_decision is null or p_decision not in ('approved', 'rejected') then
     raise exception '올바르지 않은 처리 상태입니다.';
   end if;
 
@@ -246,8 +238,7 @@ begin
 end;
 $$;
 
-revoke all on function public.review_makeup_request(uuid, text) from public;
-grant execute on function public.review_makeup_request(uuid, text) to authenticated;
+
 
 create table if not exists public.makeup_credits (
   id uuid primary key default gen_random_uuid(),
@@ -380,7 +371,7 @@ begin
     raise exception '관리자만 보강 확인 요청을 처리할 수 있습니다.';
   end if;
 
-  if p_decision not in ('approved', 'rejected') then
+  if p_decision is null or p_decision not in ('approved', 'rejected') then
     raise exception '올바르지 않은 처리 상태입니다.';
   end if;
 
@@ -534,6 +525,20 @@ begin
 end;
 $$;
 
+
+
+
+
+
+
+
+
+revoke all on function public.cancel_makeup_request(uuid) from public;
+grant execute on function public.cancel_makeup_request(uuid) to authenticated;
+revoke all on function public.ensure_makeup_slots() from public;
+grant execute on function public.ensure_makeup_slots() to authenticated;
+revoke all on function public.review_makeup_request(uuid, text) from public;
+grant execute on function public.review_makeup_request(uuid, text) to authenticated;
 revoke all on function public.review_makeup_credit(uuid, text) from public;
 revoke all on function public.cancel_makeup_credit(uuid) from public;
 revoke all on function public.use_makeup_credit(uuid, integer, text) from public;

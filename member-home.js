@@ -2,6 +2,310 @@ document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
   let allUpcomingLessons = [];
   let allCompletedLessons = [];
+  let calendarLessons = [];
+  let calendarMember = null;
+  let freeSwimDates = new Set();
+  let freeSwimBusy = false;
+  let freeSwimError = '';
+  let freeSwimLoadVersion = 0;
+
+  async function loadFreeSwims() {
+    const version = ++freeSwimLoadVersion;
+    freeSwimDates = new Set();
+    freeSwimError = '';
+    freeSwimBusy = true;
+    renderFreeSwimControl();
+    const start = dateKey(calendarMonth);
+    const end = dateKey(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
+    try {
+      if (!calendarMember || !window.swimDb?.client) throw new Error('연결이 필요합니다.');
+      const {data, error} = await window.swimDb.client.from('member_free_swims')
+        .select('swim_date').eq('member_id', calendarMember.id).gte('swim_date', start).lt('swim_date', end);
+      if (error) throw error;
+      if (version !== freeSwimLoadVersion) return;
+      freeSwimDates = new Set((data || []).map((row) => row.swim_date));
+    } catch (error) {
+      if (version !== freeSwimLoadVersion) return;
+      freeSwimError = '자유수영 기록을 불러오지 못했습니다. 다시 시도해주세요.';
+      console.warn('자유수영 조회 실패: 01-base-schema.sql 적용 여부를 확인하세요.', error);
+    } finally {
+      if (version === freeSwimLoadVersion) {
+        freeSwimBusy = false;
+        renderHomeCalendar();
+      }
+    }
+  }
+
+  function renderFreeSwimControl() {
+    const button = document.getElementById('freeSwimToggle');
+    if (!button) return;
+    const checked = freeSwimDates.has(selectedDate);
+    const future = selectedDate > dateKey(new Date());
+    button.textContent = freeSwimBusy ? '확인 중…' : checked ? '오수완 취소' : '오수완 찍기';
+    button.setAttribute('aria-pressed', String(checked));
+    button.disabled = freeSwimBusy || future || !calendarMember || Boolean(freeSwimError);
+    document.getElementById('freeSwimMessage').textContent = freeSwimError || (future ? '자유수영을 다녀온 뒤 기록해주세요.' : checked ? '오수완 도장을 찍었어요. 다시 누르면 취소돼요.' : '자유수영은 수업 횟수와 별도로 기록돼요.');
+    document.getElementById('freeSwimRetry').hidden = !freeSwimError;
+  }
+
+  document.getElementById('freeSwimRetry')?.addEventListener('click', loadFreeSwims);
+  document.getElementById('freeSwimToggle')?.addEventListener('click', async () => {
+    if (freeSwimBusy || !calendarMember || selectedDate > dateKey(new Date())) return;
+    const day = selectedDate;
+    const recorded = freeSwimDates.has(day);
+    freeSwimBusy = true;
+    renderFreeSwimControl();
+    try {
+      const table = window.swimDb.client.from('member_free_swims');
+      const {error} = recorded
+        ? await table.delete().eq('member_id', calendarMember.id).eq('swim_date', day)
+        : await table.upsert({member_id: calendarMember.id, swim_date: day}, {onConflict:'member_id,swim_date', ignoreDuplicates:true});
+      if (error) throw error;
+      await loadFreeSwims();
+      document.getElementById('freeSwimDialog')?.close();
+    } catch (error) {
+      freeSwimBusy = false;
+      renderFreeSwimControl();
+      document.getElementById('freeSwimMessage').textContent = '저장하지 못했습니다. 잠시 후 다시 눌러주세요.';
+      console.warn('자유수영 저장 실패', error);
+    }
+  });
+  const calendarMonth = new Date();
+  calendarMonth.setDate(1);
+  let selectedDate = dateKey(new Date());
+  const requestedDate = new URLSearchParams(window.location.search).get('date');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(requestedDate || '')) {
+    const date = new Date(`${requestedDate}T00:00:00`);
+    if (!Number.isNaN(date.getTime()) && dateKey(date) === requestedDate) {
+      selectedDate = requestedDate;
+      calendarMonth.setFullYear(date.getFullYear(), date.getMonth(), 1);
+    }
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function formatCommentTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    return new Intl.DateTimeFormat('ko-KR', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
+
+  async function loadLessonComments(lessonId) {
+    const section = document.querySelector(
+      `[data-lesson-comments="${lessonId}"]`
+    );
+    const list = section?.querySelector('.lesson-comments-list');
+    if (!section || !list) return;
+    if (!window.swimDb?.client) {
+      list.textContent = '댓글을 불러오려면 연결이 필요합니다.';
+      return;
+    }
+
+    const lesson = calendarLessons.find((item) => item.id === lessonId);
+    if (!lesson) return;
+    const { data, error } = await window.swimDb.client.rpc('get_member_lesson_thread', {
+      p_lesson_type: lesson.type || 'personal', p_lesson_date: lesson.date, p_lesson_time: lesson.time,
+    });
+
+    if (error) {
+      list.innerHTML = `
+        <p class="lesson-comments-error">
+          댓글을 불러오지 못했습니다. ${escapeHTML(error.message)}<br>답글 기능을 처음 사용한다면 수업 댓글 SQL 적용을 확인해주세요.
+        </p>
+      `;
+      return;
+    }
+
+    list.innerHTML = window.lessonThreads.render(data || [], lessonId);
+  }
+
+
+  const discussionList = document.getElementById('upcomingLessonList');
+  discussionList?.addEventListener('submit', async (event) => {
+    const form = event.target.closest('[data-lesson-comment-form]');
+    if (!form) return;
+    event.preventDefault();
+    const input = form.elements.comment;
+    const body = input.value.trim();
+    const button = form.querySelector('button[type="submit"]');
+    if (!body || button.disabled) return;
+    const message = form.querySelector('.home-comment-message');
+    button.disabled = true;
+    button.textContent = '등록 중';
+    message.textContent = '';
+    try {
+      if (!window.swimDb?.client) throw new Error('서버 연결을 확인해주세요.');
+      const lesson = calendarLessons.find((item) => item.id === form.dataset.lessonCommentForm);
+      if (!lesson) throw new Error('수업을 다시 선택해주세요.');
+      const { error } = await window.swimDb.client.rpc('add_member_lesson_comment', {
+        p_lesson_type: lesson.type || 'personal', p_lesson_date: lesson.date, p_lesson_time: lesson.time,
+        p_body: body, p_parent_comment_id: form.dataset.replyParent || null,
+      });
+      if (error) throw error;
+      form.reset();
+      window.lessonThreads.clear(form);
+      message.textContent = '댓글을 등록했습니다.';
+      await loadLessonComments(form.dataset.lessonCommentForm);
+    } catch (error) {
+      message.textContent = `댓글 등록 실패: ${error.message}`;
+    } finally {
+      button.disabled = false;
+      button.textContent = '등록';
+    }
+  });
+  discussionList?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-comment-delete]');
+    if (!button || button.disabled || !confirm('작성한 댓글을 삭제할까요?')) return;
+    button.disabled = true;
+    try {
+      const { error } = await window.swimDb.client.rpc('delete_lesson_comment', { p_comment_id: button.dataset.commentDelete });
+      if (error) throw error;
+      await loadLessonComments(button.dataset.lessonId);
+    } catch (error) {
+      alert(`댓글을 삭제하지 못했습니다. ${error.message}`);
+      button.disabled = false;
+    }
+  });
+
+  function dateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function renderHomeCalendar() {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const today = dateKey(new Date());
+    setText('homeCalendarMonth', `${year}년 ${month + 1}월`);
+    const days = new Date(year, month + 1, 0).getDate();
+    const offset = new Date(year, month, 1).getDay();
+    const cells = Array.from({ length: offset }, () => '<span class="home-calendar-blank" aria-hidden="true"></span>');
+    for (let day = 1; day <= days; day++) {
+      const key = dateKey(new Date(year, month, day));
+      const lessons = calendarLessons.filter((lesson) => lesson.date === key);
+      const scheduled = lessons.some((lesson) => lesson.status !== 'completed');
+      const completed = lessons.some((lesson) => lesson.status === 'completed');
+      const freeSwim = freeSwimDates.has(key);
+      cells.push(`<button type="button" data-home-calendar-date="${key}" class="home-calendar-day${key === selectedDate ? ' selected' : ''}${key === today ? ' today' : ''}" aria-pressed="${key === selectedDate}" ${key === today ? 'aria-current="date"' : ''} aria-label="${month + 1}월 ${day}일, 수업 ${lessons.length}건${freeSwim ? ", 오수완" : ""}"><span>${day}</span><span class="home-calendar-dots" aria-hidden="true">${scheduled ? '<i></i>' : ''}${completed ? '<i class="completed"></i>' : ''}</span>${freeSwim ? '<span class="home-swim-stamp" aria-hidden="true">오수완</span>' : ''}</button>`);
+    }
+    document.getElementById('homeCalendarGrid').innerHTML = cells.join('');
+    setText('homeCalendarSelectedDate', portal.formatDateWithDay(selectedDate));
+    renderFreeSwimControl();
+    const selected = calendarLessons.filter((lesson) => lesson.date === selectedDate).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+    const container = document.getElementById('upcomingLessonList');
+    container.innerHTML = selected.length ? selected.map((lesson) => `
+      <section class="home-lesson-discussion">
+        ${renderLessonItem(lesson)}
+        ${`
+          <div class="home-lesson-note"><strong>수업 내용</strong><p>${escapeHTML(lesson.status === 'completed' ? lesson.memo || '아직 작성된 수업 내용이 없습니다.' : '아직 작성된 수업 내용이 없습니다.')}</p></div>
+          <section class="lesson-comments" data-lesson-comments="${escapeHTML(lesson.id)}">
+            <div class="lesson-comments-heading"><strong>수업 댓글</strong><span>함께 수업한 회원에게도 보여요.</span></div>
+            <div class="lesson-comments-list" aria-live="polite"><p>댓글을 불러오는 중입니다.</p></div>
+            <form class="lesson-comment-form" data-lesson-comment-form="${escapeHTML(lesson.id)}">
+              <label class="home-comment-label">댓글 작성<input type="text" name="comment" maxlength="500" placeholder="궁금한 점이나 수업 후기를 남겨주세요." required /></label>
+              <button type="submit">등록</button>
+              <p class="home-comment-message" role="status"></p>
+            </form>
+          </section>`}
+      </section>`).join('') : '<p class="member-empty">이날은 등록된 수업이 없습니다.</p>';
+    for (const lesson of selected) {
+      loadLessonComments(lesson.id);
+    }
+  }
+
+  const homeCalendar = document.getElementById('homeCalendarGrid');
+  const freeSwimDialog = document.getElementById('freeSwimDialog');
+  let pressTimer = null;
+  let pressStart = null;
+  let suppressCalendarClickUntil = 0;
+  function cancelCalendarPress() {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+    pressStart = null;
+  }
+  function openFreeSwimMenu(day) {
+    selectedDate = day;
+    renderHomeCalendar();
+    setText('freeSwimDialogDate', portal.formatDateWithDay(day));
+    if (!freeSwimDialog.open) freeSwimDialog.showModal();
+  }
+  homeCalendar?.addEventListener('pointerdown', (event) => {
+    cancelCalendarPress();
+    const button = event.target.closest('[data-home-calendar-date]');
+    if (!button || !event.isPrimary || event.button !== 0) return;
+    pressStart = {x:event.clientX, y:event.clientY, pointerId:event.pointerId};
+    const day = button.dataset.homeCalendarDate;
+    pressTimer = setTimeout(() => {
+      cancelCalendarPress();
+      suppressCalendarClickUntil = Date.now() + 1000;
+      openFreeSwimMenu(day);
+    }, 550);
+  });
+  homeCalendar?.addEventListener('pointermove', (event) => {
+    if (pressStart && (Math.abs(event.clientX-pressStart.x)>10 || Math.abs(event.clientY-pressStart.y)>10)) cancelCalendarPress();
+  });
+  for (const name of ['pointerup','pointercancel','pointerleave']) homeCalendar?.addEventListener(name, cancelCalendarPress);
+  window.addEventListener('scroll', cancelCalendarPress, {passive:true,capture:true});
+  homeCalendar?.addEventListener('contextmenu', (event) => {
+    const button = event.target.closest('[data-home-calendar-date]');
+    if (!button) return;
+    event.preventDefault();
+    cancelCalendarPress();
+    suppressCalendarClickUntil = Date.now() + 1000;
+    openFreeSwimMenu(button.dataset.homeCalendarDate);
+  });
+  homeCalendar?.addEventListener('keydown', (event) => {
+    const button = event.target.closest('[data-home-calendar-date]');
+    if (button && (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) {
+      event.preventDefault();
+      openFreeSwimMenu(button.dataset.homeCalendarDate);
+    }
+  });
+  document.getElementById('freeSwimDialogClose')?.addEventListener('click', () => freeSwimDialog.close());
+  freeSwimDialog?.addEventListener('click', (event) => {
+    if (event.target !== freeSwimDialog) return;
+    const rect = freeSwimDialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) freeSwimDialog.close();
+  });
+  freeSwimDialog?.addEventListener('close', () => {
+    document.querySelector(`[data-home-calendar-date="${selectedDate}"]`)?.focus();
+  });
+
+  document.getElementById('homeCalendarGrid')?.addEventListener('click', (event) => {
+    if (event.detail > 0 && Date.now() < suppressCalendarClickUntil) { event.preventDefault(); return; }
+    const button = event.target.closest('[data-home-calendar-date]');
+    if (!button) return;
+    selectedDate = button.dataset.homeCalendarDate;
+    renderHomeCalendar();
+    document.querySelector(`[data-home-calendar-date="${selectedDate}"]`)?.focus();
+  });
+  for (const [id, direction] of [['homeCalendarPrevious', -1], ['homeCalendarNext', 1]]) {
+    document.getElementById(id)?.addEventListener('click', () => {
+      calendarMonth.setMonth(calendarMonth.getMonth() + direction);
+      selectedDate = dateKey(calendarMonth);
+      renderHomeCalendar();
+      loadFreeSwims();
+    });
+  }
+  document.getElementById('homeCalendarToday')?.addEventListener('click', () => {
+    const today = new Date();
+    calendarMonth.setFullYear(today.getFullYear(), today.getMonth(), 1);
+    selectedDate = dateKey(today);
+    renderHomeCalendar();
+    loadFreeSwims();
+  });
 
   function setText(id, value) {
     const element = document.getElementById(id);
@@ -229,6 +533,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <p>
             ${noteText}
           </p>
+          <a class="member-comment-link" href="member-lessons.html?view=completed&amp;lesson=${encodeURIComponent(lesson.id)}">수업 내용 · 댓글 보기 →</a>
         </div>
       </article>
     `;
@@ -351,26 +656,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
   try {
-    const { member } = await portal.loadCurrentMember();
+    const { member, user } = await portal.loadCurrentMember();
+    calendarMember = member;
+    window.swimDb?.client?.rpc('can_view_test_members').then(({data}) => {
+      if (data === true) document.getElementById('testAccountLink').hidden = false;
+    }).catch(() => {});
 
     const remaining = portal.getRemainingLessons(member);
+    const personalRemaining = document.getElementById('personalLessonRemaining');
+    if (personalRemaining) {
+      const format = String(member.lesson_format || '').trim();
+      const hasPersonalLessons = Number(member.total_lessons || 0) > 0
+        && !/단체|group/i.test(format);
+      personalRemaining.hidden = !hasPersonalLessons;
+    }
 
     const approvedMakeupLessons = await portal.getApprovedMakeupLessons(member);
 
-    allUpcomingLessons = getLessonsWithinOneMonth([
+    const futureLessons = [
       ...(await portal.getUpcomingLessons(member, 100)),
       ...approvedMakeupLessons,
-    ]).sort((a, b) =>
+    ];
+    allUpcomingLessons = getLessonsWithinOneMonth(futureLessons).sort((a, b) =>
       `${a.date}_${a.time}`.localeCompare(`${b.date}_${b.time}`)
     );
 
     const upcomingLessons = allUpcomingLessons.slice(0, 2);
 
-    allCompletedLessons = await portal.getCompletedLessons(member, 100, {
-      onlyWithMemo: true,
-    });
-
-    const completedLessons = allCompletedLessons.slice(0, 1);
+    allCompletedLessons = await portal.getCompletedLessons(member, 100);
+    const uniqueLessons = new Map();
+    for (const lesson of [...futureLessons, ...allCompletedLessons]) {
+      uniqueLessons.set(`${lesson.id}_${lesson.date}_${lesson.time}`, lesson);
+    }
+    calendarLessons = Array.from(uniqueLessons.values());
+    const completedLessons = allCompletedLessons.filter((lesson) => String(lesson.memo || '').trim()).slice(0, 1);
 
     const nextLesson = upcomingLessons[0];
 
@@ -399,7 +718,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     renderPaymentInfo(member);
 
-    renderUpcomingLessons(upcomingLessons);
+    renderHomeCalendar();
+    loadFreeSwims();
 
     renderCompletedLessons(completedLessons);
   } catch (error) {

@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               </span>
 
               <span class="lesson-history-actions">
-                <span class="lesson-status completed">완료</span>
+                <span class="lesson-status completed">내용 · 댓글</span>
                 <span class="lesson-note-chevron" aria-hidden="true">⌄</span>
               </span>
             </span>
@@ -383,46 +383,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!section || !list || !window.swimDb?.client) return;
 
     const { data, error } = await window.swimDb.client.rpc(
-      'get_lesson_comments',
+      'get_lesson_comment_threads',
       { p_lesson_id: lessonId }
     );
 
     if (error) {
       list.innerHTML = `
         <p class="lesson-comments-error">
-          댓글을 불러오지 못했습니다. ${escapeHTML(error.message)}
+          댓글을 불러오지 못했습니다. ${escapeHTML(error.message)}<br>답글 기능을 처음 사용한다면 수업 댓글 SQL 적용을 확인해주세요.
         </p>
       `;
       return;
     }
 
-    list.innerHTML = data?.length
-      ? data
-          .map(
-            (comment) => `
-              <article class="lesson-comment${comment.is_mine ? ' mine' : ''}">
-                <div>
-                  <span>
-                    <strong>${escapeHTML(comment.author_name)}</strong>
-                    <time>${formatCommentTime(comment.created_at)}</time>
-                  </span>
-                  ${
-                    comment.is_mine
-                      ? `<button
-                          type="button"
-                          class="lesson-comment-delete"
-                          data-comment-delete="${comment.id}"
-                          data-lesson-id="${lessonId}"
-                        >삭제</button>`
-                      : ''
-                  }
-                </div>
-                <p>${escapeHTML(comment.body)}</p>
-              </article>
-            `
-          )
-          .join('')
-      : '<p class="lesson-comments-empty">아직 댓글이 없습니다.</p>';
+    list.innerHTML = window.lessonThreads.render(data || [], lessonId);
   }
 
   function setViewAllButtonState(type, isEnabled) {
@@ -560,9 +534,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         button.textContent = '등록 중';
       }
 
-      const { error } = await window.swimDb.client.rpc('add_lesson_comment', {
+      const { error } = await window.swimDb.client.rpc(form.dataset.replyParent ? 'add_lesson_reply' : 'add_lesson_comment', {
         p_lesson_id: lessonId,
         p_body: body,
+        ...(form.dataset.replyParent ? {p_parent_comment_id: form.dataset.replyParent} : {}),
       });
 
       if (button) {
@@ -576,6 +551,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       form.reset();
+      window.lessonThreads.clear(form);
       await loadLessonComments(lessonId);
     });
 
@@ -710,6 +686,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (new URLSearchParams(window.location.search).get('view') === 'completed') {
       openLessonListModal('completed');
+      const requestedLesson = new URLSearchParams(window.location.search).get('lesson');
+      if (requestedLesson) {
+        const section = Array.from(document.querySelectorAll('[data-lesson-comments]'))
+          .find((item) => item.dataset.lessonComments === requestedLesson);
+        const item = section?.closest('.lesson-history-item');
+        const toggle = item?.querySelector('.lesson-note-toggle');
+        if (toggle) {
+          toggle.click();
+          item.scrollIntoView({ block: 'nearest' });
+        }
+      }
     }
   } catch (error) {
     console.error('내 수업 정보를 불러오지 못했습니다.', error);

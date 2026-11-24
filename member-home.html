@@ -9,6 +9,7 @@
     <title>회원 홈</title>
 
     <link rel="stylesheet" href="member-home.css?v=20261001-two-weeks" />
+    <link rel="stylesheet" href="member-portal.css?v=20261124-profile-icon" />
   </head>
 
   <body class="member-page">
@@ -45,151 +46,103 @@
             <span id="memberGreetingName"> 이정우 </span> 님
           </h1>
 
-          <p>이번 주 수업과 결제 현황을 확인하세요.</p>
+          <p>수업 일정을 확인하고, 코치와 이야기를 나눠보세요.</p>
+          <p id="personalLessonRemaining" class="home-personal-remaining" hidden>개인레슨 · 남은 수업 <strong id="remainingLessons">0회</strong></p>
         </div>
 
-        <div class="member-profile-mini">
-          <div class="member-avatar">
-            <i data-lucide="user-round"></i>
-          </div>
+        <a href="member-profile.html" class="member-profile-mini member-profile-shortcut" aria-label="내 정보">
+          <div class="member-avatar"><i data-lucide="user-round"></i></div>
+          <span>내 정보</span>
+        </a>
+      </section>
 
-          <span> 일반회원 </span>
+      <nav class="home-compact-actions" aria-label="회원 바로가기">
+        <a id="testAccountLink" href="test-members.html" hidden>전체 회원 조회 · 테스트</a>
+        <button type="button" id="makeupModalOpen"><i data-lucide="calendar-plus"></i>보강 신청</button>
+        <button type="button" id="paymentReportOpen" aria-haspopup="dialog"><i data-lucide="wallet"></i>결제 알리기</button>
+      </nav>
+
+      <section class="member-card home-calendar-card" aria-label="한 달 수업 달력">
+        <div class="member-card-header">
+          <div class="member-card-title"><i data-lucide="calendar-days"></i><h2>내 수업 달력</h2></div>
+          <button type="button" id="homeCalendarToday" class="member-card-link member-card-button">오늘</button>
+        </div>
+        <div class="home-calendar-navigation">
+          <button type="button" id="homeCalendarPrevious" aria-label="이전 달">‹</button>
+          <strong id="homeCalendarMonth" aria-live="polite"></strong>
+          <button type="button" id="homeCalendarNext" aria-label="다음 달">›</button>
+        </div>
+        <div class="home-calendar-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+        <div id="homeCalendarGrid" class="home-calendar-grid" role="group" aria-label="날짜 선택" aria-describedby="homeCalendarHint"></div>
+        <p class="home-calendar-legend"><span class="scheduled-legend">● 예정</span><span class="completed-legend">● 완료</span><span class="free-swim-legend">◉ 오수완</span></p>
+        <div class="home-calendar-detail" aria-live="polite">
+          <h3 id="homeCalendarSelectedDate"></h3>
+          <div id="upcomingLessonList" class="member-lesson-list"><p class="member-empty">수업 정보를 불러오는 중입니다.</p></div>
         </div>
       </section>
 
-      <section class="member-card makeup-card">
-        <div class="member-card-header">
-          <div class="member-card-title">
-            <i data-lucide="calendar-plus"></i>
-            <h2>보강 신청</h2>
+
+
+      <p class="home-calendar-hint" id="homeCalendarHint">날짜를 길게 누르면 오수완 도장을 찍을 수 있어요.</p>
+      <dialog id="paymentReportDialog" class="member-payment-dialog" aria-labelledby="paymentReportTitle">
+        <div class="member-payment-heading"><h2 id="paymentReportTitle">결제 알리기</h2><button type="button" id="paymentReportClose" aria-label="닫기">×</button></div>
+        <p class="member-payment-description">입금한 날짜와 금액을 알려주세요. 관리자 확인 후 반영됩니다.</p>
+        <form id="paymentReportForm">
+          <div class="profile-form-group">
+            <label for="paymentReportDate"> 결제일 </label>
+
+            <input type="date" id="paymentReportDate" required />
           </div>
-          <button type="button" id="makeupModalOpen" class="member-card-link member-card-button">
-            신청하기
+
+          <div class="profile-form-group">
+            <label for="paymentReportAmountChoice"> 결제금액 </label>
+
+            <select id="paymentReportAmountChoice" required>
+              <option value="">금액을 선택해주세요</option>
+              <option value="50000">5만 원</option>
+              <option value="100000">10만 원</option>
+              <option value="150000">15만 원</option>
+              <option value="200000">20만 원</option>
+              <option value="250000">25만 원</option>
+              <option value="300000">30만 원</option>
+              <option value="350000">35만 원</option>
+              <option value="400000">40만 원</option>
+              <option value="450000">45만 원</option>
+              <option value="500000">50만 원</option>
+              <option value="custom">직접 입력</option>
+            </select>
+            <div class="amount-input-wrap" id="paymentReportCustomAmount" hidden>
+              <label for="paymentReportAmount">직접 입력 금액</label>
+              <input
+                type="text"
+                id="paymentReportAmount"
+                inputmode="numeric"
+                placeholder="금액을 입력해주세요"
+                autocomplete="off"
+                disabled
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="profile-primary-button">
+            <i data-lucide="send"></i>
+
+            결제했다고 알리기
           </button>
-        </div>
-        <div id="makeupRequestStatus" class="makeup-member-status">
-          <p class="member-empty">보강 신청 정보를 불러오는 중입니다.</p>
-        </div>
-      </section>
+        </form>
 
-      <section class="member-card makeup-card">
-        <div class="member-card-header">
-          <div class="member-card-title">
-            <i data-lucide="badge-check"></i>
-            <h2>보강 횟수</h2>
+        <div id="paymentReportMessage" class="profile-form-message" role="status"></div>
+      </dialog>
+
+      <dialog id="freeSwimDialog" class="free-swim-dialog" aria-labelledby="freeSwimDialogTitle">
+        <div class="free-swim-dialog-heading"><h2 id="freeSwimDialogTitle">오수완</h2><button type="button" id="freeSwimDialogClose" aria-label="닫기">×</button></div>
+        <p id="freeSwimDialogDate"></p>
+          <div class="free-swim-control">
+            <button type="button" id="freeSwimToggle" aria-pressed="false" disabled>오수완 찍기</button>
+            <p id="freeSwimMessage" role="status">자유수영은 수업 횟수와 별도로 기록돼요.</p>
+            <button type="button" id="freeSwimRetry" hidden>다시 불러오기</button>
           </div>
-          <button type="button" id="makeupCreditOpen" class="member-card-link member-card-button">
-            누락 확인 요청
-          </button>
-        </div>
-        <div id="makeupCreditSummary" class="makeup-member-status">
-          <p class="member-empty">보강 횟수를 불러오는 중입니다.</p>
-        </div>
-      </section>
-
-      <!-- 요약 카드 -->
-      <section class="member-summary-grid">
-        <article class="member-summary-card">
-          <div class="summary-icon">
-            <i data-lucide="calendar-days"></i>
-          </div>
-
-          <div class="summary-content">
-            <span> 다음 수업 </span>
-
-            <strong id="nextLessonDate"> 9월 15일 (화) </strong>
-
-            <small id="nextLessonTime"> 오후 7:00 </small>
-          </div>
-        </article>
-
-        <article class="member-summary-card">
-          <div class="summary-icon">
-            <i data-lucide="bookmark"></i>
-          </div>
-
-          <div class="summary-content">
-            <span> 남은 수업 </span>
-
-            <strong id="remainingLessons"> 4회 </strong>
-
-            <small id="lessonProgressText"> 총 8회 중 </small>
-          </div>
-        </article>
-
-        <article class="member-summary-card">
-          <div class="summary-icon">
-            <i data-lucide="chart-no-axes-column-increasing"></i>
-          </div>
-
-          <div class="summary-content">
-            <span> 이번 달 진행 </span>
-
-            <strong id="monthlyLessonCount"> 3회 </strong>
-
-            <small> 이번 달 수업 </small>
-          </div>
-        </article>
-
-        <article class="member-summary-card">
-          <div class="summary-icon">
-            <i data-lucide="credit-card"></i>
-          </div>
-
-          <div class="summary-content">
-            <span> 결제 상태 </span>
-
-            <strong id="paymentStatus" class="payment-complete"> 완납 </strong>
-
-            <small id="paymentDate"> 9월 11일 입금 </small>
-          </div>
-        </article>
-      </section>
-
-      <!-- 다가오는 수업 -->
-      <section class="member-card">
-        <div class="member-card-header">
-          <div class="member-card-title">
-            <i data-lucide="calendar-check"></i>
-
-            <h2>다가오는 수업</h2>
-          </div>
-
-          <button
-            type="button"
-            id="upcomingLessonModalOpen"
-            class="member-card-link member-card-button"
-          >
-            전체 보기
-          </button>
-        </div>
-
-        <div id="upcomingLessonList" class="member-lesson-list">
-          <p class="member-empty">수업 정보를 불러오는 중입니다.</p>
-        </div>
-      </section>
-
-      <!-- 최근 수업 내용 -->
-      <section class="member-card">
-        <div class="member-card-header">
-          <div class="member-card-title">
-            <i data-lucide="notebook-text"></i>
-
-            <h2>최근 수업 내용</h2>
-          </div>
-
-          <a
-            href="member-lessons.html?view=completed"
-            class="member-card-link"
-          >
-            전체 보기
-          </a>
-        </div>
-
-        <div class="member-feedback-list">
-          <p class="member-empty">수업 내용을 불러오는 중입니다.</p>
-        </div>
-      </section>
+      </dialog>
 
       <div
         id="upcomingLessonModal"
@@ -251,6 +204,36 @@
             <div><span>Make-up</span><h2>보강 가능 시간</h2></div>
             <button type="button" id="makeupModalClose" class="member-modal-close" aria-label="닫기">×</button>
           </div>
+          <div class="home-makeup-info">
+      <section class="member-card makeup-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="calendar-plus"></i>
+            <h2>보강 신청</h2>
+          </div>
+
+        </div>
+        <div id="makeupRequestStatus" class="makeup-member-status">
+          <p class="member-empty">보강 신청 정보를 불러오는 중입니다.</p>
+        </div>
+      </section>
+
+      <section class="member-card makeup-card">
+        <div class="member-card-header">
+          <div class="member-card-title">
+            <i data-lucide="badge-check"></i>
+            <h2>보강 횟수</h2>
+          </div>
+          <button type="button" id="makeupCreditOpen" class="member-card-link member-card-button">
+            누락 확인 요청
+          </button>
+        </div>
+        <div id="makeupCreditSummary" class="makeup-member-status">
+          <p class="member-empty">보강 횟수를 불러오는 중입니다.</p>
+        </div>
+      </section>
+
+          </div>
           <div id="makeupSlotList" class="member-modal-body"></div>
         </div>
       </div>
@@ -278,31 +261,6 @@
     </main>
 
     <!-- 하단 메뉴 -->
-    <nav class="member-bottom-nav">
-      <a href="member-home.html" class="member-nav-item active">
-        <span class="member-nav-icon">
-          <i data-lucide="house"></i>
-        </span>
-
-        <span> 홈 </span>
-      </a>
-
-      <a href="member-lessons.html" class="member-nav-item">
-        <span class="member-nav-icon">
-          <i data-lucide="calendar-days"></i>
-        </span>
-
-        <span> 내 수업 </span>
-      </a>
-
-      <a href="member-profile.html" class="member-nav-item">
-        <span class="member-nav-icon">
-          <i data-lucide="user-round"></i>
-        </span>
-
-        <span> 내 정보 </span>
-      </a>
-    </nav>
 
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -310,10 +268,12 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="member-shared.js?v=20261007-cancel-extension"></script>
-    <script src="member-home.js?v=20261007-cancel-extension"></script>
+    <script src="lesson-threads.js?v=20261124-free-swim"></script>
+    <script src="member-payment.js?v=20261124-popup"></script>
+    <script src="member-home.js?v=20261124-open-discussion"></script>
     <script src="makeup-member.js?v=20261001-two-weeks"></script>
     <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
-    <script src="notifications.js?v=20261104-mobile-layout"></script>
+    <script src="notifications.js?v=20261124-home-links"></script>
 
     <script>
       lucide.createIcons();

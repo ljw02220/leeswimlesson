@@ -521,7 +521,7 @@
       return {
         title: `${comment.author_name || '회원'}님의 새 댓글`,
         message: `${typeName} · ${comment.lesson_date} ${time} · ${preview}`,
-        href: isMember ? 'member-lessons.html?view=completed' : 'members.html',
+        href: isMember ? `member-home.html?date=${encodeURIComponent(comment.lesson_date)}` : 'members.html',
         createdAt: comment.created_at || '',
       };
     });
@@ -547,7 +547,7 @@
       return {
         title: '새 수업노트가 작성되었습니다.',
         message: `${typeName} · ${note.lesson_date} ${time}`,
-        href: 'member-lessons.html?view=completed',
+        href: `member-home.html?date=${encodeURIComponent(note.lesson_date)}`,
         createdAt: note.created_at || '',
       };
     });

@@ -1,0 +1,156 @@
+/* Shared member portal: calm club colors and clear routes to lessons. */
+.member-page { background: #f3f6f8; }
+.member-header { background: #163f57; color: #fff; padding: 18px; border-radius: 16px; gap: 12px; }
+.member-header .member-brand-text strong { color: #fff; }
+.member-header .member-brand-text span { color: #bed5e2; }
+.member-header .member-brand-mark { background: #ffffff18; color: #fff; }
+.member-header .member-notification-button { background: #fff; color: #163f57; flex-shrink: 0; }
+.member-card, .member-summary-card, .lesson-summary-card { box-shadow: none; border-color: #dce5eb; }
+.member-quick-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 0 0 20px; }
+.member-quick-links a { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 16px 12px; border: 1px solid #dce5eb; border-radius: 13px; background: #fff; color: #163f57; text-decoration: none; min-width: 0; }
+.member-quick-links svg { width: 23px; height: 23px; margin-bottom: 4px; }
+.member-quick-links strong { font-size: 13px; }
+.member-quick-links span { font-size: 11px; color: #64748b; }
+.member-comment-link { display: inline-block; margin-top: 10px; color: #175f80; font-size: 12px; font-weight: 700; text-decoration: none; padding: 8px 0; }
+.member-quick-links a:focus-visible, .member-comment-link:focus-visible { outline: 3px solid #349ac2; outline-offset: 3px; }
+@media(max-width: 380px) {
+  .member-header { padding: 14px 12px; }
+  .member-header .member-brand-text strong { font-size: 16px; }
+  .member-header .member-brand-text span { font-size: 9px; }
+  .member-quick-links { gap: 6px; }
+  .member-quick-links a { padding: 13px 9px; }
+  .member-quick-links strong { font-size: 12px; }
+  .member-quick-links span { font-size: 10px; }
+}
+
+.home-calendar-navigation { display:flex; align-items:center; justify-content:space-between; margin:8px 0 16px; }
+.home-calendar-navigation strong { font-size:18px; color:#153e56; }
+.home-calendar-navigation button { width:40px; height:40px; border:1px solid #dde5ea; border-radius:10px; background:#fff; color:#175f80; font-size:26px; cursor:pointer; }
+.home-calendar-weekdays, #homeCalendarGrid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; }
+.home-calendar-weekdays { text-align:center; font-size:11px; color:#64748b; padding-bottom:8px; }
+.home-calendar-weekdays span:first-child { color:#dc5d64; }
+.home-calendar-weekdays span:last-child { color:#3273af; }
+.home-calendar-day { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; min-height:49px; border:1px solid transparent; border-radius:10px; background:#f6f8fa; color:#263b4c; font:inherit; font-size:13px; cursor:pointer; }
+.home-calendar-day.today { border-color:#175f80; font-weight:800; }
+.home-calendar-day.selected { background:#175f80; color:white; }
+.home-calendar-dots { height:5px; display:flex; gap:3px; }
+.home-calendar-dots i { width:5px; height:5px; border-radius:50%; background:#2563eb; }
+.home-calendar-dots i.completed { background:#16a34a; }
+.home-calendar-day.selected .home-calendar-dots i { box-shadow:0 0 0 1px #fff; }
+.home-calendar-dots i.completed { box-shadow:0 0 0 1px #fff; }
+.home-calendar-detail { border-top:1px solid #e4ebf3; margin-top:12px; padding-top:16px; }
+.home-calendar-detail h3 { font-size:14px; margin-bottom:12px; }
+.home-calendar-detail .member-lesson-item { min-width:0; }
+.home-calendar-dots, .home-calendar-day > span { pointer-events:none; }
+.home-calendar-legend { display:flex; justify-content:flex-end; gap:12px; margin-top:12px; font-size:10px; color:#3884e0; }
+.home-calendar-legend .scheduled-legend { color:#2563eb; }
+.home-calendar-legend .completed-legend { color:#16a34a; }
+@media(max-width:360px) { .home-calendar-day { min-height:43px; font-size:12px; } }
+
+/* Keep the calendar first; secondary tasks use compact controls. */
+.home-compact-actions { display:flex; flex-wrap:wrap; gap:8px; margin: -2px 0 22px; }
+.home-compact-actions a, .home-compact-actions button { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:40px; padding:9px 13px; border:1px solid #cddde6; border-radius:9px; background:#fff; color:#175f80; font:inherit; font-size:12px; font-weight:700; text-decoration:none; cursor:pointer; }
+.home-compact-actions svg { width:16px; height:16px; }
+.home-compact-actions :focus-visible { outline:3px solid #349ac2; outline-offset:3px; }
+.home-makeup-info { padding: 0 20px; }
+.home-makeup-info .member-card { padding:12px; margin-bottom:10px; border-radius:10px; }
+.home-makeup-info .member-card h2 { font-size:13px; }
+#payment-report { scroll-margin-top:20px; }
+
+.home-lesson-discussion + .home-lesson-discussion { border-top:1px solid #e4ebf3; padding-top:18px; margin-top:18px; }
+.home-lesson-note { margin:12px 0; padding:14px; background:#f5f8fa; border-radius:10px; font-size:13px; }
+.home-lesson-note p, .lesson-comment p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; margin-top:7px; }
+.home-lesson-discussion .lesson-comments-heading { display:flex; flex-wrap:wrap; gap:5px 10px; align-items:center; margin:16px 0 10px; font-size:13px; }
+.home-lesson-discussion .lesson-comments-heading span { color:#64748b; font-size:10px; }
+.home-lesson-discussion .lesson-comment { border:1px solid #e0e8ee; border-radius:10px; margin-bottom:8px; padding:12px; font-size:12px; }
+.home-lesson-discussion .lesson-comment.mine { background:#f1f8fc; }
+.home-lesson-discussion .lesson-comment > div { display:flex; gap:8px; justify-content:space-between; align-items:center; }
+.home-lesson-discussion .lesson-comment time { display:block; font-size:10px; color:#64748b; margin-top:3px; }
+.home-lesson-discussion .lesson-comment-delete { border:0; background:transparent; color:#b44d55; font-size:11px; padding:8px; cursor:pointer; }
+.home-lesson-discussion .lesson-comment-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:end; margin-top:12px; }
+.home-comment-label { display:grid; gap:6px; font-size:11px; color:#526276; }
+.home-comment-label input { box-sizing:border-box; width:100%; min-width:0; height:44px; border:1px solid #cddde6; border-radius:8px; padding:10px; font:inherit; font-size:16px; }
+.home-lesson-discussion .lesson-comment-form > button { height:44px; padding:0 14px; border:0; border-radius:8px; background:#175f80; color:white; font-weight:700; cursor:pointer; }
+.home-lesson-discussion button:disabled { opacity:.6; cursor:wait; }
+.home-comment-message { grid-column:1/-1; font-size:12px; color:#526276; overflow-wrap:anywhere; }
+.home-discussion-hint, .home-lesson-discussion .lesson-comments-empty, .home-lesson-discussion .lesson-comments-error, .home-lesson-discussion .lesson-comments-list > p { color:#64748b; font-size:12px; line-height:1.6; padding:10px 0; }
+.lesson-comment-thread { margin-bottom:14px; }
+.lesson-comment.lesson-reply { margin-left:18px; border-left:3px solid #bfd8e6; background:#f7fafc; }
+.lesson-reply-button { border:0; background:transparent; color:#175f80; font:inherit; font-size:12px; font-weight:700; padding:8px 0 0; cursor:pointer; }
+.lesson-reply-context { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; color:#175f80; padding:8px; background:#eef6fa; border-radius:6px; }
+.lesson-comment-form .lesson-reply-context button { background:transparent; color:#526276; border:0; padding:6px; min-width:0; cursor:pointer; }
+.lesson-comment-form:has(.lesson-reply-context) { flex-wrap:wrap; }
+.lesson-comment-form .lesson-reply-context { flex-basis:100%; }
+/* A stamp takes its own space below the day, including on narrow phones. */
+.home-calendar-day { position:relative; min-height:82px; padding:6px 2px 37px; }
+.home-swim-stamp { position:absolute; bottom:4px; left:50%; display:flex; align-items:center; justify-content:center; width:38px; height:30px; transform:translateX(-50%) rotate(-10deg); border:2px solid currentColor; border-radius:50%; color:#2563eb; font-size:11px; font-weight:900; letter-spacing:-.5px; line-height:1; box-shadow:inset 0 0 0 1px #f6f8fa; pointer-events:none; }
+.home-calendar-day.selected .home-swim-stamp { color:#fff; box-shadow:none; }
+@media(max-width:360px) { .home-calendar-day { min-height:76px; } .home-swim-stamp { width:33px; height:27px; font-size:10px; } }
+.home-calendar-legend .free-swim-legend { color:#2563eb; }
+.free-swim-control { margin-bottom:16px; padding:12px; background:#eff6ff; border-radius:10px; }
+.free-swim-control button { min-height:40px; border:1px solid #bfdbfe; border-radius:8px; padding:8px 12px; background:#fff; color:#2563eb; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.free-swim-control button[aria-pressed="true"] { background:#2563eb; color:#fff; }
+.free-swim-control button:disabled { opacity:.6; cursor:default; }
+.free-swim-control p { margin-top:8px; font-size:11px; color:#526b8a; line-height:1.5; }
+.home-compact-actions [hidden] { display:none; }
+.test-view-help, #testViewMessage { color:#64748b; font-size:12px; line-height:1.6; margin:10px 0; overflow-wrap:anywhere; }
+#testMemberSelect { display:block; width:100%; margin-top:8px; padding:10px; min-height:44px; border:1px solid #cddde6; border-radius:8px; background:white; font:inherit; }
+.test-view-card h2 { font-size:16px; margin-bottom:12px; }
+.test-view-card dl > div { display:grid; grid-template-columns:90px minmax(0,1fr); gap:10px; padding:8px 0; font-size:12px; border-bottom:1px solid #edf1f5; }
+.test-view-card dt { color:#64748b; }.test-view-card dd { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.test-view-row { padding:12px 0; border-bottom:1px solid #e5ebf0; font-size:12px; line-height:1.6; overflow-wrap:anywhere; }
+.test-view-row summary { cursor:pointer; font-weight:700; }
+.test-view-row > p { white-space:pre-wrap; margin:10px 0; }
+.test-view-comments .lesson-reply-button { display:none; }
+.test-view-comments .lesson-comment { margin:10px 0; padding:10px; background:#f5f8fa; border-radius:8px; }
+.test-view-comments .lesson-reply { margin-left:16px; }
+.test-view-comments time { display:block; font-size:10px; color:#64748b; }
+
+.home-calendar-day { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:pan-y; }
+.home-calendar-hint { margin: -2px 0 20px; color:#64748b; font-size:11px; line-height:1.5; }
+.free-swim-dialog { width:min(340px,calc(100vw - 32px)); box-sizing:border-box; margin:auto; padding:20px; border:1px solid #dbeafe; border-radius:18px; background:#fff; color:#183e68; box-shadow:0 20px 70px #163f5733; }
+.free-swim-dialog::backdrop { background:#0f274766; }
+.free-swim-dialog-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.free-swim-dialog-heading h2 { font-size:20px; }
+.free-swim-dialog-heading button { width:36px; height:36px; border:0; border-radius:8px; background:#eff6ff; color:#2563eb; font-size:24px; cursor:pointer; }
+#freeSwimDialogDate { font-size:13px; margin:8px 0 16px; }
+.free-swim-dialog .free-swim-control { margin:0; }
+.free-swim-dialog #freeSwimToggle { width:100%; min-height:44px; }
+
+/* Comments read as a conversation rather than separate cards. */
+.home-lesson-discussion .lesson-comment,
+.lesson-comments .lesson-comment,
+.test-view-comments .lesson-comment { border:0; border-radius:0; background:transparent; box-shadow:none; padding:10px 0; margin:0; }
+.home-lesson-discussion .lesson-comment.mine,
+.lesson-comments .lesson-comment.mine { background:transparent; border:0; }
+.home-lesson-discussion .lesson-comment.lesson-reply,
+.lesson-comments .lesson-comment.lesson-reply,
+.test-view-comments .lesson-comment.lesson-reply { margin-left:18px; border:0; background:transparent; padding:8px 0; }
+.lesson-comment-thread + .lesson-comment-thread { border-top:1px solid #edf1f5; padding-top:10px; }
+.member-payment-dialog { box-sizing:border-box; width:min(420px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); overflow-y:auto; margin:auto; padding:22px; border:1px solid #dbe5ef; border-radius:18px; background:#fff; color:#183e68; box-shadow:0 20px 70px #163f5733; }
+.member-payment-dialog::backdrop { background:#0f274766; }
+.member-payment-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.member-payment-heading h2 { font-size:20px; }
+.member-payment-heading button { width:36px; height:36px; border:0; border-radius:8px; background:#eff6ff; color:#2563eb; font-size:24px; cursor:pointer; }
+.member-payment-description { font-size:12px; line-height:1.6; color:#64748b; margin:10px 0 18px; }
+.member-payment-dialog .profile-form-group { margin-bottom:16px; min-width:0; }
+.member-payment-dialog label { display:block; margin-bottom:7px; font-size:13px; font-weight:700; }
+.member-payment-dialog input, .member-payment-dialog select { display:block; box-sizing:border-box; width:100%; min-width:0; max-width:100%; min-height:44px; padding:10px; border:1px solid #cddde6; border-radius:8px; background:#fff; color:#183e68; font:inherit; font-size:16px; }
+.member-payment-dialog .amount-input-wrap { margin-top:12px; }
+.member-payment-dialog [hidden] { display:none; }
+.member-payment-dialog .profile-primary-button { display:flex; justify-content:center; align-items:center; gap:8px; width:100%; min-height:46px; padding:12px; border:0; border-radius:9px; background:#2563eb; color:#fff; font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+.member-payment-dialog .profile-primary-button svg { width:17px; height:17px; }
+.member-payment-dialog button:disabled { opacity:.6; cursor:wait; }
+.member-payment-dialog .profile-form-message { font-size:12px; line-height:1.6; margin-top:12px; color:#15803d; overflow-wrap:anywhere; }
+.member-payment-dialog .profile-form-message[data-tone="error"] { color:#dc2626; }
+
+.member-greeting-text .home-personal-remaining { display:inline-flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:12px; padding:8px 12px; border-radius:9px; background:#eaf3ff; color:#255788; font-size:12px; }
+.member-greeting-text .home-personal-remaining strong { color:#2563eb; font-size:16px; font-weight:800; }
+.member-greeting-text .home-personal-remaining[hidden] { display:none; }
+
+.member-bottom-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+.member-page { padding-bottom:0; }
+.member-profile-shortcut { color:inherit; text-decoration:none; border-radius:12px; }
+.member-profile-shortcut:focus-visible { outline:3px solid #349ac2; outline-offset:4px; }
+.member-profile-shortcut:hover .member-avatar { background:#d8eaff; }

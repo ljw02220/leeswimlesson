@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
-  let currentMember = null;
 
   function setText(id, value) {
     const element = document.getElementById(id);
@@ -8,17 +7,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (element) {
       element.textContent = value;
     }
-  }
-
-  function setMessage(message, tone = 'success') {
-    const element = document.getElementById('paymentReportMessage');
-
-    if (!element) {
-      return;
-    }
-
-    element.textContent = message;
-    element.dataset.tone = tone;
   }
 
   function renderMember(member) {
@@ -55,136 +43,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadProfile() {
     const { member } = await portal.loadCurrentMember();
 
-    currentMember = member;
     renderMember(member);
   }
 
   window.addEventListener('focus', () => {
     loadProfile().catch((error) => console.error('회원정보 새로고침 실패:', error));
   });
-
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const paymentDate = document.getElementById('paymentReportDate');
-
-  if (paymentDate) {
-    paymentDate.value = todayKey;
-  }
-
-  const paymentForm = document.getElementById('paymentReportForm');
-  const amountChoice = document.getElementById('paymentReportAmountChoice');
-  const customAmount = document.getElementById('paymentReportCustomAmount');
-  const amountInput = document.getElementById('paymentReportAmount');
-
-  function syncAmountInput(focus = false) {
-    const isCustom = amountChoice?.value === 'custom';
-    if (customAmount) customAmount.hidden = !isCustom;
-    if (amountInput) {
-      amountInput.disabled = !isCustom;
-      amountInput.required = isCustom;
-      if (isCustom && focus) amountInput.focus();
-    }
-  }
-
-  amountChoice?.addEventListener('change', () => syncAmountInput(true));
-  syncAmountInput();
-
-  if (paymentForm) {
-    paymentForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      if (!currentMember) {
-        return;
-      }
-
-      const paymentAmount = portal.parseMoney(
-        amountChoice?.value === 'custom' ? amountInput?.value : amountChoice?.value
-      );
-      const paymentDateValue =
-        document.getElementById('paymentReportDate')?.value || '';
-
-      if (!paymentDateValue || paymentAmount <= 0) {
-        setMessage('결제일과 결제금액을 입력해주세요.', 'error');
-
-        return;
-      }
-
-      const submitButton = paymentForm.querySelector('[type="submit"]');
-      if (submitButton?.disabled) return;
-      if (submitButton) submitButton.disabled = true;
-      try {
-        currentMember = await portal.updateMemberPayment(currentMember, {
-          paymentDate: paymentDateValue,
-          paymentAmount,
-        });
-
-        renderMember(currentMember);
-        paymentForm.reset();
-        syncAmountInput();
-
-        if (paymentDate) {
-          paymentDate.value = todayKey;
-        }
-
-        setMessage('결제 알림을 저장했습니다. 관리자 확인 후 반영됩니다.');
-        window.dispatchEvent(new CustomEvent('swim-payment-requested'));
-      } catch (error) {
-        console.error('결제 알림 저장 실패:', error);
-
-        setMessage(error.message || '결제 알림을 저장하지 못했습니다.', 'error');
-      } finally {
-        const submitButton = paymentForm.querySelector('[type="submit"]');
-        if (submitButton) submitButton.disabled = false;
-      }
-    });
-  }
-
-  const paymentReportAmount = document.getElementById('paymentReportAmount');
-
-  if (paymentReportAmount) {
-    paymentReportAmount.addEventListener('input', (event) => {
-      const numbersOnly = event.target.value.replace(/[^0-9]/g, '');
-
-      if (!numbersOnly) {
-        event.target.value = '';
-
-        return;
-      }
-
-      event.target.value = Number(numbersOnly).toLocaleString('ko-KR');
-    });
-  }
-
-  const messageForm = document.getElementById('memberMessageForm');
-
-  if (messageForm) {
-    messageForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      if (!currentMember) {
-        return;
-      }
-
-      const messageInput = document.getElementById('memberMessage');
-      const message = messageInput?.value.trim() || '';
-
-      if (!message) {
-        alert('전달 내용을 입력해주세요.');
-
-        return;
-      }
-
-      try {
-        currentMember = await portal.updateMemberMemo(currentMember, message);
-        messageInput.value = '';
-
-        alert('전달 내용을 저장했습니다.');
-      } catch (error) {
-        console.error('전달 내용 저장 실패:', error);
-
-        alert('전달 내용을 저장하지 못했습니다.');
-      }
-    });
-  }
 
   const editButton = document.getElementById('profileEditButton');
 

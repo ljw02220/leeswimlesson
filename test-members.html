@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>테스트 · 전체 회원 조회</title>
+  <link rel="stylesheet" href="member-home.css?v=20261124"><link rel="stylesheet" href="member-portal.css?v=20261124-open-comments">
+</head>
+<body class="member-page">
+<main class="member-app">
+  <header class="member-header"><strong>테스트 · 전체 회원 조회</strong><a href="member-home.html" style="color:white">내 화면</a></header>
+  <section class="member-card"><h1 style="font-size:20px">회원 둘러보기</h1><p class="test-view-help">실제 회원 자료를 조회하는 화면입니다. 기능 시험은 ‘내 화면’에서 테스트 계정으로 진행하세요.</p>
+    <label for="testMemberSelect">회원 선택</label><select id="testMemberSelect" disabled></select>
+    <p id="testViewMessage" role="status">권한을 확인하고 있습니다.</p><button type="button" id="testViewRetry" hidden>다시 불러오기</button>
+  </section>
+  <div id="testMemberDetails"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="supabase.js?v=20260922-login-persistence"></script>
+<script src="lesson-threads.js?v=20261124-replies"></script><script src="test-members.js?v=20261124"></script>
+</body></html>
