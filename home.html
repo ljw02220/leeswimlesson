@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=20261125" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=20261125" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" href="site.webmanifest" />
+    <link rel="manifest" href="site.webmanifest?v=20261125-icons" />
 
     <title>홈</title>
 
     <link rel="stylesheet" href="common.css?v=20261104-mobile-layout" />
-    <link rel="stylesheet" href="home.css?v=20261125-workout-button" />
+    <link rel="stylesheet" href="home.css?v=20261125-saved-view" />
     <link rel="stylesheet" href="workout-plan.css?v=20261125-stroke-below" />
 </head>
 
@@ -54,8 +56,9 @@
           <div class="admin-calendar-navigation"><button type="button" id="homeCalendarPrev" aria-label="이전 달">‹</button><strong id="homeCalendarMonth"></strong><button type="button" id="homeCalendarNext" aria-label="다음 달">›</button><button type="button" id="homeCalendarToday">오늘</button></div>
           <div class="admin-calendar-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
           <div id="homeCalendarDays" class="admin-calendar-days" aria-label="월간 수업 날짜"></div>
-          <p class="admin-calendar-legend"><span>● 예정</span><span>● 완료</span><span>● 새 댓글</span></p>
-          <details class="home-daily-workout" id="homeDailyWorkout"><summary>운동량 작성 <span id="homeWorkoutDate"></span></summary><form id="homeWorkoutForm"><div class="workout-editor" id="homeWorkoutEditor"></div><div class="home-note-actions"><p id="homeWorkoutMessage" role="status"></p><button type="submit" disabled>운동량 저장</button></div></form></details>
+          <p class="admin-calendar-legend"><span>● 예정</span><span>● 완료</span><span>● 새 댓글</span><span class="workout-written-legend">✓ 운동량 작성</span></p>
+          <div id="homeWorkoutSavedView" class="home-workout-saved-view" aria-live="polite"></div>
+          <details class="home-daily-workout" id="homeDailyWorkout"><summary>운동량 작성 · 수정 <span id="homeWorkoutDate"></span><strong id="homeWorkoutStatus" class="home-workout-status" role="status">확인 중</strong></summary><form id="homeWorkoutForm" novalidate><div class="workout-editor" id="homeWorkoutEditor"></div><div class="home-note-actions"><p id="homeWorkoutMessage" role="status"></p><button type="submit" disabled>운동량 저장</button></div></form></details>
           <h3 class="admin-selected-heading"><span id="homeSelectedDate"></span><span id="todayLessonCount" class="home-count">—</span></h3>
           <div id="homeTodayLessons" class="home-list"><p class="home-empty">수업을 불러오는 중입니다.</p></div>
         </article>
@@ -78,6 +81,6 @@
 <script src="workout-plan.js?v=20261125-group-phase"></script>
     <script src="home.js?v=20261125-separated-workout"></script>
     <script src="notifications.js?v=20261125-moves"></script>
-  <script src="admin-daily-workout.js?v=20261125"></script>
+  <script src="admin-daily-workout.js?v=20261125-saved-view"></script>
 </body>
 </html>

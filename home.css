@@ -92,3 +92,17 @@ button.home-lesson-item { background:transparent; border:0; border-bottom:1px so
 .home-daily-workout > summary span { float:right; color:#718ba5; font-size:11px; font-weight:500; }
 .home-daily-workout .workout-editor { margin-top:0; border-top:1px solid #dce6ef; }
 .home-daily-workout .home-note-actions { margin-bottom:14px; }
+
+.home-daily-workout > summary { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.home-daily-workout > summary #homeWorkoutDate { margin-left:auto; }
+.home-workout-status { padding:4px 7px; border-radius:6px; font-size:11px; background:#e8eef5; color:#687e94; }
+.home-workout-status[data-state="saved"] { background:#dcf4e8; color:#18794e; }
+.home-workout-status[data-state="dirty"] { background:#fff0ce; color:#925c10; }
+.home-workout-status[data-state="error"] { background:#fee9e7; color:#b4433a; }
+.admin-workout-mark { display:block; margin-top:3px; font-size:9px; line-height:1.4; color:#18865b; white-space:nowrap; }
+.admin-workout-mark[data-state="dirty"] { color:#a66b13; }
+.admin-calendar-day.selected .admin-workout-mark { color:#dcffed; }
+.admin-calendar-legend .workout-written-legend { color:#18865b; }
+
+.home-workout-saved-view { margin-top:16px; min-width:0; }
+.home-workout-saved-view:empty { display:none; }
