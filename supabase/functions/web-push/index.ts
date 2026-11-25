@@ -37,9 +37,14 @@ Deno.serve(async (request) => {
     const admin = createClient(supabaseUrl, serviceRoleKey);
 
     if (body.type === 'INSERT' && body.table === 'push_notification_events') {
-      if (request.headers.get('x-webhook-secret') !== Deno.env.get('PUSH_WEBHOOK_SECRET')) {
+      const expectedSecret=Deno.env.get('PUSH_WEBHOOK_SECRET');
+      const receivedSecret=request.headers.get('x-webhook-secret');
+      if (!expectedSecret || !receivedSecret || receivedSecret !== expectedSecret) {
+        const reason=!expectedSecret?'WEBHOOK_SECRET_NOT_CONFIGURED':!receivedSecret?'WEBHOOK_HEADER_MISSING':'WEBHOOK_SECRET_MISMATCH';
+        console.warn(reason); // Never log either secret value.
         return json({ error: '웹훅 인증에 실패했습니다.' }, 401);
       }
+      console.info('WEBHOOK_AUTH_OK');
       if (!vapidPublicKey || !vapidPrivateKey) return json({ error: 'VAPID 키가 설정되지 않았습니다.' }, 503);
       webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
@@ -79,7 +84,10 @@ Deno.serve(async (request) => {
       global: { headers: { Authorization: authorization } },
     });
     const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) return json({ error: '로그인이 필요합니다.' }, 401);
+    if (userError || !user) {
+      console.warn(body.action ? 'USER_AUTH_REQUIRED' : 'WEBHOOK_PAYLOAD_NOT_RECOGNIZED');
+      return json({ error: '로그인이 필요합니다.' }, 401);
+    }
 
     if (body.action === 'test') {
       stage = 'test';

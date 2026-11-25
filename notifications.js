@@ -113,6 +113,7 @@
       .swim-push-button:disabled { cursor: wait; opacity: .65; }
       .swim-push-message { margin: 0 14px 8px; color: #64748b; font-size: 11px; line-height: 1.45; }
       .swim-push-message.is-error { color: #dc2626; }
+      .swim-notification-guide { display:block; margin:4px 10px 12px; padding:10px; border-radius:7px; background:#eff6ff; color:#2563eb; text-decoration:none; font-size:12px; font-weight:700; }
       .swim-notification-item { display: block; width: 100%; padding: 11px 10px; border: 0; border-top: 1px solid #eef2f7; background: #fff; color: #334155; text-align: left; text-decoration: none; font-size: 13px; line-height: 1.45; cursor: pointer; }
       .swim-notification-item strong { display: block; margin-bottom: 2px; color: #0f172a; font-size: 13px; }
       .swim-payment-confirm { margin-top: 8px; padding: 7px 14px; border: 0; border-radius: 6px; background: #2563eb; color: white; font: inherit; font-weight: 700; cursor: pointer; }
@@ -168,7 +169,7 @@
         </div>
         <button type="button" class="swim-push-button">확인 중</button>
       </div>
-      <button type="button" class="swim-push-test swim-push-button">내 기기로 테스트 알림 보내기</button><p class="swim-push-message" hidden></p>
+      <a class="swim-notification-guide" href="notification-guide.html">알림 설정 방법 →</a><button type="button" class="swim-push-test swim-push-button">내 기기로 테스트 알림 보내기</button><p class="swim-push-message" hidden></p>
       <div class="swim-notification-list"></div>
     `;
     wrap.appendChild(panel);
