@@ -153,7 +153,7 @@ begin
   perform public.queue_admin_push(
     '새 수업 댓글',
     comment_author || '님이 댓글을 남겼습니다.',
-    './members.html',
+    './home.html?date=' || new.lesson_date::text,
     'comment-' || new.id::text
   );
 
@@ -268,6 +268,54 @@ $$;
 drop trigger if exists notify_personal_lesson_move_push on public.personal_lesson_moves;
 create trigger notify_personal_lesson_move_push after insert or update of new_date,new_time on public.personal_lesson_moves for each row execute function public.notify_personal_lesson_move_push();
 revoke all on function public.notify_personal_lesson_move_push() from public,anon,authenticated;
+
+-- 공통 운동량 대상: 등록된 단체수업 또는 승인된 보강. 개인레슨은 제외합니다.
+create or replace function public.workout_recipient_ids(p_date date)
+returns table(member_id uuid) language sql stable security definer set search_path=public as $$
+ select m.id from public.members m where m.auth_user_id is not null and (
+ exists(select 1 from jsonb_array_elements(coalesce(m.group_lessons,'[]'::jsonb)) g where (g->>'day')::integer=extract(dow from p_date)::integer)
+ or exists(select 1 from public.makeup_requests r join public.makeup_slots s on s.id=r.slot_id where r.member_id=m.id and r.status='approved' and s.slot_date=p_date)
+ );
+$$;
+revoke all on function public.workout_recipient_ids(date) from public,anon,authenticated;
+create or replace function public.notify_daily_workout_push()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare recipient record;
+begin
+ if new.workout_plan is null or jsonb_array_length(coalesce(new.workout_plan->'rows','[]'::jsonb))=0 then return new; end if;
+ if tg_op='UPDATE' then if new.workout_plan is not distinct from old.workout_plan then return new; end if; end if;
+ for recipient in select member_id from public.workout_recipient_ids(new.workout_date) loop
+ perform public.queue_member_push(recipient.member_id,'수업 운동량이 올라왔어요',new.workout_date::text || ' 운동량을 확인해주세요.','./member-home.html?date='||new.workout_date::text,'workout-'||new.workout_date::text);
+ end loop;
+ return new;
+end;
+$$;
+revoke all on function public.notify_daily_workout_push() from public,anon,authenticated;
+drop trigger if exists notify_daily_workout_push on public.daily_workouts;
+create trigger notify_daily_workout_push after insert or update of workout_plan on public.daily_workouts for each row execute function public.notify_daily_workout_push();
+create or replace function public.get_workout_notifications()
+returns table(workout_date date,updated_at timestamptz) language sql stable security definer set search_path=public as $$
+ select w.workout_date,w.updated_at from public.daily_workouts w
+ where w.workout_plan is not null and jsonb_array_length(coalesce(w.workout_plan->'rows','[]'::jsonb))>0
+ and exists(select 1 from public.workout_recipient_ids(w.workout_date) r join public.members m on m.id=r.member_id where m.auth_user_id=auth.uid())
+ order by w.updated_at desc limit 20;
+$$;
+revoke all on function public.get_workout_notifications() from public,anon;
+grant execute on function public.get_workout_notifications() to authenticated;
+-- 실제 발송 경로를 사용하는 본인 테스트. 30초 간격 제한.
+create or replace function public.send_my_test_push()
+returns void language plpgsql security definer set search_path=public as $$
+begin
+ if auth.uid() is null then raise exception '로그인이 필요합니다.'; end if;
+ if not exists(select 1 from public.push_subscriptions where user_id=auth.uid()) then raise exception '먼저 이 기기의 휴대폰 알림을 켜주세요.'; end if;
+ perform pg_advisory_xact_lock(hashtext(auth.uid()::text));
+ if exists(select 1 from public.push_notification_events where target_user_id=auth.uid() and tag='self-test' and created_at>now()-interval '30 seconds') then raise exception '테스트는 30초 후에 다시 해주세요.'; end if;
+ insert into public.push_notification_events(target_user_id,target_role,title,body,url,tag)
+ values(auth.uid(),case when public.is_swim_admin() then 'admin' else 'member' end,'수영관리 테스트 알림','휴대폰 알림이 연결됐어요.',case when public.is_swim_admin() then './home.html' else './member-home.html' end,'self-test');
+end;
+$$;
+revoke all on function public.send_my_test_push() from public,anon;
+grant execute on function public.send_my_test_push() to authenticated;
 
 notify pgrst, 'reload schema';
 commit;

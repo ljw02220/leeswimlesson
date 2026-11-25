@@ -10,7 +10,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: payload.body || '새로운 알림이 있습니다.',
     badge: payload.badge || undefined,
-    icon: payload.icon || undefined,
+    icon: payload.icon || './icons/icon-192.png',
     tag: payload.tag || 'swim-notification',
     renotify: true,
     data: {

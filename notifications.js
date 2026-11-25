@@ -168,7 +168,7 @@
         </div>
         <button type="button" class="swim-push-button">확인 중</button>
       </div>
-      <p class="swim-push-message" hidden></p>
+      <button type="button" class="swim-push-test swim-push-button">내 기기로 테스트 알림 보내기</button><p class="swim-push-message" hidden></p>
       <div class="swim-notification-list"></div>
     `;
     wrap.appendChild(panel);
@@ -252,7 +252,7 @@
   async function getPushRegistration() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
     if (!pushRegistration) {
-      pushRegistration = await navigator.serviceWorker.register('./swim-service-worker.js?v=20261007');
+      pushRegistration = await navigator.serviceWorker.register('./swim-service-worker.js?v=20261125-icons');
       await navigator.serviceWorker.ready;
     }
     return pushRegistration;
@@ -322,6 +322,14 @@
   }
 
   function setupPushSettings(panel) {
+    panel.querySelector('.swim-push-test').addEventListener('click',async event=>{
+      const button=event.currentTarget;button.disabled=true;
+      try{
+        const {error}=await client.rpc('send_my_test_push');if(error)throw error;
+        setPushMessage(panel,'테스트 발송을 요청했어요. 앱을 잠시 닫고 확인해주세요.');
+      }catch(error){setPushMessage(panel,error.message||'테스트 발송을 요청하지 못했습니다.',true);}
+      finally{button.disabled=false;}
+    });
     const button = panel.querySelector('.swim-push-button');
     button.addEventListener('click', async () => {
       button.disabled = true;
@@ -396,7 +404,7 @@
       items.push({
         title: `가입 신청 ${signupResult.count}건`,
         message: '승인을 기다리는 회원이 있습니다.',
-        href: 'members.html',
+        href: `home.html?date=${encodeURIComponent(comment.lesson_date)}`,
         persistent: true,
         count: signupResult.count,
       });
@@ -521,7 +529,7 @@
       return {
         title: `${comment.author_name || '회원'}님의 새 댓글`,
         message: `${typeName} · ${comment.lesson_date} ${time} · ${preview}`,
-        href: isMember ? `member-home.html?date=${encodeURIComponent(comment.lesson_date)}` : 'members.html',
+        href: isMember ? `member-home.html?date=${encodeURIComponent(comment.lesson_date)}` : `home.html?date=${encodeURIComponent(comment.lesson_date)}`,
         createdAt: comment.created_at || '',
       };
     });
@@ -560,18 +568,27 @@
     return (data||[]).map(move=>({title:'개인레슨 일정이 변경됐어요.',message:`${move.new_date} ${String(move.new_time).slice(0,5)} 수업을 확인해주세요.`,href:`member-home.html?date=${encodeURIComponent(move.new_date)}`,createdAt:move.updated_at}));
   }
 
+  async function loadWorkoutNotifications(){
+    if(!isMember)return [];
+    const {data,error}=await client.rpc('get_workout_notifications');
+    if(error){console.warn('운동량 알림 조회 실패',error);return [];}
+    return (data||[]).map(row=>({title:'수업 운동량이 올라왔어요.',message:`${row.workout_date} 운동량을 확인해주세요.`,href:`member-home.html?date=${encodeURIComponent(row.workout_date)}`,createdAt:row.updated_at}));
+  }
+
   async function refresh(trigger, panel) {
-    const [baseNotifications, commentNotifications, noteNotifications, moveNotifications] = await Promise.all([
+    const [baseNotifications, commentNotifications, noteNotifications, moveNotifications, workoutNotifications] = await Promise.all([
       isMember ? loadMemberNotifications() : loadAdminNotifications(),
       loadCommentNotifications(),
       loadLessonNoteNotifications(),
       loadPersonalMoveNotifications(),
+      loadWorkoutNotifications(),
     ]);
     notifications = [
       ...baseNotifications,
       ...commentNotifications,
       ...noteNotifications,
       ...moveNotifications,
+      ...workoutNotifications,
     ].sort((a, b) => {
       if (a.persistent && !b.persistent) return -1;
       if (!a.persistent && b.persistent) return 1;

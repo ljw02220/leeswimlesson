@@ -4,7 +4,7 @@
 
 ## 1. 데이터베이스 준비
 
-Supabase SQL Editor에서 `supabase-web-push-migration.sql` 전체를 실행합니다.
+Supabase SQL Editor에서 `sql/05-notifications.sql` 전체를 실행합니다.
 
 ## 2. VAPID 키 만들기
 
@@ -54,3 +54,7 @@ Supabase Dashboard의 Database Webhooks에서 다음 Webhook을 만듭니다.
 - iPhone: Safari 공유 버튼에서 `홈 화면에 추가`하고, 홈 화면의 수영관리 아이콘으로 연 뒤 알림을 켭니다.
 
 기기마다 한 번씩 켜야 합니다. 브라우저 알림 권한을 차단했다면 휴대폰 설정에서 해당 사이트의 알림 권한을 다시 허용해야 합니다.
+
+## 테스트
+
+최신 05를 실행하고 Edge Function/키/Webhook 설정 후, 홈 화면 웹앱의 알림 패널에서 휴대폰 알림을 켜고 ‘내 기기로 테스트 알림 보내기’를 누릅니다. 실제 푸시 이벤트→Webhook→Edge Function→기기 경로로 본인에게만 보냅니다. 운동량 저장은 해당 날짜 단체수업·승인 보강 회원에게, 댓글은 해당 수업 회원과 관리자에게 알립니다. 같은 운동량을 그대로 재저장하면 중복 발송하지 않습니다.
