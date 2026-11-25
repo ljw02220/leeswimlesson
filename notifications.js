@@ -268,7 +268,14 @@
       return;
     }
     const subscription = await registration.pushManager.getSubscription();
-    const enabled = Boolean(subscription) && Notification.permission === 'granted';
+    let enabled = Boolean(subscription) && Notification.permission === 'granted';
+    if(enabled){
+      // A browser subscription can outlive a login or a failed server registration.
+      // Bind it to the current signed-in user before claiming notifications are on.
+      button.textContent='확인 중';button.disabled=true;
+      try{await callPushFunction({action:'subscribe',subscription:subscription.toJSON()});}
+      catch(error){button.textContent='다시 연결';button.dataset.enabled='false';button.disabled=false;button.classList.remove('is-on');throw error;}
+    }
     button.textContent = enabled ? '끄기' : '켜기';
     button.classList.toggle('is-on', enabled);
     button.disabled = false;
@@ -280,8 +287,6 @@
       setPushMessage(panel, '아이폰은 공유 버튼에서 홈 화면에 추가한 뒤, 추가된 아이콘으로 열어 켜주세요.');
     } else if (Notification.permission === 'denied') {
       setPushMessage(panel, '브라우저 설정에서 이 사이트의 알림 권한을 허용해주세요.', true);
-    } else {
-      setPushMessage(panel);
     }
   }
 
@@ -325,6 +330,10 @@
     panel.querySelector('.swim-push-test').addEventListener('click',async event=>{
       const button=event.currentTarget;button.disabled=true;
       try{
+        const registration=await getPushRegistration();
+        const subscription=await registration?.pushManager.getSubscription();
+        if(!subscription||Notification.permission!=='granted')throw Error('이 기기의 휴대폰 알림을 먼저 켜주세요.');
+        await callPushFunction({action:'subscribe',subscription:subscription.toJSON()});
         const {error}=await client.rpc('send_my_test_push');if(error)throw error;
         setPushMessage(panel,'테스트 발송을 요청했어요. 앱을 잠시 닫고 확인해주세요.');
       }catch(error){setPushMessage(panel,error.message||'테스트 발송을 요청하지 못했습니다.',true);}
@@ -334,6 +343,7 @@
     button.addEventListener('click', async () => {
       button.disabled = true;
       button.textContent = '처리 중';
+      setPushMessage(panel);
       try {
         if (button.dataset.enabled === 'true') await disablePush(panel);
         else await enablePush(panel);
@@ -343,6 +353,7 @@
       } finally {
         await refreshPushButton(panel).catch((error) => {
           console.warn('휴대폰 알림 상태 확인 실패:', error);
+          setPushMessage(panel,error.message||'기기 등록을 확인하지 못했습니다.',true);
         });
       }
     });
@@ -350,7 +361,7 @@
       console.warn('휴대폰 알림 준비 실패:', error);
       button.textContent = '설정 필요';
       button.disabled = false;
-      setPushMessage(panel, 'Supabase 휴대폰 알림 설정을 먼저 완료해주세요.', true);
+      setPushMessage(panel, error.message || '휴대폰 알림 서버 연결을 확인해주세요.', true);
     });
   }
 
