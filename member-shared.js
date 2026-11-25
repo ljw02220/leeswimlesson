@@ -1009,12 +1009,15 @@
     const includeHolidays = Boolean(options.includeHolidays);
     const limit = Number(options.limit || 4);
     const cancelledLessonKeys = await loadCancelledPersonalLessonKeys(member);
-    const personalLessons = (includeHolidays
-      ? createLessonSchedule(member, cancelledLessonKeys)
-      : createLessonDatePlan(member, cancelledLessonKeys)
-    ).filter(
-      (lesson) => lesson.date >= todayKey && lesson.status !== 'completed'
-    );
+    const moves=window.lessonMoves ? (await window.lessonMoves.load(getClient(),member.id)).filter(m=>(m.cycle_start_date||null)===(member.lesson_start_date||null)) : [];
+    const completed=new Set(member.completed_lesson_keys||[]);
+    for(const move of moves)if(completed.has(`${move.new_date}_${formatTime(move.new_time)}`)||cancelledLessonKeys.has(`${move.new_date}_${formatTime(move.new_time)}`))cancelledLessonKeys.add(`${move.original_date}_${formatTime(move.original_time)}`);
+    let personalLessons = (includeHolidays ? createLessonSchedule(member,cancelledLessonKeys) : createLessonDatePlan(member,cancelledLessonKeys));
+    if(window.lessonMoves)personalLessons=window.lessonMoves.apply(personalLessons.map(item=>({...item,memberId:member.id,memberIds:[member.id]})),moves,{
+      templates:[{id:member.id,memberId:member.id,memberIds:[member.id],title:member.lesson_format||'개인레슨',type:'personal',status:'scheduled'}],
+      statusFor:(date,time)=>completed.has(`${date}_${time}`)?'completed':cancelledLessonKeys.has(`${date}_${time}`)?'cancelled':'scheduled',
+    });
+    personalLessons=personalLessons.filter(lesson=>lesson.date>=todayKey&&!completed.has(`${lesson.date}_${formatTime(lesson.time)}`));
     const groupLessons = createGroupLessonSchedule(member, {
       includeHolidays,
       maxScheduled: Math.max(limit, 6),

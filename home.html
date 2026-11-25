@@ -9,8 +9,9 @@
     <title>홈</title>
 
     <link rel="stylesheet" href="common.css?v=20261104-mobile-layout" />
-    <link rel="stylesheet" href="home.css" />
-  </head>
+    <link rel="stylesheet" href="home.css?v=20261125-workout-button" />
+    <link rel="stylesheet" href="workout-plan.css?v=20261125-stroke-below" />
+</head>
 
   <body>
     <!-- 상단 네비게이션 -->
@@ -33,60 +34,36 @@
     </nav>
 
     <main class="management-page">
-      <!-- 페이지 제목 -->
-      <section class="page-heading">
-        <div>
-          <span class="page-kicker">Dashboard</span>
-          <h1>홈</h1>
-        </div>
+      <section class="home-heading">
+        <div><p class="page-kicker">TODAY</p><h1>오늘의 관리</h1><p id="homeTodayDate" class="home-date"></p></div>
+        <button type="button" id="homeRefresh" class="home-refresh">새로고침 <span aria-hidden="true">↻</span></button>
+      </section>
+      <p class="home-intro">오늘 수업과 확인할 일을 한눈에 살펴보세요.</p>
+      <p id="homeDashboardMessage" class="home-dashboard-message" role="status" hidden></p>
+
+      <section class="home-attention" aria-label="확인할 일">
+        <a href="finance.html#paymentRequests" class="home-task"><span class="home-task-icon" aria-hidden="true">₩</span><span class="home-task-title">입금 확인</span><strong id="homePaymentCount">—</strong><small>확인 대기 <span aria-hidden="true">→</span></small></a>
+        <a href="lessons.html?makeup=open" class="home-task"><span class="home-task-icon" aria-hidden="true">＋</span><span class="home-task-title">보강 신청</span><strong id="homeMakeupCount">—</strong><small>신청 · 횟수 확인 <span aria-hidden="true">→</span></small></a>
+        <a href="members.html" class="home-task"><span class="home-task-icon" aria-hidden="true">♙</span><span class="home-task-title">가입 승인</span><strong id="homeSignupCount">—</strong><small>승인 대기 <span aria-hidden="true">→</span></small></a>
+        <a href="#homeRecentComments" class="home-task"><span class="home-task-icon" aria-hidden="true">☷</span><span class="home-task-title">새 댓글</span><strong id="homeCommentCount">—</strong><small>수업 이야기 <span aria-hidden="true">↓</span></small></a>
       </section>
 
-      <!-- 인사말 -->
-      <span class="salutation"> 관리자님 안녕하세요! </span>
-
-      <!-- 요약 카드 -->
-      <section class="metric-grid home-metric-grid">
-        <a href="lessons.html" class="metric-card metric-link">
-          <span>오늘 수업</span>
-          <strong id="todayLessonCount">0건</strong>
-          <small>오늘 예정된 수업</small>
-        </a>
-
-        <a href="members.html" class="metric-card metric-link">
-          <span>전체 회원</span>
-          <strong id="totalMemberCount">0명</strong>
-          <small>등록된 개인레슨 회원</small>
-        </a>
-
-        <a href="members.html" class="metric-card metric-link">
-          <span>재등록 예정</span>
-          <strong id="renewalMemberCount">0명</strong>
-          <small>잔여 수업 1회 이하</small>
-        </a>
-
-        <a href="finance.html" class="metric-card metric-link income">
-          <span>이번 달 수입</span>
-          <strong id="monthlyIncome">0원</strong>
-          <small>이번 달 등록된 수입</small>
-        </a>
-      </section>
-
-      <!-- 대시보드 본문 -->
-      <section class="home-content-grid">
-        <!-- 오늘 수업 -->
-        <article class="manager-card">
-          <div class="card-header">
-            <div>
-              <h2>오늘 수업</h2>
-              <p>오늘 예정된 수업을 확인할 수 있습니다.</p>
-            </div>
-
-            <a href="lessons.html" class="home-more-link"> 수업관리 </a>
-          </div>
-
-          <div id="homeTodayLessons" class="home-list">
-            <div class="home-empty">오늘 예정된 수업이 없습니다.</div>
-          </div>
+      <section class="home-workspace">
+        <article class="manager-card home-schedule-card">
+          <div class="card-header"><div><h2>수업 달력</h2><p id="homeScheduleSummary">일정을 불러오고 있습니다.</p></div><a href="lessons.html" class="home-more-link">수업관리 →</a></div>
+          <div class="admin-calendar-navigation"><button type="button" id="homeCalendarPrev" aria-label="이전 달">‹</button><strong id="homeCalendarMonth"></strong><button type="button" id="homeCalendarNext" aria-label="다음 달">›</button><button type="button" id="homeCalendarToday">오늘</button></div>
+          <div class="admin-calendar-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+          <div id="homeCalendarDays" class="admin-calendar-days" aria-label="월간 수업 날짜"></div>
+          <p class="admin-calendar-legend"><span>● 예정</span><span>● 완료</span><span>● 새 댓글</span></p>
+          <details class="home-daily-workout" id="homeDailyWorkout"><summary>운동량 작성 <span id="homeWorkoutDate"></span></summary><form id="homeWorkoutForm"><div class="workout-editor" id="homeWorkoutEditor"></div><div class="home-note-actions"><p id="homeWorkoutMessage" role="status"></p><button type="submit" disabled>운동량 저장</button></div></form></details>
+          <h3 class="admin-selected-heading"><span id="homeSelectedDate"></span><span id="todayLessonCount" class="home-count">—</span></h3>
+          <div id="homeTodayLessons" class="home-list"><p class="home-empty">수업을 불러오는 중입니다.</p></div>
+        </article>
+        <article class="manager-card home-comments-card" id="homeRecentComments">
+          <div class="card-header"><div><h2>수업 댓글</h2><p>수업을 선택하고 댓글과 답글을 함께 확인하세요.</p></div><span id="homeCommentTotal" class="home-count"></span></div>
+          <label class="home-thread-label" for="homeCommentThreadSelect">수업 선택</label>
+          <select id="homeCommentThreadSelect" class="home-thread-select" disabled><option>불러오는 중입니다.</option></select>
+          <div id="homeCommentList" class="home-list"><p class="home-empty">댓글을 불러오는 중입니다.</p></div>
         </article>
       </section>
     </main>
@@ -94,7 +71,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20261104-admin-nav"></script>
-    <script src="home.js?v=20260911"></script>
-    <script src="notifications.js?v=20261104-mobile-layout"></script>
-  </body>
+    <script src="config.js"></script>
+    <script src="lesson-moves.js?v=20261125"></script>
+    <script src="lessons.js?v=20261125-moves"></script>
+    <script src="lesson-threads.js?v=20261124-replies"></script>
+<script src="workout-plan.js?v=20261125-group-phase"></script>
+    <script src="home.js?v=20261125-separated-workout"></script>
+    <script src="notifications.js?v=20261125-moves"></script>
+  <script src="admin-daily-workout.js?v=20261125"></script>
+</body>
 </html>

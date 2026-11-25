@@ -1,252 +1,94 @@
-/* ==================================================
-  1. 홈 본문 배치
-================================================== */
-
-.home-content-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-
-  gap: 18px;
-
-  margin-bottom: 18px;
-}
-
-/* ==================================================
-  2. 인사말
-================================================== */
-
-.salutation {
-  display: block;
-
-  margin: -4px 0 18px;
-
-  color: #344054;
-
-  font-size: 17px;
-  font-weight: 800;
-}
-
-/* ==================================================
-  3. 요약 카드 링크
-================================================== */
-
-.metric-link,
-.metric-link:visited,
-.metric-link:hover,
-.metric-link:active {
-  color: inherit;
-
-  text-decoration: none;
-}
-
-.metric-link {
-  cursor: pointer;
-
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.metric-link:hover {
-  transform: translateY(-2px);
-
-  box-shadow: 0 14px 34px rgba(38, 66, 104, 0.12);
-}
-
-/* ==================================================
-  4. 더보기 링크
-================================================== */
-
-.home-more-link {
-  flex-shrink: 0;
-
-  padding: 7px 10px;
-
-  border-radius: 8px;
-
-  background: #edf4ff;
-  color: #3976d1;
-
-  text-decoration: none;
-
-  font-size: 11px;
-  font-weight: 800;
-
-  transition: background 0.15s;
-}
-
-.home-more-link:hover {
-  background: #dfeeff;
-}
-
-/* ==================================================
-  5. 홈 목록
-================================================== */
-
-.home-list {
-  display: flex;
-  flex-direction: column;
-
-  gap: 8px;
-}
-
-.home-empty {
-  padding: 32px 16px;
-
-  border-radius: 9px;
-
-  background: #f8fafc;
-  color: #98a2b3;
-
-  text-align: center;
-
-  font-size: 12px;
-}
-
-/* ==================================================
-  6. 오늘 수업 항목
-================================================== */
-
-.home-lesson-item {
-  display: flex;
-  align-items: center;
-
-  gap: 10px;
-
-  min-height: 48px;
-
-  padding: 9px 11px;
-
-  border: 1px solid #edf1f5;
-  border-radius: 9px;
-
-  background: #fbfdff;
-}
-
-.home-lesson-time {
-  flex-shrink: 0;
-
-  width: 48px;
-
-  color: #26364d;
-
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.home-lesson-name {
-  flex: 1;
-
-  min-width: 0;
-
-  color: #65758a;
-
-  font-size: 12px;
-  font-weight: 600;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ==================================================
-  7. 수업 상태
-================================================== */
-
-.home-lesson-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  flex-shrink: 0;
-
-  min-width: 44px;
-  height: 26px;
-
-  padding: 0 8px;
-
-  border-radius: 20px;
-
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.home-lesson-status.scheduled {
-  background: #edf4ff;
-  color: #3976d1;
-}
-
-.home-lesson-status.completed {
-  background: #e8f7ee;
-  color: #219664;
-}
-
-.home-lesson-status.cancelled {
-  background: #ffe8e8;
-  color: #d95858;
-}
-
-/* ==================================================
-  8. 태블릿
-================================================== */
-
-@media (max-width: 850px) {
-  .home-content-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ==================================================
-  9. 모바일
-================================================== */
-
-@media (max-width: 430px) {
-  .salutation {
-    margin: -2px 0 14px;
-
-    font-size: 14px;
-  }
-
-  .home-content-grid {
-    gap: 12px;
-
-    margin-bottom: 12px;
-  }
-
-  .home-lesson-item {
-    gap: 8px;
-
-    min-height: 46px;
-
-    padding: 8px 9px;
-  }
-
-  .home-lesson-time {
-    width: 42px;
-
-    font-size: 11px;
-  }
-
-  .home-lesson-name {
-    font-size: 11px;
-  }
-
-  .home-lesson-status {
-    min-width: 40px;
-    height: 24px;
-
-    padding: 0 7px;
-
-    font-size: 9px;
-  }
-
-  .home-more-link {
-    padding: 6px 8px;
-
-    font-size: 10px;
-  }
-
-  .home-empty {
-    padding: 26px 12px;
-
-    font-size: 11px;
-  }
-}
+.home-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.home-heading h1 { font-size:30px; letter-spacing:-1px; margin:4px 0 8px; }
+.home-date { color:#52657a; font-size:14px; }
+.home-refresh { border:1px solid #d9e3ed; border-radius:10px; padding:11px 14px; background:#fff; color:#3e5c79; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.home-refresh span { margin-left:10px; font-size:17px; }
+.home-refresh:disabled { opacity:.6; cursor:wait; }
+.home-intro { color:#718197; font-size:13px; line-height:1.6; margin:14px 0 24px; }
+.home-dashboard-message { padding:12px 16px; background:#fff7ed; color:#9a571b; border-radius:10px; font-size:13px; margin-bottom:16px; }
+.home-attention { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:24px; }
+.home-task { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:20px; background:#fff; border:1px solid #dce6ef; border-radius:14px; color:#243c56; text-decoration:none; transition:border-color .15s,transform .15s; }
+.home-task:hover { border-color:#8db6eb; transform:translateY(-2px); }
+.home-task-icon { grid-column:2; grid-row:1/3; display:flex; justify-content:center; align-items:center; align-self:start; width:36px; height:36px; border-radius:10px; background:#eff6ff; color:#3478d8; font-size:20px; }
+.home-task-title { font-size:13px; font-weight:700; color:#677c91; }
+.home-task strong { grid-column:1; font-size:28px; letter-spacing:-1px; }
+.home-task small { grid-column:1/-1; display:flex; justify-content:space-between; color:#8c9aab; font-size:11px; margin-top:8px; }
+.home-workspace { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); align-items:start; gap:20px; }
+.home-workspace .manager-card { min-width:0; box-shadow:none; padding:22px; border:1px solid #dce6ef; border-radius:14px; }
+.home-workspace .card-header { align-items:start; gap:12px; margin-bottom:18px; }
+.home-workspace h2 { display:flex; align-items:center; gap:8px; font-size:18px; }
+.home-workspace .card-header p { font-size:12px; color:#8391a2; margin-top:7px; line-height:1.5; }
+.home-count { border-radius:6px; background:#f0f5fa; color:#5f7892; padding:4px 7px; font-size:11px; font-weight:700; white-space:nowrap; }
+.home-more-link { flex-shrink:0; font-size:12px; font-weight:700; color:#3478d8; text-decoration:none; padding:6px 0; }
+.home-list { display:grid; gap:0; }
+.home-empty { padding:36px 12px; color:#8d9aab; background:#f8fafc; border-radius:10px; text-align:center; font-size:12px; line-height:1.8; }
+.home-lesson-item { display:flex; align-items:center; gap:14px; min-width:0; padding:17px 0; color:inherit; text-decoration:none; border-bottom:1px solid #edf2f7; }
+.home-lesson-item:last-child { border-bottom:0; }
+.home-lesson-time { font-size:16px; font-weight:800; color:#234562; font-variant-numeric:tabular-nums; }
+.home-lesson-info { min-width:0; flex:1; display:grid; gap:5px; }
+.home-lesson-info span { color:#8b9aab; font-size:11px; }.home-lesson-info strong { overflow-wrap:anywhere; color:#3b536c; font-size:13px; }
+.home-lesson-status { border-radius:7px; padding:6px 9px; font-size:11px; font-weight:700; flex-shrink:0; }
+.home-lesson-status.scheduled { background:#edf4ff; color:#3478d8; }.home-lesson-status.completed { background:#eaf7ef; color:#278755; }.home-lesson-status.cancelled { background:#fff0f0; color:#c96565; }
+.home-comment-item { display:block; color:inherit; text-decoration:none; padding:16px 0; border-bottom:1px solid #edf2f7; }
+.home-comment-item:last-child { border-bottom:0; }.home-comment-heading { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+.home-comment-heading strong { font-size:13px; color:#35506a; }.home-comment-heading time { width:100%; font-size:11px; color:#8c9aab; }
+.home-unread { font-size:9px; font-weight:700; color:#3478d8; background:#eff6ff; padding:3px 5px; border-radius:5px; }
+.home-comment-item p { margin:9px 0; color:#60748a; font-size:12px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+.home-comment-open { font-size:10px; color:#3478d8; }
+.home-task:focus-visible,.home-more-link:focus-visible,.home-lesson-item:focus-visible,.home-comment-item:focus-visible,.home-refresh:focus-visible { outline:3px solid #8db6eb; outline-offset:4px; }
+@media(max-width:850px) { .home-attention { gap:10px; }.home-task { padding:15px; }.home-task-icon { width:28px; height:28px; font-size:16px; }.home-task strong { font-size:25px; }.home-workspace { grid-template-columns:1fr; } }
+@media(max-width:560px) { .home-heading h1 { font-size:25px; }.home-date { font-size:12px; }.home-intro { font-size:12px; margin-bottom:18px; }.home-attention { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:16px; }.home-task { border-radius:12px; gap:7px; }.home-task-title { font-size:12px; }.home-task small { font-size:10px; }.home-workspace { gap:14px; }.home-workspace .manager-card { padding:17px; }.home-workspace h2 { font-size:16px; }.home-lesson-time { font-size:14px; }.home-refresh { padding:9px 11px; }.home-lesson-item { gap:10px; } }
+.home-thread-label { display:block; font-size:11px; color:#788da2; margin-bottom:7px; }
+.home-thread-select { width:100%; min-width:0; box-sizing:border-box; min-height:44px; border:1px solid #dce6ef; border-radius:9px; padding:10px; background:#fff; color:#35506a; font:inherit; font-size:13px; margin-bottom:18px; }
+.home-thread-note { padding:13px; background:#f5f8fc; border-radius:9px; font-size:12px; color:#4c647d; margin-bottom:14px; }
+.home-thread-note p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.7; margin-top:7px; }
+.home-thread .lesson-comment { border:0; background:transparent; padding:12px 0; font-size:13px; color:#4d6379; }
+.home-thread .lesson-comment > div { display:flex; align-items:start; justify-content:space-between; gap:10px; }
+.home-thread .lesson-comment strong { color:#294763; font-size:12px; }
+.home-thread .lesson-comment time { display:block; margin-top:4px; color:#90a0b1; font-size:10px; }
+.home-thread .lesson-comment p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.7; margin:8px 0 0; }
+.home-thread .lesson-comment.lesson-reply { margin-left:20px; }
+.home-thread .lesson-comment-thread + .lesson-comment-thread { border-top:1px solid #edf2f7; }
+.home-thread .lesson-comment-delete,.home-thread .lesson-reply-button { border:0; padding:5px 0; background:transparent; color:#3478d8; font:inherit; font-size:11px; cursor:pointer; }
+.home-thread .lesson-comment-delete { color:#a58282; }
+.home-thread-form { display:grid; gap:8px; margin-top:16px; }
+.home-thread-form > label { font-size:12px; font-weight:700; color:#617891; }
+.home-thread-input-row { display:flex; align-items:stretch; gap:8px; }
+.home-thread-form textarea { box-sizing:border-box; width:100%; min-width:0; min-height:70px; padding:10px; border:1px solid #dce6ef; border-radius:9px; resize:vertical; font:inherit; font-size:14px; line-height:1.5; }
+.home-thread-input-row button { flex-shrink:0; border:0; border-radius:9px; background:#3478d8; color:#fff; padding:10px 14px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.home-thread-form button:disabled { opacity:.6; cursor:wait; }
+.home-thread-message { font-size:12px; color:#6b8198; overflow-wrap:anywhere; }
+.home-thread .lesson-reply-context { display:flex; align-items:center; justify-content:space-between; padding:9px; border-radius:7px; background:#eff6ff; color:#3478d8; font-size:12px; gap:8px; }
+.home-thread .lesson-reply-context button { border:0; background:transparent; color:#617891; padding:5px; cursor:pointer; }
+@media(max-width:560px) { .home-thread-form textarea { font-size:16px; }.home-thread-select { font-size:14px; } }
+.admin-calendar-navigation { display:flex; align-items:center; gap:8px; margin:14px 0 18px; }
+.admin-calendar-navigation strong { flex:1; text-align:center; font-size:17px; color:#294763; }
+.admin-calendar-navigation button { min-width:36px; min-height:36px; padding:6px 10px; border:1px solid #dce6ef; border-radius:8px; background:#fff; color:#3478d8; font:inherit; font-size:13px; cursor:pointer; }
+.admin-calendar-weekdays,.admin-calendar-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; }
+.admin-calendar-weekdays { text-align:center; font-size:11px; color:#8b9aab; padding-bottom:9px; }
+.admin-calendar-weekdays span:first-child { color:#d26c74; }.admin-calendar-weekdays span:last-child { color:#3478d8; }
+.admin-calendar-day { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:61px; padding:6px 0; border:1px solid transparent; border-radius:9px; background:#f5f8fb; color:#3b536c; font:inherit; font-size:13px; cursor:pointer; }
+.admin-calendar-day.today { border-color:#8db6eb; font-weight:800; }.admin-calendar-day.selected { background:#3478d8; color:white; }
+.admin-calendar-marks { display:flex; justify-content:center; gap:3px; height:5px; }.admin-calendar-marks i { width:5px; height:5px; border-radius:50%; background:#3478d8; }
+.admin-calendar-marks i.completed { background:#278755; }.admin-calendar-marks i.comments { background:#e8983e; }
+.admin-calendar-day.selected i { box-shadow:0 0 0 1px white; }
+.admin-calendar-legend { display:flex; justify-content:flex-end; gap:10px; margin:12px 0 18px; color:#3478d8; font-size:10px; }.admin-calendar-legend span:nth-child(2) { color:#278755; }.admin-calendar-legend span:nth-child(3) { color:#d28b38; }
+.admin-selected-heading { display:flex; align-items:center; gap:8px; border-top:1px solid #edf2f7; padding-top:18px; font-size:14px; color:#294763; }
+button.home-lesson-item { background:transparent; border:0; border-bottom:1px solid #edf2f7; width:100%; font:inherit; text-align:left; cursor:pointer; }
+@media(max-width:560px) { .admin-calendar-day { min-height:52px; font-size:12px; }.admin-calendar-navigation { gap:5px; }.admin-calendar-navigation strong { font-size:15px; } }
+.home-note-form label { display:block; font-weight:800; color:#35506a; margin-bottom:9px; }
+.home-note-form textarea { box-sizing:border-box; display:block; width:100%; min-height:115px; padding:11px; border:1px solid #d6e2ee; border-radius:8px; background:#fff; color:#35506a; font:inherit; font-size:13px; line-height:1.7; resize:vertical; }
+.home-note-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; }
+.home-note-actions p { font-size:11px; line-height:1.5; margin:0; }
+.home-note-actions button { flex-shrink:0; padding:9px 12px; border:0; border-radius:8px; background:#3478d8; color:#fff; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.home-note-form button:disabled { opacity:.5; cursor:wait; }
+@media(max-width:560px) { .home-note-form textarea { font-size:16px; } }
+.home-note-form .home-class-distance { display:grid; gap:7px; margin:14px 0 0; font-size:12px; }
+.home-class-distance input { box-sizing:border-box; width:100%; min-height:42px; padding:10px; border:1px solid #d6e2ee; border-radius:8px; background:#fff; color:#35506a; font:inherit; font-size:16px; }
+.home-class-distance small { font-size:10px; font-weight:400; color:#8598ab; }
+
+.home-daily-workout { margin:16px 0; border:1px solid #c9dff4; border-radius:10px; padding:0 13px; background:#f7fbff; }
+.home-daily-workout > summary { padding:13px 0; cursor:pointer; color:#315f8f; font-size:13px; font-weight:700; }
+.home-daily-workout > summary span { float:right; color:#718ba5; font-size:11px; font-weight:500; }
+.home-daily-workout .workout-editor { margin-top:0; border-top:1px solid #dce6ef; }
+.home-daily-workout .home-note-actions { margin-bottom:14px; }

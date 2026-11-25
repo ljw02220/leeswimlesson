@@ -58,6 +58,7 @@
   const deleteLessonBtn = document.querySelector('#delete-lesson-btn');
 
   let selectedLesson = null;
+  let suppressMoveClickUntil = 0;
 
   /* ==================================================
   2. 날짜
@@ -187,6 +188,8 @@
 ================================================== */
 
   let personalSchedule = [];
+  let personalLessonMoves = [];
+  let visiblePersonalDays = {};
   let personalScheduleLoaded = false;
   let lessonRecordStateLoaded = false;
 
@@ -393,6 +396,8 @@
         throw error;
       }
 
+      personalLessonMoves = window.lessonMoves ? await window.lessonMoves.load(window.swimDb.client) : [];
+      personalLessonMoves = personalLessonMoves.filter(move => (data || []).some(m=>m.id===move.member_id && (m.lesson_start_date || null)===(move.cycle_start_date || null)));
       personalSchedule = mergePersonalScheduleEntries(
         (data || []).map(mapDatabaseMemberToPersonalSchedule).filter(Boolean)
       );
@@ -487,7 +492,7 @@
               (item.memberIds || [])
                 .map(String)
                 .includes(String(row.member_id)) &&
-              normalizeTimeValue(item.time) === time
+              (normalizeTimeValue(item.time) === time || personalLessonMoves.some(move=>move.member_id===row.member_id&&move.new_date===row.lesson_date&&normalizeTimeValue(move.new_time)===time))
             );
           }) ||
           (row.member_id
@@ -733,13 +738,12 @@
         dayIndexes.includes(currentDate.getDay()) &&
         !holidaysByDate[dateKey]
       ) {
-        lessonDates.push(dateKey);
-
-        const lessonKey = getLessonKey(dateKey, {
-          id: lesson.id,
-          time: lesson.time,
-          type: 'personal',
+        const move=personalLessonMoves.find(m=>(lesson.memberIds||[lesson.memberId]).includes(m.member_id)&&m.original_date===dateKey&&normalizeTimeValue(m.original_time)===lesson.time);
+        const lessonKey = getLessonKey(move?.new_date || dateKey, {
+          id: lesson.id, time: move ? normalizeTimeValue(move.new_time) : lesson.time, type: 'personal',
         });
+        if(move && completedLessons[lessonKey]) { currentDate.setDate(currentDate.getDate()+1); guard+=1; continue; }
+        lessonDates.push(dateKey);
 
         if (cancelledLessons[lessonKey] !== true) {
           activeLessonCount += 1;
@@ -793,6 +797,16 @@
       personalLessonsByDate[lesson.date] = lessonsForDate;
     });
 
+    if(window.lessonMoves && personalLessonMoves.length){
+      const items=Object.entries(personalLessonsByDate).flatMap(([date,rows])=>rows.map(row=>({...row,date})));
+      const templates=personalSchedule.map(row=>({...row,title:row.name,type:'personal'}));
+      const mapped=window.lessonMoves.apply(items,personalLessonMoves,{templates,statusFor:(date,time,ids)=>{
+        const key=getLessonKey(date,{id:ids.join('+'),time,type:'personal'});
+        return completedLessons[key]?'completed':cancelledLessons[key]?'cancelled':'scheduled';
+      }});
+      for(const key of Object.keys(personalLessonsByDate)) delete personalLessonsByDate[key];
+      for(const row of mapped)(personalLessonsByDate[row.date]??=[]).push(row);
+    }
     return personalLessonsByDate;
   }
 
@@ -1460,6 +1474,7 @@
       );
 
       scheduleByDate[dateKey] = daySchedule;
+      visiblePersonalDays[dateKey] = daySchedule;
 
       const scheduleHTML = daySchedule
         .map((item) => {
@@ -1479,6 +1494,7 @@
                 ${isCompleted ? 'completed' : ''}
               "
               data-lesson-key="${lessonKey}"
+              draggable="${item.type==='personal'&&!isCompleted&&!isCancelled}"
               onclick="
                 openLessonDetail(
                   '${dateKey}',
@@ -1704,6 +1720,8 @@
 ================================================== */
 
   function findLesson(dateKey, lessonKey) {
+    const visible=(visiblePersonalDays[dateKey]||[]).find(item=>getLessonKey(dateKey,item)===lessonKey);
+    if(visible)return {...visible,date:dateKey};
     const makeupLesson = (window.makeupCalendarLessons || []).find(
       (item) =>
         item.date === dateKey && getLessonKey(dateKey, item) === lessonKey
@@ -1774,6 +1792,7 @@
 ================================================== */
 
   function openLessonDetail(dateKey, lessonKey) {
+    if(Date.now()<suppressMoveClickUntil)return;
     const lesson = findLesson(dateKey, lessonKey);
 
     if (!lesson) {
@@ -1809,6 +1828,8 @@
       detailTitle.textContent = getLessonName(lesson);
     }
 
+    const moveButton=document.getElementById('movePersonalLessonButton');
+    if(moveButton)moveButton.hidden=lesson.type!=='personal'||Boolean(completedLessons[lessonKey]||cancelledLessons[lessonKey]);
     if (detailStatus) {
       if (cancelledLessons[lessonKey]) {
         detailStatus.value = 'cancelled';
@@ -2161,8 +2182,134 @@
   28. 처음 실행
 ================================================== */
 
+  let moveDraft = null;
+  let draggingMove = null;
+  let touchMoveTimer = null;
+  let touchStartPoint = null;
+  let touchMoveActive = false;
+  const moveDialog=document.getElementById('personalLessonMoveDialog');
+  function clearMoveHighlight(){daysTag?.querySelectorAll('.move-drop-target').forEach(day=>day.classList.remove('move-drop-target'));}
+  function lessonFromElement(element){
+    const item=element?.closest('.schedule-item[data-lesson-key]');
+    const day=item?.closest('[data-date-key]');
+    if(!item||!day||item.getAttribute('draggable')!=='true')return null;
+    return {...findLesson(day.dataset.dateKey,item.dataset.lessonKey),date:day.dataset.dateKey,lessonKey:item.dataset.lessonKey};
+  }
+  function showMoveDialog(lesson,date){
+    if(!lesson||lesson.type!=='personal'||completedLessons[lesson.lessonKey]||cancelledLessons[lesson.lessonKey])return;
+    moveDraft={...lesson};
+    document.getElementById('personalMoveDescription').textContent=`${getLessonName(lesson)} · ${lesson.date} ${lesson.time}`;
+    const dateInput=document.getElementById('personalMoveDate');
+    dateInput.min=getDateKey(new Date());dateInput.value=date||lesson.date;
+    document.getElementById('personalMoveTime').value=lesson.time;
+    document.getElementById('personalMoveMessage').textContent='이번 수업 한 번만 변경됩니다. 정기 요일과 잔여 횟수는 유지돼요.';
+    if(!moveDialog.open)moveDialog.showModal();
+  }
+  document.getElementById('movePersonalLessonButton')?.addEventListener('click',()=>showMoveDialog(selectedLesson));
+  document.getElementById('personalMoveClose')?.addEventListener('click',()=>moveDialog.close());
+  moveDialog?.addEventListener('click',event=>{if(event.target!==moveDialog)return;const r=moveDialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)moveDialog.close();});
+  document.getElementById('personalMoveForm')?.addEventListener('submit',async event=>{
+    event.preventDefault();if(!moveDraft)return;
+    const button=document.getElementById('personalMoveSave');if(button.disabled)return;
+    const draft={...moveDraft};const targetDate=document.getElementById('personalMoveDate').value;
+    const targetTime=document.getElementById('personalMoveTime').value.slice(0,5);
+    if(targetDate===draft.date&&targetTime===draft.time){moveDialog.close();return;}
+    button.disabled=true;const message=document.getElementById('personalMoveMessage');message.textContent='일정을 확인하고 있습니다.';
+    try{
+      if(!hasSupabaseConnection())throw Error('서버에 연결한 뒤 일정을 변경해주세요.');
+      const date=new Date(`${targetDate}T00:00:00`);
+      const targetMonth=await window.swimAdminSchedule.getMonth(date.getFullYear(),date.getMonth());
+      const overlaps=targetMonth.some(item=>item.date===targetDate&&normalizeTimeValue(item.time)===targetTime&&item.status!=='cancelled'&&item.status!=='deleted'
+        &&!(item.date===draft.date&&normalizeTimeValue(item.time)===draft.time&&item.type==='personal'&&(item.memberIds||[item.memberId]).every(id=>(draft.memberIds||[draft.memberId]).includes(id))));
+      if(overlaps)throw Error('선택한 날짜·시간에 다른 수업이 있습니다. 시간을 다시 선택해주세요.');
+      const memberIds=draft.memberIds?.length?draft.memberIds:[draft.memberId].filter(Boolean);
+      const {error}=await window.swimDb.client.rpc('move_personal_lesson',{p_member_ids:memberIds,p_original_date:draft.originalDate||draft.date,p_original_time:draft.originalTime||draft.time,p_new_date:targetDate,p_new_time:targetTime});
+      if(error)throw error;
+      moveDialog.close();closeLessonDetailModal();
+      selectedCalendarDateKey=targetDate;calendarStartDate=new Date(date);calendarStartDate.setDate(date.getDate()-date.getDay());
+      await renderCalendar();
+      window.dispatchEvent(new CustomEvent('swim-personal-lesson-moved'));
+    }catch(error){message.textContent=`변경하지 못했습니다. ${getErrorText(error)} 최신 기본 DB 스키마 적용 여부도 확인해주세요.`;}
+    finally{button.disabled=false;}
+  });
+  daysTag?.addEventListener('dragstart',event=>{
+    const lesson=lessonFromElement(event.target);if(!lesson){event.preventDefault();return;}
+    draggingMove=lesson;suppressMoveClickUntil=Date.now()+1000;
+    event.dataTransfer.setData('text/plain',lesson.lessonKey);event.dataTransfer.effectAllowed='move';
+  });
+  daysTag?.addEventListener('dragover',event=>{
+    if(!draggingMove)return;const day=event.target.closest('[data-date-key]');if(!day)return;
+    event.preventDefault();clearMoveHighlight();day.classList.add('move-drop-target');event.dataTransfer.dropEffect='move';
+  });
+  daysTag?.addEventListener('drop',event=>{
+    if(!draggingMove)return;event.preventDefault();const day=event.target.closest('[data-date-key]');
+    const lesson=draggingMove;draggingMove=null;clearMoveHighlight();suppressMoveClickUntil=Date.now()+1000;
+    if(day)showMoveDialog(lesson,day.dataset.dateKey);
+  });
+  daysTag?.addEventListener('dragend',()=>{draggingMove=null;clearMoveHighlight();suppressMoveClickUntil=Date.now()+500;});
+  function cancelTouchMove(){clearTimeout(touchMoveTimer);touchMoveTimer=null;touchStartPoint=null;}
+  daysTag?.addEventListener('touchstart',event=>{
+    cancelTouchMove();if(event.touches.length!==1||event.target.closest('.check-circle'))return;
+    const lesson=lessonFromElement(event.target);if(!lesson)return;
+    const point=event.touches[0];touchStartPoint={x:point.clientX,y:point.clientY};
+    touchMoveTimer=setTimeout(()=>{touchMoveActive=true;draggingMove=lesson;suppressMoveClickUntil=Date.now()+2000;},500);
+  },{passive:true});
+  daysTag?.addEventListener('touchmove',event=>{
+    if(event.touches.length!==1)return;const p=event.touches[0];
+    if(!touchMoveActive){if(touchStartPoint&&(Math.abs(p.clientX-touchStartPoint.x)>10||Math.abs(p.clientY-touchStartPoint.y)>10))cancelTouchMove();return;}
+    event.preventDefault();clearMoveHighlight();document.elementFromPoint(p.clientX,p.clientY)?.closest('[data-date-key]')?.classList.add('move-drop-target');
+  },{passive:false});
+  daysTag?.addEventListener('touchend',event=>{
+    cancelTouchMove();if(!touchMoveActive)return;
+    const p=event.changedTouches[0];const day=document.elementFromPoint(p.clientX,p.clientY)?.closest('[data-date-key]');
+    const lesson=draggingMove;touchMoveActive=false;draggingMove=null;clearMoveHighlight();suppressMoveClickUntil=Date.now()+1000;
+    if(day)showMoveDialog(lesson,day.dataset.dateKey);
+  });
+  daysTag?.addEventListener('touchcancel',()=>{cancelTouchMove();touchMoveActive=false;draggingMove=null;clearMoveHighlight();});
+  daysTag?.addEventListener('contextmenu',event=>{if(lessonFromElement(event.target))event.preventDefault();});
+  daysTag?.addEventListener('click',event=>{if(Date.now()<suppressMoveClickUntil){event.preventDefault();event.stopPropagation();}},true);
+
+  // Home uses the same schedule engine as the lesson calendar.
+  window.swimAdminSchedule = {
+    async getMonth(year, month) {
+      personalScheduleLoaded = false;
+      lessonRecordStateLoaded = false;
+      recordedPersonalLessons = {};
+      await loadPersonalSchedule();
+      await loadLessonRecordState();
+      const holidays = await getHolidayMap(year, month);
+      const personal = createPersonalLessonsByDate(holidays);
+      const rows = [];
+      for (let day=1; day<=new Date(year,month+1,0).getDate(); day++) {
+        const date = new Date(year,month,day);
+        const dateKey = getDateKey(date);
+        for (const item of getDaySchedule(date,dateKey,holidays[dateKey],personal)) {
+          const key = getLessonKey(dateKey,item);
+          rows.push({...item,date:dateKey,lessonKey:key,title:getLessonName(item),status:cancelledLessons[key]?'cancelled':completedLessons[key]?'completed':'scheduled'});
+        }
+      }
+      return rows;
+    },
+    async getToday() {
+      personalScheduleLoaded = false;
+      lessonRecordStateLoaded = false;
+      recordedPersonalLessons = {};
+      await loadPersonalSchedule();
+      await loadLessonRecordState();
+      const schedule = await getTodaySchedule();
+      const dateKey = getDateKey(today);
+      return schedule.map((item) => {
+        const key = getLessonKey(dateKey, item);
+        return {...item, lessonKey:key, name:getLessonName(item),
+          status:cancelledLessons[key] ? 'cancelled' : completedLessons[key] ? 'completed' : 'scheduled'};
+      });
+    },
+  };
+  if (!daysTag) return;
+
   window.openLessonDetail = openLessonDetail;
   window.toggleComplete = toggleComplete;
 
-  renderCalendar();
+  const linkedDate = new URLSearchParams(window.location.search).get('date');
+  if (!linkedDate || !goToCalendarDate(linkedDate)) renderCalendar();
 })();

@@ -553,16 +553,25 @@
     });
   }
 
+  async function loadPersonalMoveNotifications() {
+    if(!isMember)return [];
+    const {data,error}=await client.from('personal_lesson_moves').select('id,new_date,new_time,updated_at').order('updated_at',{ascending:false}).limit(20);
+    if(error)return [];
+    return (data||[]).map(move=>({title:'개인레슨 일정이 변경됐어요.',message:`${move.new_date} ${String(move.new_time).slice(0,5)} 수업을 확인해주세요.`,href:`member-home.html?date=${encodeURIComponent(move.new_date)}`,createdAt:move.updated_at}));
+  }
+
   async function refresh(trigger, panel) {
-    const [baseNotifications, commentNotifications, noteNotifications] = await Promise.all([
+    const [baseNotifications, commentNotifications, noteNotifications, moveNotifications] = await Promise.all([
       isMember ? loadMemberNotifications() : loadAdminNotifications(),
       loadCommentNotifications(),
       loadLessonNoteNotifications(),
+      loadPersonalMoveNotifications(),
     ]);
     notifications = [
       ...baseNotifications,
       ...commentNotifications,
       ...noteNotifications,
+      ...moveNotifications,
     ].sort((a, b) => {
       if (a.persistent && !b.persistent) return -1;
       if (!a.persistent && b.persistent) return 1;

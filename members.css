@@ -1153,3 +1153,5 @@
 @media (max-width: 430px) {
   .members-page .member-list-card .member-sort { width: 122px; height: 34px; font-size: 11px; }
 }
+/* The personal lesson period panel now lives in lesson management. */
+.members-page .content-grid { grid-template-columns:minmax(0,1fr); }

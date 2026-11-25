@@ -9,6 +9,7 @@
     <title>수업관리</title>
 
     <link rel="stylesheet" href="common.css?v=20261104-mobile-layout" />
+    <link rel="stylesheet" href="personal-lesson-periods.css?v=20261125-moves" />
   </head>
 
   <body>
@@ -36,9 +37,17 @@
           <h1>수업관리</h1>
         </div>
 
+        <div class="lesson-heading-actions">
+          <button type="button" id="togglePersonalPeriods" aria-expanded="false" aria-controls="personalPeriodPanel">개인레슨 일정</button>
         <button type="button" class="primary-action" id="makeupManageButton">
           보강 관리
         </button>
+        </div>
+      </section>
+
+      <section id="personalPeriodPanel" class="manager-card personal-period-card" hidden aria-labelledby="personalPeriodTitle">
+        <div class="card-header"><div><h2 id="personalPeriodTitle">개인레슨 일정 <span id="personalLessonPeriodCount"></span></h2><p>마감일이 가까운 순서로 보여요. 회원을 누르면 자세히 볼 수 있어요.</p></div><button type="button" id="reloadPersonalLessonPeriods">다시 불러오기</button></div>
+        <div id="personalLessonPeriods" class="lesson-period-list"></div>
       </section>
 
       <section class="schedule-panel">
@@ -120,8 +129,14 @@
           </section>
         </div>
       </section>
+
     </main>
 
+    <dialog id="personalLessonMoveDialog" class="personal-move-dialog" aria-labelledby="personalMoveTitle">
+      <div class="personal-move-heading"><h2 id="personalMoveTitle">개인레슨 일정 변경</h2><button type="button" id="personalMoveClose" aria-label="닫기">×</button></div>
+      <p id="personalMoveDescription"></p>
+      <form id="personalMoveForm"><label>변경할 날짜<input type="date" id="personalMoveDate" required></label><label>변경할 시간<input type="time" id="personalMoveTime" step="300" required></label><p id="personalMoveMessage" role="status"></p><button type="submit" id="personalMoveSave">일정 변경 확인</button></form>
+    </dialog>
     <!-- 수업 추가 팝업 -->
     <div class="lesson-modal" id="lesson-modal" aria-hidden="true">
       <div
@@ -261,6 +276,7 @@
             </select>
           </div>
 
+          <button type="button" id="movePersonalLessonButton" class="move-personal-button" hidden>일정 변경</button>
           <div class="detail-memo-row">
             <label class="detail-label" for="detail-memo"> 수업 내용 </label>
 
@@ -303,9 +319,11 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20261104-admin-nav"></script>
-    <script src="lessons.js?v=20261104-date-text"></script>
-    <script src="makeup-admin.js?v=20261001-calendar"></script>
+    <script src="lesson-moves.js?v=20261125"></script>
+    <script src="lessons.js?v=20261125-moves"></script>
+    <script src="personal-lesson-periods.js?v=20261125-moves"></script>
+    <script src="makeup-admin.js?v=20261124-dashboard"></script>
     <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
-    <script src="notifications.js?v=20261104-mobile-layout"></script>
+    <script src="notifications.js?v=20261125-moves"></script>
   </body>
 </html>

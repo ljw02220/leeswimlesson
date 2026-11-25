@@ -7,7 +7,7 @@
     <link rel="manifest" href="site.webmanifest" />
 
     <link rel="stylesheet" href="common.css?v=20261104-mobile-layout" />
-    <link rel="stylesheet" href="members.css?v=20261104-sort-right" />
+    <link rel="stylesheet" href="members.css?v=20261125-member-list" />
 
     <title>회원관리</title>
   </head>
@@ -58,7 +58,7 @@
         </div>
       </section>
 
-      <!-- 회원 목록 / 개인레슨 일정 -->
+      <!-- 회원 목록 -->
       <section class="content-grid">
         <div class="manager-card member-list-card">
           <div class="card-header">
@@ -104,14 +104,7 @@
           </div>
         </div>
 
-        <!-- 개인레슨 일정 -->
-        <aside class="manager-card side-card">
-          <div class="card-header compact">
-            <h2>개인레슨 일정</h2>
-          </div>
 
-          <div class="lesson-period-list"></div>
-        </aside>
       </section>
     </main>
 
@@ -410,7 +403,7 @@
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=20261104-admin-nav"></script>
-    <script src="members.js?v=20261104-sort-only"></script>
+    <script src="members.js?v=20261125-periods-moved"></script>
     <script src="notifications.js?v=20261104-mobile-layout"></script>
   </body>
 </html>

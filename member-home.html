@@ -9,7 +9,8 @@
     <title>회원 홈</title>
 
     <link rel="stylesheet" href="member-home.css?v=20261001-two-weeks" />
-    <link rel="stylesheet" href="member-portal.css?v=20261124-profile-icon" />
+    <link rel="stylesheet" href="member-portal.css?v=20261125-participation" />
+    <link rel="stylesheet" href="workout-plan.css?v=20261125-stroke-below" />
   </head>
 
   <body class="member-page">
@@ -47,46 +48,107 @@
           </h1>
 
           <p>수업 일정을 확인하고, 코치와 이야기를 나눠보세요.</p>
-          <p id="personalLessonRemaining" class="home-personal-remaining" hidden>개인레슨 · 남은 수업 <strong id="remainingLessons">0회</strong></p>
+          <p
+            id="personalLessonRemaining"
+            class="home-personal-remaining"
+            hidden
+          >
+            개인레슨 · 남은 수업 <strong id="remainingLessons">0회</strong>
+          </p>
         </div>
 
-        <a href="member-profile.html" class="member-profile-mini member-profile-shortcut" aria-label="내 정보">
+        <a
+          href="member-profile.html"
+          class="member-profile-mini member-profile-shortcut"
+          aria-label="내 정보"
+        >
           <div class="member-avatar"><i data-lucide="user-round"></i></div>
           <span>내 정보</span>
         </a>
       </section>
 
       <nav class="home-compact-actions" aria-label="회원 바로가기">
-        <a id="testAccountLink" href="test-members.html" hidden>전체 회원 조회 · 테스트</a>
-        <button type="button" id="makeupModalOpen"><i data-lucide="calendar-plus"></i>보강 신청</button>
-        <button type="button" id="paymentReportOpen" aria-haspopup="dialog"><i data-lucide="wallet"></i>결제 알리기</button>
+        <a id="testAccountLink" href="test-members.html" hidden
+          >전체 회원 조회 · 테스트</a
+        >
+        <button type="button" id="makeupModalOpen">
+          <i data-lucide="calendar-plus"></i>보강 신청
+        </button>
+        <button type="button" id="paymentReportOpen" aria-haspopup="dialog">
+          <i data-lucide="wallet"></i>결제 알리기
+        </button>
       </nav>
 
-      <section class="member-card home-calendar-card" aria-label="한 달 수업 달력">
+      <section
+        class="member-card home-calendar-card"
+        aria-label="한 달 수업 달력"
+      >
         <div class="member-card-header">
-          <div class="member-card-title"><i data-lucide="calendar-days"></i><h2>내 수업 달력</h2></div>
-          <button type="button" id="homeCalendarToday" class="member-card-link member-card-button">오늘</button>
+          <div class="member-card-title">
+            <i data-lucide="calendar-days"></i>
+            <h2>내 수업 달력</h2>
+          </div>
+          <button
+            type="button"
+            id="homeCalendarToday"
+            class="member-card-link member-card-button"
+          >
+            오늘
+          </button>
         </div>
         <div class="home-calendar-navigation">
-          <button type="button" id="homeCalendarPrevious" aria-label="이전 달">‹</button>
+          <button type="button" id="homeCalendarPrevious" aria-label="이전 달">
+            ‹
+          </button>
           <strong id="homeCalendarMonth" aria-live="polite"></strong>
-          <button type="button" id="homeCalendarNext" aria-label="다음 달">›</button>
+          <button type="button" id="homeCalendarNext" aria-label="다음 달">
+            ›
+          </button>
         </div>
-        <div class="home-calendar-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
-        <div id="homeCalendarGrid" class="home-calendar-grid" role="group" aria-label="날짜 선택" aria-describedby="homeCalendarHint"></div>
-        <p class="home-calendar-legend"><span class="scheduled-legend">● 예정</span><span class="completed-legend">● 완료</span><span class="free-swim-legend">◉ 오수완</span></p>
+        <div class="member-distance-summary" aria-live="polite">
+          <span id="memberSwimMonthLabel">이번 달 수영거리</span
+          ><strong id="memberSwimMonthTotal">—</strong
+          ><small id="memberSwimMonthDays">기록한 거리 기준</small>
+        </div>
+        <div class="home-calendar-weekdays" aria-hidden="true">
+          <span>일</span><span>월</span><span>화</span><span>수</span
+          ><span>목</span><span>금</span><span>토</span>
+        </div>
+        <div
+          id="homeCalendarGrid"
+          class="home-calendar-grid"
+          role="group"
+          aria-label="날짜 선택"
+          aria-describedby="homeCalendarHint"
+        ></div>
+        <p class="home-calendar-hint" id="homeCalendarHint">
+          날짜를 길게 눌러 수영거리와 오수완을 기록하세요.
+        </p>
+        <p class="home-calendar-legend">
+          <span class="scheduled-legend">● 예정</span
+          ><span class="completed-legend">● 완료</span>
+        </p>
         <div class="home-calendar-detail" aria-live="polite">
-          <h3 id="homeCalendarSelectedDate"></h3>
-          <div id="upcomingLessonList" class="member-lesson-list"><p class="member-empty">수업 정보를 불러오는 중입니다.</p></div>
+          <h3 id="homeCalendarSelectedDate"></h3><div id="memberSelectedDistance" class="member-selected-distance" aria-live="polite"></div>
+          <div id="upcomingLessonList" class="member-lesson-list">
+            <p class="member-empty">수업 정보를 불러오는 중입니다.</p>
+          </div>
         </div>
       </section>
-
-
-
-      <p class="home-calendar-hint" id="homeCalendarHint">날짜를 길게 누르면 오수완 도장을 찍을 수 있어요.</p>
-      <dialog id="paymentReportDialog" class="member-payment-dialog" aria-labelledby="paymentReportTitle">
-        <div class="member-payment-heading"><h2 id="paymentReportTitle">결제 알리기</h2><button type="button" id="paymentReportClose" aria-label="닫기">×</button></div>
-        <p class="member-payment-description">입금한 날짜와 금액을 알려주세요. 관리자 확인 후 반영됩니다.</p>
+      <dialog
+        id="paymentReportDialog"
+        class="member-payment-dialog"
+        aria-labelledby="paymentReportTitle"
+      >
+        <div class="member-payment-heading">
+          <h2 id="paymentReportTitle">결제 알리기</h2>
+          <button type="button" id="paymentReportClose" aria-label="닫기">
+            ×
+          </button>
+        </div>
+        <p class="member-payment-description">
+          입금한 날짜와 금액을 알려주세요. 관리자 확인 후 반영됩니다.
+        </p>
         <form id="paymentReportForm">
           <div class="profile-form-group">
             <label for="paymentReportDate"> 결제일 </label>
@@ -111,7 +173,11 @@
               <option value="500000">50만 원</option>
               <option value="custom">직접 입력</option>
             </select>
-            <div class="amount-input-wrap" id="paymentReportCustomAmount" hidden>
+            <div
+              class="amount-input-wrap"
+              id="paymentReportCustomAmount"
+              hidden
+            >
               <label for="paymentReportAmount">직접 입력 금액</label>
               <input
                 type="text"
@@ -131,17 +197,61 @@
           </button>
         </form>
 
-        <div id="paymentReportMessage" class="profile-form-message" role="status"></div>
+        <div
+          id="paymentReportMessage"
+          class="profile-form-message"
+          role="status"
+        ></div>
       </dialog>
 
-      <dialog id="freeSwimDialog" class="free-swim-dialog" aria-labelledby="freeSwimDialogTitle">
-        <div class="free-swim-dialog-heading"><h2 id="freeSwimDialogTitle">오수완</h2><button type="button" id="freeSwimDialogClose" aria-label="닫기">×</button></div>
+      <dialog
+        id="freeSwimDialog"
+        class="free-swim-dialog"
+        aria-labelledby="freeSwimDialogTitle"
+      >
+        <div class="free-swim-dialog-heading">
+          <h2 id="freeSwimDialogTitle">오수완 · 수영거리</h2>
+          <button type="button" id="freeSwimDialogClose" aria-label="닫기">
+            ×
+          </button>
+        </div>
         <p id="freeSwimDialogDate"></p>
-          <div class="free-swim-control">
-            <button type="button" id="freeSwimToggle" aria-pressed="false" disabled>오수완 찍기</button>
-            <p id="freeSwimMessage" role="status">자유수영은 수업 횟수와 별도로 기록돼요.</p>
-            <button type="button" id="freeSwimRetry" hidden>다시 불러오기</button>
+        <p id="swimClassDistance" class="swim-class-distance"></p>
+        <form id="swimDistanceForm" class="swim-distance-form">
+          <label for="swimDistanceInput">자유수영 거리</label>
+          <div class="swim-distance-input">
+            <input
+              id="swimDistanceInput"
+              name="distance"
+              type="number"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              placeholder="예: 1000"
+              required
+            /><span>m</span>
           </div>
+          <button type="submit" id="swimDistanceSave" disabled>
+            거리 저장
+          </button>
+          <p id="swimDistanceMessage" role="status">
+            수업 전후에 따로 수영한 거리를 입력하면 수업과 합산돼요.
+          </p>
+        </form>
+        <div class="free-swim-control">
+          <button
+            type="button"
+            id="freeSwimToggle"
+            aria-pressed="false"
+            disabled
+          >
+            오수완 찍기
+          </button>
+          <p id="freeSwimMessage" role="status">
+            자유수영은 수업 횟수와 별도로 기록돼요.
+          </p>
+          <button type="button" id="freeSwimRetry" hidden>다시 불러오기</button>
+        </div>
       </dialog>
 
       <div
@@ -201,60 +311,102 @@
       <div id="makeupModal" class="member-modal-overlay" aria-hidden="true">
         <div class="member-modal" role="dialog" aria-modal="true">
           <div class="member-modal-header">
-            <div><span>Make-up</span><h2>보강 가능 시간</h2></div>
-            <button type="button" id="makeupModalClose" class="member-modal-close" aria-label="닫기">×</button>
+            <div>
+              <span>Make-up</span>
+              <h2>보강 가능 시간</h2>
+            </div>
+            <button
+              type="button"
+              id="makeupModalClose"
+              class="member-modal-close"
+              aria-label="닫기"
+            >
+              ×
+            </button>
           </div>
           <div class="home-makeup-info">
-      <section class="member-card makeup-card">
-        <div class="member-card-header">
-          <div class="member-card-title">
-            <i data-lucide="calendar-plus"></i>
-            <h2>보강 신청</h2>
-          </div>
+            <section class="member-card makeup-card">
+              <div class="member-card-header">
+                <div class="member-card-title">
+                  <i data-lucide="calendar-plus"></i>
+                  <h2>보강 신청</h2>
+                </div>
+              </div>
+              <div id="makeupRequestStatus" class="makeup-member-status">
+                <p class="member-empty">보강 신청 정보를 불러오는 중입니다.</p>
+              </div>
+            </section>
 
-        </div>
-        <div id="makeupRequestStatus" class="makeup-member-status">
-          <p class="member-empty">보강 신청 정보를 불러오는 중입니다.</p>
-        </div>
-      </section>
-
-      <section class="member-card makeup-card">
-        <div class="member-card-header">
-          <div class="member-card-title">
-            <i data-lucide="badge-check"></i>
-            <h2>보강 횟수</h2>
-          </div>
-          <button type="button" id="makeupCreditOpen" class="member-card-link member-card-button">
-            누락 확인 요청
-          </button>
-        </div>
-        <div id="makeupCreditSummary" class="makeup-member-status">
-          <p class="member-empty">보강 횟수를 불러오는 중입니다.</p>
-        </div>
-      </section>
-
+            <section class="member-card makeup-card">
+              <div class="member-card-header">
+                <div class="member-card-title">
+                  <i data-lucide="badge-check"></i>
+                  <h2>보강 횟수</h2>
+                </div>
+                <button
+                  type="button"
+                  id="makeupCreditOpen"
+                  class="member-card-link member-card-button"
+                >
+                  누락 확인 요청
+                </button>
+              </div>
+              <div id="makeupCreditSummary" class="makeup-member-status">
+                <p class="member-empty">보강 횟수를 불러오는 중입니다.</p>
+              </div>
+            </section>
           </div>
           <div id="makeupSlotList" class="member-modal-body"></div>
         </div>
       </div>
 
-      <div id="makeupCreditModal" class="member-modal-overlay" aria-hidden="true">
+      <div
+        id="makeupCreditModal"
+        class="member-modal-overlay"
+        aria-hidden="true"
+      >
         <div class="member-modal" role="dialog" aria-modal="true">
           <div class="member-modal-header">
-            <div><span>Make-up credit</span><h2>보강 누락 확인 요청</h2></div>
-            <button type="button" id="makeupCreditClose" class="member-modal-close" aria-label="닫기">×</button>
+            <div>
+              <span>Make-up credit</span>
+              <h2>보강 누락 확인 요청</h2>
+            </div>
+            <button
+              type="button"
+              id="makeupCreditClose"
+              class="member-modal-close"
+              aria-label="닫기"
+            >
+              ×
+            </button>
           </div>
           <form id="makeupCreditForm" class="makeup-credit-form">
-            <label>빠진 수업 날짜 <small>기억나지 않으면 비워두세요.</small>
+            <label
+              >빠진 수업 날짜 <small>기억나지 않으면 비워두세요.</small>
               <input type="date" name="missed_date" />
             </label>
-            <label>요청 횟수
-              <input type="number" name="quantity" min="1" max="20" value="1" required />
+            <label
+              >요청 횟수
+              <input
+                type="number"
+                name="quantity"
+                min="1"
+                max="20"
+                value="1"
+                required
+              />
             </label>
-            <label>설명
-              <textarea name="reason" maxlength="500" placeholder="예: 시스템 사용 전 누락된 보강 2회"></textarea>
+            <label
+              >설명
+              <textarea
+                name="reason"
+                maxlength="500"
+                placeholder="예: 시스템 사용 전 누락된 보강 2회"
+              ></textarea>
             </label>
-            <button type="submit" class="member-primary-button">확인 요청 보내기</button>
+            <button type="submit" class="member-primary-button">
+              확인 요청 보내기
+            </button>
           </form>
         </div>
       </div>
@@ -267,13 +419,15 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="member-shared.js?v=20261007-cancel-extension"></script>
+    <script src="lesson-moves.js?v=20261125"></script>
+    <script src="member-shared.js?v=20261125-moves"></script>
     <script src="lesson-threads.js?v=20261124-free-swim"></script>
     <script src="member-payment.js?v=20261124-popup"></script>
-    <script src="member-home.js?v=20261124-open-discussion"></script>
+    <script src="workout-plan.js?v=20261125-group-phase"></script>
+    <script src="member-home.js?v=20261125-history-cutoff"></script>
     <script src="makeup-member.js?v=20261001-two-weeks"></script>
     <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
-    <script src="notifications.js?v=20261124-home-links"></script>
+    <script src="notifications.js?v=20261125-moves"></script>
 
     <script>
       lucide.createIcons();

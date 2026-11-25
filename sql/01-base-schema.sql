@@ -84,6 +84,14 @@ create table if not exists public.lessons (
 
 alter table public.lessons
 add column if not exists memo text;
+-- Coach-entered meters for this class, separate from member-entered free swimming.
+alter table public.lessons add column if not exists swim_distance_meters integer;
+alter table public.lessons add column if not exists workout_plan jsonb;
+alter table public.lessons drop constraint if exists lessons_workout_plan_check;
+alter table public.lessons add constraint lessons_workout_plan_check check(workout_plan is null or jsonb_typeof(workout_plan)='object');
+alter table public.lessons drop constraint if exists lessons_swim_distance_check;
+alter table public.lessons add constraint lessons_swim_distance_check check(swim_distance_meters is null or swim_distance_meters >= 0);
+
 
 -- =========================================
 -- 4. 회원가입 신청 테이블
@@ -229,9 +237,12 @@ create table if not exists public.member_free_swims (
   created_at timestamptz not null default now(),
   unique (member_id, swim_date)
 );
+alter table public.member_free_swims add column if not exists distance_meters integer;
+alter table public.member_free_swims drop constraint if exists member_free_swims_distance_check;
+alter table public.member_free_swims add constraint member_free_swims_distance_check check(distance_meters is null or distance_meters > 0);
 alter table public.member_free_swims enable row level security;
 revoke all on public.member_free_swims from anon, authenticated;
-grant select, insert, delete on public.member_free_swims to authenticated;
+grant select, insert, update, delete on public.member_free_swims to authenticated;
 drop policy if exists "own free swim select" on public.member_free_swims;
 create policy "own free swim select" on public.member_free_swims for select to authenticated
 using (exists (select 1 from public.members m where m.id = member_id and m.auth_user_id = auth.uid()));
@@ -242,6 +253,10 @@ with check (swim_date <= (now() at time zone 'Asia/Seoul')::date
 drop policy if exists "own free swim delete" on public.member_free_swims;
 create policy "own free swim delete" on public.member_free_swims for delete to authenticated
 using (exists (select 1 from public.members m where m.id = member_id and m.auth_user_id = auth.uid()));
+drop policy if exists "own free swim update" on public.member_free_swims;
+create policy "own free swim update" on public.member_free_swims for update to authenticated
+using (exists(select 1 from public.members m where m.id=member_id and m.auth_user_id=auth.uid()))
+with check (swim_date<=(now() at time zone 'Asia/Seoul')::date and exists(select 1 from public.members m where m.id=member_id and m.auth_user_id=auth.uid()));
 -- 테스트 계정은 기존 Auth UUID에만 조회 권한을 등록합니다.
 create table if not exists public.test_account_access (
   auth_user_id uuid primary key references auth.users(id) on delete cascade,
@@ -299,6 +314,95 @@ revoke all on function public.can_view_test_members() from public, anon;
 revoke all on function public.get_test_member_overview(uuid) from public, anon;
 grant execute on function public.can_view_test_members() to authenticated;
 grant execute on function public.get_test_member_overview(uuid) to authenticated;
+
+-- One-off personal lesson changes, independent of the member's recurring schedule.
+create table if not exists public.personal_lesson_moves (
+ id uuid primary key default gen_random_uuid(),
+ member_id uuid not null references public.members(id) on delete cascade,
+ original_date date not null, original_time time not null,
+ new_date date not null, new_time time not null,
+ cycle_start_date date,
+ created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+ unique(member_id,original_date,original_time)
+);
+alter table public.personal_lesson_moves enable row level security;
+revoke all on public.personal_lesson_moves from public,anon,authenticated;
+grant select on public.personal_lesson_moves to authenticated;
+drop policy if exists "personal moves read" on public.personal_lesson_moves;
+create policy "personal moves read" on public.personal_lesson_moves for select to authenticated using(public.is_swim_admin() or public.can_read_swim_member(member_id));
+
+create or replace function public.move_personal_lesson(p_member_ids uuid[],p_original_date date,p_original_time time,p_new_date date,p_new_time time)
+returns integer language plpgsql security definer set search_path=public,auth as $$
+declare m public.members%rowtype; previous public.personal_lesson_moves%rowtype; old_date date; old_time time; changed integer:=0;
+begin
+ if not public.is_swim_admin() then raise exception '관리자만 수업 일정을 변경할 수 있습니다.'; end if;
+ if coalesce(cardinality(p_member_ids),0)=0 or array_position(p_member_ids,null) is not null or p_original_date is null or p_original_time is null or p_new_date is null or p_new_time is null then raise exception '수업과 변경할 날짜·시간을 확인해주세요.'; end if;
+ if p_new_date<(now() at time zone 'Asia/Seoul')::date then raise exception '오늘 이후의 날짜를 선택해주세요.'; end if;
+ perform pg_advisory_xact_lock(hashtext('swim-personal-lesson-move'));
+ if (select count(distinct id) from public.members where id=any(p_member_ids))<>(select count(distinct v) from unnest(p_member_ids) v) then raise exception '회원 정보를 찾지 못했습니다.'; end if;
+ if exists(select 1 from public.lessons where lesson_date=p_new_date and lesson_time=p_new_time and status not in ('cancelled','deleted') and (member_id is null or not(member_id=any(p_member_ids)))) then raise exception '선택한 시간에 다른 수업이 있습니다.'; end if;
+ for m in select * from public.members where id=any(p_member_ids) order by id for update loop
+  select * into previous from public.personal_lesson_moves where member_id=m.id and original_date=p_original_date and original_time=p_original_time;
+  old_date:=case when found then previous.new_date else p_original_date end;
+  old_time:=case when previous.id is not null then previous.new_time else p_original_time end;
+  if exists(select 1 from public.lessons where member_id=m.id and lesson_type='personal' and lesson_date=old_date and lesson_time=old_time and status in ('completed','cancelled','deleted')) then raise exception '예정된 개인레슨만 옮길 수 있습니다.'; end if;
+  if exists(select 1 from public.personal_lesson_moves where member_id=m.id and new_date=p_new_date and new_time=p_new_time and (original_date,original_time) is distinct from (p_original_date,p_original_time)) then raise exception '이 시간에 이미 변경된 수업이 있습니다.'; end if;
+  if exists(select 1 from public.lessons where member_id=m.id and lesson_type='personal' and lesson_date=p_new_date and lesson_time=p_new_time and (lesson_date,lesson_time) is distinct from (old_date,old_time) and status not in ('cancelled','deleted')) then raise exception '이 시간에 이미 개인레슨이 있습니다.'; end if;
+  insert into public.personal_lesson_moves(member_id,original_date,original_time,new_date,new_time,cycle_start_date)
+  values(m.id,p_original_date,p_original_time,p_new_date,p_new_time,m.lesson_start_date)
+  on conflict(member_id,original_date,original_time) do update set new_date=excluded.new_date,new_time=excluded.new_time,updated_at=now();
+  update public.lessons set lesson_date=p_new_date,lesson_time=p_new_time,updated_at=now()
+   where member_id=m.id and lesson_type='personal' and lesson_date=old_date and lesson_time=old_time;
+  if not found then insert into public.lessons(member_id,lesson_date,lesson_time,title,lesson_type,status,source)
+   values(m.id,p_new_date,p_new_time,m.name,'personal','scheduled','personal'); end if;
+  if to_regclass('public.lesson_comments') is not null and (old_date,old_time) is distinct from (p_new_date,p_new_time) then
+   update public.lesson_comments set lesson_date=p_new_date,lesson_time=p_new_time where lesson_type='personal' and lesson_date=old_date and lesson_time=old_time;
+  end if;
+  changed:=changed+1;
+ end loop;
+ return changed;
+end;
+$$;
+revoke all on function public.move_personal_lesson(uuid[],date,time,date,time) from public,anon;
+grant execute on function public.move_personal_lesson(uuid[],date,time,date,time) to authenticated;
+
+-- 날짜별 공통 운동량. 수업별 메모와 댓글은 기존 테이블을 사용합니다.
+create table if not exists public.daily_workouts (
+ workout_date date primary key,
+ workout_plan jsonb,
+ distance_meters integer not null default 0 check(distance_meters >= 0),
+ updated_at timestamptz not null default now(),
+ check(workout_plan is null or jsonb_typeof(workout_plan)='object')
+);
+alter table public.daily_workouts enable row level security;
+grant select,insert,update,delete on public.daily_workouts to authenticated,service_role;
+drop policy if exists "daily workouts admin" on public.daily_workouts;
+create policy "daily workouts admin" on public.daily_workouts for all to authenticated using(public.is_swim_admin()) with check(public.is_swim_admin());
+drop policy if exists "daily workouts read" on public.daily_workouts;
+create policy "daily workouts read" on public.daily_workouts for select to authenticated using(true);
+-- 기존 날짜별 최신 운동량을 한 번 옮깁니다. 재실행으로 수정한 표를 덮어쓰지 않습니다.
+insert into public.daily_workouts(workout_date,workout_plan,distance_meters,updated_at)
+select distinct on(lesson_date) lesson_date,workout_plan,coalesce(swim_distance_meters,0),updated_at
+from public.lessons where workout_plan is not null order by lesson_date,updated_at desc,id
+on conflict(workout_date) do nothing;
+
+-- 회원이 직접 누른 완료(참여). 관리자 수업 완료와 별개입니다.
+create table if not exists public.member_workout_participations (
+ member_id uuid not null references public.members(id) on delete cascade,
+ workout_date date not null,
+ created_at timestamptz not null default now(),
+ primary key(member_id,workout_date)
+);
+alter table public.member_workout_participations enable row level security;
+revoke all on public.member_workout_participations from anon,authenticated;
+grant select,insert,delete on public.member_workout_participations to authenticated;
+grant all on public.member_workout_participations to service_role;
+drop policy if exists "own participation read" on public.member_workout_participations;
+create policy "own participation read" on public.member_workout_participations for select to authenticated using(exists(select 1 from public.members m where m.id=member_id and m.auth_user_id=auth.uid()));
+drop policy if exists "own participation insert" on public.member_workout_participations;
+create policy "own participation insert" on public.member_workout_participations for insert to authenticated with check(workout_date <= (now() at time zone 'Asia/Seoul')::date and exists(select 1 from public.members m where m.id=member_id and m.auth_user_id=auth.uid()));
+drop policy if exists "own participation delete" on public.member_workout_participations;
+create policy "own participation delete" on public.member_workout_participations for delete to authenticated using(exists(select 1 from public.members m where m.id=member_id and m.auth_user_id=auth.uid()));
 
 notify pgrst, 'reload schema';
 commit;

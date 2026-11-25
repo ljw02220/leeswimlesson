@@ -401,5 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  loadData();
+  if (new URLSearchParams(window.location.search).get('makeup') === 'open') openModal();
+  else loadData();
 });

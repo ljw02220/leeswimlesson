@@ -4,28 +4,6 @@
 
 const STORAGE_KEY = 'personalLessonMembers';
 const REPORT_STORAGE_KEY = 'personalLessonReports';
-const HOLIDAY_API_URL =
-  'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
-const HOLIDAY_SERVICE_KEY = window.SWIM_CONFIG?.HOLIDAY_API_KEY || '';
-
-const HOLIDAY_OVERRIDES = {
-  '2026-09-24': '추석 연휴',
-  '2026-09-25': '추석',
-  '2026-09-26': '추석 연휴',
-  '2026-10-03': '개천절',
-  '2026-10-09': '한글날',
-};
-
-const DAY_INDEX_BY_NAME = {
-  일: 0,
-  월: 1,
-  화: 2,
-  수: 3,
-  목: 4,
-  금: 5,
-  토: 6,
-};
-
 const DAY_NAME_BY_INDEX = {
   0: '일',
   1: '월',
@@ -50,7 +28,6 @@ let members = [];
 let signupRequests = [];
 let editingMemberId = null;
 let memberLoadError = '';
-const holidayCache = {};
 
 // ======================================================
 // 데이터 불러오기 / 저장
@@ -744,14 +721,6 @@ function getDateKey(date) {
   ].join('-');
 }
 
-function getNextDateKey(dateKey) {
-  const date = new Date(`${dateKey}T00:00:00`);
-
-  date.setDate(date.getDate() + 1);
-
-  return getDateKey(date);
-}
-
 function formatShortDate(dateValue) {
   if (!dateValue) {
     return '';
@@ -770,116 +739,6 @@ function formatKoreanDate(dateValue) {
   const date = new Date(`${dateValue}T00:00:00`);
 
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
-}
-
-async function getHolidays(year, month) {
-  const cacheKey = `${year}-${month}`;
-
-  if (holidayCache[cacheKey]) {
-    return holidayCache[cacheKey];
-  }
-
-  const holidays = {};
-
-  Object.entries(HOLIDAY_OVERRIDES).forEach(([dateKey, name]) => {
-    const holidayDate = new Date(`${dateKey}T00:00:00`);
-
-    if (
-      holidayDate.getFullYear() === year &&
-      holidayDate.getMonth() === month
-    ) {
-      holidays[dateKey] = name;
-    }
-  });
-
-  if (!HOLIDAY_SERVICE_KEY) {
-    holidayCache[cacheKey] = holidays;
-
-    return holidays;
-  }
-
-  const formattedMonth = String(month + 1).padStart(2, '0');
-  const url =
-    `${HOLIDAY_API_URL}/getRestDeInfo` +
-    `?ServiceKey=${HOLIDAY_SERVICE_KEY}` +
-    `&solYear=${year}` +
-    `&solMonth=${formattedMonth}` +
-    `&numOfRows=50`;
-
-  try {
-    const response = await fetch(url);
-    const text = await response.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, 'text/xml');
-    const items = xml.querySelectorAll('item');
-
-    items.forEach((item) => {
-      const date = item.querySelector('locdate')?.textContent;
-      const name = item.querySelector('dateName')?.textContent;
-
-      if (!date) {
-        return;
-      }
-
-      const dateKey = [
-        date.slice(0, 4),
-        date.slice(4, 6),
-        date.slice(6, 8),
-      ].join('-');
-
-      holidays[dateKey] = name || '공휴일';
-    });
-  } catch (error) {
-    console.error('공휴일 정보를 불러오지 못했습니다.', error);
-  }
-
-  holidayCache[cacheKey] = holidays;
-
-  return holidays;
-}
-
-async function getPersonalLessonDates(member) {
-  const totalLessons = Number(member.totalLessons || 0);
-  const usedLessons = Math.min(
-    getEffectiveUsedLessons(member),
-    totalLessons
-  );
-  const remainingLessons = Math.max(totalLessons - usedLessons, 0);
-  const startDate =
-    (usedLessons > 0 && member.lastLessonDate
-      ? getNextDateKey(member.lastLessonDate)
-      : member.lessonStartDate) ||
-    member.lastLessonDate ||
-    '';
-  const lessonDays = Array.isArray(member.days) ? member.days : [];
-  const dayIndexes = lessonDays
-    .map((day) => DAY_INDEX_BY_NAME[day])
-    .filter((day) => day !== undefined);
-  const lessonDates = [];
-
-  if (!startDate || remainingLessons <= 0 || dayIndexes.length === 0) {
-    return lessonDates;
-  }
-
-  const currentDate = new Date(`${startDate}T00:00:00`);
-  let guard = 0;
-
-  while (lessonDates.length < remainingLessons && guard < 500) {
-    const dateKey = getDateKey(currentDate);
-    const holidays = await getHolidays(
-      currentDate.getFullYear(),
-      currentDate.getMonth()
-    );
-
-    if (dayIndexes.includes(currentDate.getDay()) && !holidays[dateKey]) {
-      lessonDates.push(dateKey);
-    }
-
-    currentDate.setDate(currentDate.getDate() + 1);
-    guard++;
-  }
-
-  return lessonDates;
 }
 
 function escapeHTML(value) {
@@ -1850,113 +1709,12 @@ function setupAddButton() {
 }
 
 // ======================================================
-// 개인레슨 시작/마감 일정
-// ======================================================
-
-async function renderLessonPeriods() {
-  const periodList = document.querySelector('.lesson-period-list');
-
-  if (!periodList) {
-    return;
-  }
-
-  periodList.innerHTML = `
-    <article class="lesson-period-empty">
-      개인레슨 일정을 계산하는 중입니다.
-    </article>
-  `;
-
-  const schedules = await Promise.all(
-    members
-      .filter((member) => member.status !== '종료')
-      .map(async (member) => {
-        const lessonDates = await getPersonalLessonDates(member);
-        const upcomingDates = lessonDates;
-
-        return {
-          member,
-          lessonDates,
-          upcomingDates,
-          startDate:
-            lessonDates[0] ||
-            member.lessonStartDate ||
-            member.lastLessonDate ||
-            '',
-          endDate: lessonDates[lessonDates.length - 1] || '',
-        };
-      })
-  );
-
-  const visibleSchedules = schedules
-    .filter(
-      (schedule) =>
-        schedule.startDate ||
-        schedule.member.lessonStartDate ||
-        schedule.member.lastLessonDate
-    )
-    .sort((a, b) => {
-      const aEnd = a.endDate || '9999-12-31';
-      const bEnd = b.endDate || '9999-12-31';
-
-      return aEnd.localeCompare(bEnd);
-    })
-    .slice(0, 6);
-
-  periodList.innerHTML = '';
-
-  if (visibleSchedules.length === 0) {
-    periodList.innerHTML = `
-      <article class="lesson-period-empty">
-        수업 시작일을 입력하면 개인레슨 마감일이 표시됩니다.
-      </article>
-    `;
-
-    return;
-  }
-
-  visibleSchedules.forEach((schedule) => {
-    const { member, upcomingDates, startDate, endDate } = schedule;
-    const remaining = getRemainingLessons(member);
-    const article = document.createElement('article');
-    const nextDates = upcomingDates
-      .slice(0, 4)
-      .map(formatKoreanDate)
-      .join(', ');
-
-    article.className = 'lesson-period-item';
-    article.innerHTML = `
-      <div class="lesson-period-top">
-        <strong>${escapeHTML(member.name)}</strong>
-        <span>${remaining}회 남음</span>
-      </div>
-
-      <p>
-        시작 ${escapeHTML(formatKoreanDate(startDate) || '-')}
-        ·
-        마감 ${escapeHTML(formatKoreanDate(endDate) || '계산 필요')}
-      </p>
-
-      <small>
-        ${escapeHTML(nextDates || '남은 예정 수업이 없습니다.')}
-      </small>
-    `;
-
-    article.addEventListener('click', () => {
-      openMemberDetail(member.id);
-    });
-
-    periodList.appendChild(article);
-  });
-}
-
-// ======================================================
 // 화면 전체 업데이트
 // ======================================================
 
 function renderAll() {
   renderSignupRequests();
   renderMembers();
-  renderLessonPeriods();
 }
 
 function setupSignupRequestActions() {

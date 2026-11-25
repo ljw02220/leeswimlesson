@@ -1,0 +1,31 @@
+.lesson-heading-actions { display:flex; align-items:center; gap:8px; }
+#togglePersonalPeriods { border:1px solid #d0deec; border-radius:8px; padding:10px 13px; background:white; color:#37668f; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+#togglePersonalPeriods[aria-expanded="true"] { background:#edf5ff; border-color:#8bb5e7; }
+.personal-period-card[hidden] { display:none; }
+.personal-period-card { margin:0 0 16px; padding:16px; }
+.personal-period-card .card-header { gap:12px; align-items:start; margin-bottom:12px; }
+.personal-period-card h2 { font-size:15px; }.personal-period-card h2 span { color:#7d90a6; font-size:11px; margin-left:6px; }
+.personal-period-card .card-header p { margin-top:5px; color:#7d90a6; font-size:11px; line-height:1.5; }
+#reloadPersonalLessonPeriods { flex-shrink:0; border:0; padding:5px; background:transparent; color:#3f729e; font:inherit; font-size:11px; cursor:pointer; }
+.personal-period-card .lesson-period-list { max-height:300px; overflow-y:auto; }
+.personal-period-card .lesson-period-item { border-bottom:1px solid #edf1f5; }
+.personal-period-card .lesson-period-item:last-child { border-bottom:0; }
+.personal-period-card summary { display:grid; grid-template-columns:minmax(0,1fr) 80px 100px; align-items:center; gap:10px; padding:11px 4px; list-style:none; cursor:pointer; color:#4f6881; font-size:12px; }
+.personal-period-card summary::-webkit-details-marker { display:none; }
+.personal-period-card summary strong { overflow-wrap:anywhere; color:#34506c; font-size:13px; }
+.personal-period-card summary span { color:#3478d8; font-size:11px; }.personal-period-card summary time { text-align:right; font-size:11px; }
+.lesson-period-detail { padding:0 4px 12px; color:#7890a6; font-size:11px; line-height:1.8; }
+.lesson-period-empty { color:#8b9aab; font-size:12px; padding:10px 0; }
+@media(max-width:560px) { .lesson-heading-actions { gap:5px; }#togglePersonalPeriods { padding:9px 8px; font-size:11px; }.lesson-heading-actions .primary-action { padding:9px 8px; font-size:11px; }.personal-period-card { padding:13px; }.personal-period-card summary { grid-template-columns:minmax(0,1fr) 62px 76px; gap:6px; } }
+
+.schedule-item[draggable="true"] { cursor:grab; -webkit-touch-callout:none; user-select:none; }
+.days li.move-drop-target { outline:3px solid #3478d8; outline-offset:-3px; background:#edf6ff; }
+.move-personal-button { width:100%; min-height:42px; border:1px solid #bfdbfe; border-radius:8px; background:#eff6ff; color:#2563eb; font:inherit; font-size:13px; font-weight:700; cursor:pointer; margin:10px 0; }
+.move-personal-button[hidden] { display:none; }
+.personal-move-dialog { box-sizing:border-box; width:min(400px,calc(100vw - 32px)); margin:auto; padding:22px; border:0; border-radius:16px; background:white; color:#294763; }
+.personal-move-dialog::backdrop { background:#0f274766; }
+.personal-move-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }.personal-move-heading h2 { font-size:18px; }.personal-move-heading button { width:36px; height:36px; border:0; border-radius:8px; background:#eff6ff; color:#3478d8; font-size:24px; cursor:pointer; }
+#personalMoveDescription { font-size:13px; color:#71869b; line-height:1.6; margin:12px 0 18px; }
+#personalMoveForm { display:grid; gap:14px; }#personalMoveForm label { display:grid; gap:7px; font-size:12px; font-weight:700; }
+#personalMoveForm input { box-sizing:border-box; width:100%; min-height:44px; padding:10px; border:1px solid #dce6ef; border-radius:8px; font:inherit; font-size:16px; }
+#personalMoveMessage { font-size:12px; color:#72869a; line-height:1.6; overflow-wrap:anywhere; }#personalMoveSave { min-height:44px; border:0; border-radius:8px; background:#3478d8; color:white; font:inherit; font-size:14px; font-weight:700; cursor:pointer; }#personalMoveSave:disabled { opacity:.6; cursor:wait; }

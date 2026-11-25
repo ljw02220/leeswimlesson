@@ -257,5 +257,17 @@ revoke all on function public.notify_lesson_comment_push() from public, anon, au
 
 revoke all on function public.notify_lesson_note_push() from public, anon, authenticated;
 
+create or replace function public.notify_personal_lesson_move_push()
+returns trigger language plpgsql security definer set search_path=public as $$
+begin
+ if tg_op='UPDATE' and (old.new_date,old.new_time) is not distinct from (new.new_date,new.new_time) then return new; end if;
+ perform public.queue_member_push(new.member_id,'개인레슨 일정 변경',to_char(new.new_date,'YYYY-MM-DD') || ' ' || to_char(new.new_time,'HH24:MI') || ' 수업으로 변경되었습니다.','./member-home.html?date=' || new.new_date::text,'lesson-move-' || new.id::text);
+ return new;
+end;
+$$;
+drop trigger if exists notify_personal_lesson_move_push on public.personal_lesson_moves;
+create trigger notify_personal_lesson_move_push after insert or update of new_date,new_time on public.personal_lesson_moves for each row execute function public.notify_personal_lesson_move_push();
+revoke all on function public.notify_personal_lesson_move_push() from public,anon,authenticated;
+
 notify pgrst, 'reload schema';
 commit;
