@@ -14,6 +14,8 @@ function json(data: unknown, status = 200) {
   });
 }
 
+const recentTests = new Map<string, number>();
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -29,6 +31,7 @@ Deno.serve(async (request) => {
     return json({ publicKey: vapidPublicKey });
   }
 
+  let stage = 'request';
   try {
     const body = await request.json();
     const admin = createClient(supabaseUrl, serviceRoleKey);
@@ -78,7 +81,34 @@ Deno.serve(async (request) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) return json({ error: '로그인이 필요합니다.' }, 401);
 
+    if (body.action === 'test') {
+      stage = 'test';
+      if (!vapidPublicKey || !vapidPrivateKey) return json({error:'서버 VAPID 키 설정을 확인해주세요.'},503);
+      const {data:subscriptions,error}=await admin.from('push_subscriptions')
+        .select('id,endpoint,p256dh,auth_key').eq('user_id',user.id).eq('endpoint',String(body.endpoint||''));
+      if(error)throw error;
+      const subscription=subscriptions?.[0];
+      if(!subscription)return json({error:'이 기기를 다시 연결한 뒤 테스트해주세요.'},400);
+      const now=Date.now();
+      if(now-(recentTests.get(user.id)||0)<5000)return json({error:'5초 후 다시 테스트해주세요.'},429);
+      for(const [key,time] of recentTests)if(now-time>60000)recentTests.delete(key);
+      recentTests.set(user.id,now);
+      try {
+        webpush.setVapidDetails(vapidSubject,vapidPublicKey,vapidPrivateKey);
+        const result=await webpush.sendNotification({endpoint:subscription.endpoint,keys:{p256dh:subscription.p256dh,auth:subscription.auth_key}},JSON.stringify({title:'수영관리 테스트 알림',body:'테스트 알림을 바로 발송했어요.',url:'./member-home.html',icon:'./icons/icon-192.png',tag:`test-${crypto.randomUUID()}`}),{urgency:'high',TTL:60,timeout:10000});
+        if(result.statusCode<200||result.statusCode>=300)throw Error('Push service rejected delivery');
+        return json({sent:1});
+      }catch(error){
+        const status=(error as {statusCode?:number})?.statusCode;
+        console.error('Direct test push failed',{status,userId:user.id});
+        if(status===404||status===410){await admin.from('push_subscriptions').delete().eq('id',subscription.id);return json({error:'기기 구독이 만료됐어요. 알림을 껐다가 다시 켜주세요.'},410);}
+        if(status===401||status===403)return json({error:'푸시 발송 인증에 실패했어요. VAPID 공개키·비밀키가 같은 쌍인지 확인해주세요.'},502);
+        return json({error:'기기 알림 서버가 발송을 받지 못했어요. web-push 서버 로그를 확인해주세요.'},502);
+      }
+    }
+
     if (body.action === 'subscribe') {
+      stage = 'subscribe';
       const subscription = body.subscription;
       if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
         return json({ error: '올바르지 않은 구독 정보입니다.' }, 400);
@@ -96,6 +126,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'unsubscribe') {
+      stage = 'unsubscribe';
       const { error } = await admin.from('push_subscriptions')
         .delete()
         .eq('user_id', user.id)
@@ -106,7 +137,16 @@ Deno.serve(async (request) => {
 
     return json({ error: '지원하지 않는 요청입니다.' }, 400);
   } catch (error) {
-    console.error(error);
-    return json({ error: error instanceof Error ? error.message : '푸시 알림 처리 중 오류가 발생했습니다.' }, 500);
+    const detail=error as {message?:string;code?:string};
+    console.error('web-push failure', {stage,code:detail?.code,message:detail?.message});
+    const labels:Record<string,string>={
+      '42P01':'알림 구독 테이블이 없습니다. 최신 05 알림 SQL을 실행해주세요.',
+      'PGRST205':'알림 구독 테이블을 찾지 못했습니다. 최신 05 알림 SQL을 실행해주세요.',
+      'PGRST204':'알림 테이블의 항목이 맞지 않습니다. 최신 05 알림 SQL을 실행해주세요.',
+      '42501':'알림 구독 저장 권한이 없습니다. 서버 권한과 최신 05 알림 SQL을 확인해주세요.',
+      '23505':'기기 구독 정보가 충돌했습니다. 알림을 껐다가 다시 켜주세요.'
+    };
+    const code=detail?.code||'UNKNOWN';
+    return json({error:labels[code] || (stage==='subscribe'?'기기 등록에 실패했습니다. Supabase의 web-push 함수 Logs에서 오류를 확인해주세요.':'푸시 알림 처리에 실패했습니다. Supabase의 web-push 함수 Logs를 확인해주세요.')},500);
   }
 });

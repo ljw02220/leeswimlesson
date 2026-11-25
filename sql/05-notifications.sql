@@ -18,6 +18,9 @@ on public.push_subscriptions(user_id);
 
 alter table public.push_subscriptions enable row level security;
 grant select, insert, update, delete on public.push_subscriptions to authenticated;
+-- Edge Function uses service_role; RLS bypass does not grant table privileges.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.push_subscriptions to service_role;
 
 drop policy if exists "users manage own push subscriptions" on public.push_subscriptions;
 create policy "users manage own push subscriptions"
@@ -40,6 +43,7 @@ create table if not exists public.push_notification_events (
 
 alter table public.push_notification_events enable row level security;
 revoke all on public.push_notification_events from anon, authenticated;
+grant select, update on public.push_notification_events to service_role;
 
 create or replace function public.queue_admin_push(
   p_title text,

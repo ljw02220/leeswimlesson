@@ -334,8 +334,9 @@
         const subscription=await registration?.pushManager.getSubscription();
         if(!subscription||Notification.permission!=='granted')throw Error('이 기기의 휴대폰 알림을 먼저 켜주세요.');
         await callPushFunction({action:'subscribe',subscription:subscription.toJSON()});
-        const {error}=await client.rpc('send_my_test_push');if(error)throw error;
-        setPushMessage(panel,'테스트 발송을 요청했어요. 앱을 잠시 닫고 확인해주세요.');
+        const result=await callPushFunction({action:'test',endpoint:subscription.endpoint});
+        if(result.sent!==1)throw Error('테스트 알림 발송을 확인하지 못했습니다.');
+        setPushMessage(panel,'이 기기의 알림 서버가 발송을 접수했어요. 알림 배너를 확인해주세요.');
       }catch(error){setPushMessage(panel,error.message||'테스트 발송을 요청하지 못했습니다.',true);}
       finally{button.disabled=false;}
     });
