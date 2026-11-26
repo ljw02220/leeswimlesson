@@ -85,20 +85,7 @@ using (
 create policy "members create own makeup requests"
 on public.makeup_requests
 for insert to authenticated
-with check (
-  status = 'pending'
-  and exists (
-    select 1 from public.makeup_slots slot
-    where slot.id = makeup_requests.slot_id
-      and slot.status = 'open'
-      and slot.slot_date between (now() at time zone 'Asia/Seoul')::date and (now() at time zone 'Asia/Seoul')::date + 14
-  )
-  and exists (
-    select 1 from public.members
-    where members.id = makeup_requests.member_id
-      and members.auth_user_id = auth.uid()
-  )
-);
+with check (public.is_swim_admin());
 
 create policy "admin manages makeup requests"
 on public.makeup_requests
@@ -137,7 +124,7 @@ begin
       and members.auth_user_id = auth.uid()
   ) into is_owner;
 
-  if not is_admin and not is_owner then
+  if not is_admin then
     raise exception '보강 신청을 취소할 권한이 없습니다.';
   end if;
 
@@ -297,16 +284,7 @@ using (
 create policy "members request makeup credits"
 on public.makeup_credits
 for insert to authenticated
-with check (
-  status = 'pending'
-  and requested_by = 'member'
-  and remaining_quantity = quantity
-  and exists (
-    select 1 from public.members member
-    where member.id = makeup_credits.member_id
-      and member.auth_user_id = auth.uid()
-  )
-);
+with check (public.is_swim_admin());
 
 create policy "admin manages makeup credits"
 on public.makeup_credits
@@ -418,7 +396,7 @@ begin
       and member.auth_user_id = auth.uid()
   ) into is_owner;
 
-  if not is_admin and not is_owner then
+  if not is_admin then
     raise exception '보강 확인 요청을 취소할 권한이 없습니다.';
   end if;
 

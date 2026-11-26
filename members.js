@@ -420,6 +420,7 @@ async function approveSignupRequest(requestId) {
     if (matchedMember) {
       const savedMember = await saveMember(matchedMember.id, {
         ...matchedMember,
+        groupLessons: normalizeGroupLessons([...(matchedMember.groupLessons || []), ...(request.group_lessons || [])]).filter((item,index,items)=>items.findIndex(other=>other.day===item.day&&other.time===item.time)===index),
         authUserId: matchedMember.authUserId || request.auth_user_id,
       });
       const index = members.findIndex(
@@ -434,11 +435,11 @@ async function approveSignupRequest(requestId) {
         authUserId: request.auth_user_id,
         name: request.name,
         phone: request.phone,
-        lessonFormat: '1:1',
+        lessonFormat: 'group',
         days: [],
         time: '',
         lessonStartDate: '',
-        groupLessons: [],
+        groupLessons: normalizeGroupLessons(request.group_lessons),
         totalLessons: 0,
         usedLessons: 0,
         paymentAmount: 0,
@@ -779,7 +780,7 @@ function renderSignupRequests() {
         <article class="signup-request-item">
           <div>
             <strong>${escapeHTML(request.name)}</strong>
-            <span>${escapeHTML(request.phone)} · ${requestedAt}</span>
+            <span>${escapeHTML(request.phone)} · ${requestedAt}</span><small>${escapeHTML(normalizeGroupLessons(request.group_lessons).map(item=>`${item.dayName} ${item.time}`).join(" · ") || "단체수업 선택 없음")}</small>
           </div>
 
           <div class="signup-request-actions">
@@ -861,7 +862,12 @@ function getReportButtonLabel(member) {
 // ======================================================
 
 function getFilteredMembers() {
-  return members;
+  const tier = document.getElementById('memberTierFilter')?.value || 'all';
+  return members.filter(member => {
+    const format = String(member.lessonFormat || member.lesson_format || '').trim();
+    const full = !/단체|group/i.test(format) && (/^1\s*:\s*\d+/.test(format) || Number(member.totalLessons ?? member.total_lessons ?? 0) > 0);
+    return tier === 'all' || (tier === 'full' ? full : !full);
+  });
 }
 
 // ======================================================
@@ -939,7 +945,7 @@ function renderMembers() {
   const count = document.getElementById('memberListCount');
   const toggle = document.getElementById('toggleMemberList');
   if (count) count.textContent = sortedMembers.length === members.length
-    ? `총 ${members.length}명` : `총 ${members.length}명 · 검색 결과 ${sortedMembers.length}명`;
+    ? `총 ${members.length}명` : `총 ${members.length}명 · 현재 목록 ${sortedMembers.length}명`;
   if (toggle) {
     toggle.hidden = sortedMembers.length <= 4;
     toggle.textContent = memberListExpanded ? '접기' : '전체보기';
@@ -1165,6 +1171,10 @@ function setupReportButtons() {
 // ======================================================
 
 function setupFilters() {
+  document.getElementById('memberTierFilter')?.addEventListener('change', () => {
+    memberListExpanded = false;
+    renderMembers();
+  });
   const memberSort = document.getElementById('memberSort');
 
   if (memberSort) {
@@ -1335,6 +1345,9 @@ async function deleteMember(memberId) {
 // ======================================================
 
 function setupModalEvents() {
+  document.querySelectorAll('input[name="associateClass"]').forEach(input=>input.addEventListener('change',()=>updateAssociateClass(input)));
+  document.getElementById('memberTier')?.addEventListener('change',syncMemberTierForm);
+  document.getElementById('lessonFormat')?.addEventListener('change',()=>{document.getElementById('memberTier').value=document.getElementById('lessonFormat').value==='group'?'associate':'full';syncMemberTierForm();});
   const modal = document.getElementById('memberModal');
 
   const form = document.getElementById('memberForm');
@@ -1446,6 +1459,32 @@ function formatMoneyInput(event) {
 // 잔여 횟수 미리보기
 // ======================================================
 
+function syncAssociateClasses() {
+  const selected=new Set(Array.from(document.querySelectorAll('input[name="groupLesson"]:checked'),input=>input.value));
+  document.querySelectorAll('input[name="associateClass"]').forEach(input=>{
+    const [days,time]=input.value.split('|');
+    input.checked=days.split(',').every(day=>selected.has(`${day}|${time}`));
+  });
+}
+function updateAssociateClass(input) {
+  const [days,time]=input.value.split('|');
+  document.querySelectorAll('input[name="groupLesson"]').forEach(checkbox=>{
+    if(days.split(',').some(day=>checkbox.value===`${day}|${time}`))checkbox.checked=input.checked;
+  });
+}
+function syncMemberTierForm(){
+  const tier=document.getElementById('memberTier');const format=document.getElementById('lessonFormat');
+  if(!tier||!format)return;
+  const associate=tier.value==='associate';
+  if(associate)format.value='group';else if(format.value==='group')format.value='1:1';
+  document.getElementById('associateClasses')?.removeAttribute('hidden');
+  for(const selector of ['input[name="lessonDay"]','#remainingLessonPreview','#memberStatus','#memberMemo']){
+    document.querySelector(selector)?.closest('.form-group')?.toggleAttribute('hidden',associate);
+  }
+  syncAssociateClasses();
+  const ids=['lessonFormat','memberTime','lessonStartDate','totalLessons','usedLessons','paymentAmount','paymentStatus','residenceType','paymentMethod'];
+  for(const id of ids){const field=document.getElementById(id);if(!field)continue;field.closest('.form-group')?.toggleAttribute('hidden',associate);if(field.required)field.dataset.personalRequired='true';field.required=!associate&&field.dataset.personalRequired==='true';}
+}
 function updateRemainingPreview() {
   const total = Number(document.getElementById('totalLessons')?.value) || 0;
 
@@ -1484,6 +1523,7 @@ function openAddMemberModal() {
   document.getElementById('usedLessons').value = 0;
 
   document.getElementById('lessonFormat').value = '1:1';
+  document.getElementById('memberTier').value='full';syncMemberTierForm();
 
   document.getElementById('lessonStartDate').value = '';
 
@@ -1543,6 +1583,7 @@ function openMemberDetail(memberId) {
   setSelectedGroupLessons(member.groupLessons);
 
   document.getElementById('lessonFormat').value = member.lessonFormat || '1:1';
+  document.getElementById('memberTier').value=/단체|group/i.test(member.lessonFormat||'')?'associate':'full';syncMemberTierForm();
 
   document.getElementById('totalLessons').value = member.totalLessons || 0;
 

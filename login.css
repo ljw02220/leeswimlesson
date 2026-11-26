@@ -414,3 +414,5 @@ input {
     margin-bottom: 22px;
   }
 }
+
+.signup-classes{border:1px solid #dce5eb;border-radius:12px;padding:14px;margin:0 0 18px}.signup-classes legend{font-weight:700;font-size:14px}.signup-classes p{font-size:12px;color:#64748b;line-height:1.6}.signup-classes label{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px}.signup-classes input{width:18px;height:18px}

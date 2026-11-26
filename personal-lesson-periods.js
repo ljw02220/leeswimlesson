@@ -198,7 +198,7 @@ async function render() {
     if(result.error)throw result.error;stateRows=result.data||[];
   }
   const states=new Map(stateRows.map(r=>[`${r.member_id}_${r.lesson_date}_${String(r.lesson_time).slice(0,5)}`,r.status]));
-  const schedules=await Promise.all(members.filter(m=>m.status!=='종료'&&Number(m.totalLessons)>0).map(async member=>{
+  const schedules=await Promise.all(members.filter(m=>m.status!=='종료'&&!/단체|group/i.test(m.lesson_format||m.lessonFormat||'')&&Number(m.totalLessons)>0).map(async member=>{
     const active=moves.filter(m=>m.member_id===member.id&&(m.cycle_start_date||null)===(member.lessonStartDate||null));
     const dates=await getPersonalLessonDates(member,active,states);
     const items=dates.map(date=>({id:member.id,memberId:member.id,memberIds:[member.id],date,time:member.lessonTime,type:'personal'}));

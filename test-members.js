@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const client = window.swimDb?.client;
+  try{const session=JSON.parse(sessionStorage.getItem('loginSession')||localStorage.getItem('loginSession')||'{}');if(session.role!=='member'){const back=document.getElementById('overviewReturn');back.href='home.html';back.textContent='관리자 홈';}}catch(error){}
   const select = document.getElementById('testMemberSelect');
   const message = document.getElementById('testViewMessage');
   const details = document.getElementById('testMemberDetails');

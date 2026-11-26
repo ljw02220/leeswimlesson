@@ -309,7 +309,9 @@ function updateMonthText() {
     const { start, end } = getSalarySettlementRange(currentYear, currentMonth);
     const lastDate = new Date(`${end}T00:00:00`);
     lastDate.setDate(lastDate.getDate() - 1);
-    reportPeriod.textContent = `${start} ~ ${toDateKey(lastDate)} 보고분 · ${currentYear}.${monthNumber}.15 급여 반영`;
+    reportPeriod.textContent = `${start} ~ ${toDateKey(
+      lastDate
+    )} 보고분 · ${currentYear}.${monthNumber}.15 급여 반영`;
   }
 
   if (expectedSalaryLabel) {
@@ -392,9 +394,15 @@ async function getHolidays(year, month) {
 ================================================== */
 
 async function createRecurringGroupLessons(year, month, useStoredState = true) {
-  const cancelledLessons = useStoredState ? getStorageData('cancelledLessons', {}) : {};
-  const completedLessons = useStoredState ? getStorageData('completedLessons', {}) : {};
-  const deletedLessons = useStoredState ? getStorageData('deletedLessons', {}) : {};
+  const cancelledLessons = useStoredState
+    ? getStorageData('cancelledLessons', {})
+    : {};
+  const completedLessons = useStoredState
+    ? getStorageData('completedLessons', {})
+    : {};
+  const deletedLessons = useStoredState
+    ? getStorageData('deletedLessons', {})
+    : {};
   const holidaysByDate = await getHolidays(year, month);
   const lastDay = new Date(year, month + 1, 0).getDate();
   const lessons = [];
@@ -438,13 +446,18 @@ async function createRecurringGroupLessons(year, month, useStoredState = true) {
 }
 
 function mergeGroupLessonRecords(recurring, records) {
-  const key = (lesson) => `${lesson.lesson_date}_${String(lesson.lesson_time).slice(0, 5)}`;
+  const key = (lesson) =>
+    `${lesson.lesson_date}_${String(lesson.lesson_time).slice(0, 5)}`;
   const merged = new Map(recurring.map((lesson) => [key(lesson), lesson]));
   const latest = new Map();
   records.forEach((record) => {
     const previous = latest.get(key(record));
-    if (!previous || String(record.updated_at || record.created_at || '') >=
-        String(previous.updated_at || previous.created_at || '')) latest.set(key(record), record);
+    if (
+      !previous ||
+      String(record.updated_at || record.created_at || '') >=
+        String(previous.updated_at || previous.created_at || '')
+    )
+      latest.set(key(record), record);
   });
   latest.forEach((record, recordKey) => merged.set(recordKey, record));
   return Array.from(merged.values());
@@ -453,13 +466,19 @@ function mergeGroupLessonRecords(recurring, records) {
 async function getGroupLessons(year = currentYear, month = currentMonth) {
   const client = getSupabaseClient();
   const activityMonth = getSalaryActivityMonth(year, month);
-  if (!client) return createRecurringGroupLessons(activityMonth.year, activityMonth.month);
+  if (!client)
+    return createRecurringGroupLessons(activityMonth.year, activityMonth.month);
   const { start, end } = getMonthRange(activityMonth.year, activityMonth.month);
   const [recurring, result] = await Promise.all([
     createRecurringGroupLessons(activityMonth.year, activityMonth.month, false),
-    client.from('lessons')
-      .select('id, lesson_date, lesson_time, lesson_type, status, source, created_at, updated_at')
-      .eq('lesson_type', 'group').gte('lesson_date', start).lt('lesson_date', end),
+    client
+      .from('lessons')
+      .select(
+        'id, lesson_date, lesson_time, lesson_type, status, source, created_at, updated_at'
+      )
+      .eq('lesson_type', 'group')
+      .gte('lesson_date', start)
+      .lt('lesson_date', end),
   ]);
   if (result.error) throw result.error;
   return mergeGroupLessonRecords(recurring, result.data || []);
@@ -1532,15 +1551,19 @@ paymentDateForm?.addEventListener('submit', async (event) => {
   try {
     const client = getSupabaseClient();
     if (!client) throw new Error('Supabase 연결이 필요합니다.');
-    const member = paymentDateMembers.find((item) => String(item.id) === memberId);
-    if (!member || Number(member.payment_amount) <= 0) throw new Error('회원의 수강료를 먼저 입력해주세요.');
+    const member = paymentDateMembers.find(
+      (item) => String(item.id) === memberId
+    );
+    if (!member || Number(member.payment_amount) <= 0)
+      throw new Error('회원의 수강료를 먼저 입력해주세요.');
     const { error } = await client.rpc('admin_confirm_member_payment', {
       p_member_id: memberId,
       p_payment_date: paymentDate,
       p_payment_amount: Number(member.payment_amount),
     });
     if (error) throw error;
-    paymentDateMessage.textContent = '입금을 확인했습니다. 보고 예정에서 확인해주세요.';
+    paymentDateMessage.textContent =
+      '입금을 확인했습니다. 보고 예정에서 확인해주세요.';
     setPersonalReportView('pending');
     await loadFinance();
   } catch (error) {
@@ -1709,30 +1732,53 @@ function isPendingPersonalReport(member) {
 }
 
 function getUnreportedPayments(members, reports) {
-  return members.filter((member) => member.payment_date && Number(member.payment_amount) > 0 &&
-    member.payment_status === '완납' && !reports.some((report) =>
-      String(report.member_id) === String(member.id) && report.payment_date === member.payment_date &&
-      Number(report.payment_amount) === Number(member.payment_amount)));
+  return members.filter(
+    (member) =>
+      member.payment_date &&
+      Number(member.payment_amount) > 0 &&
+      member.payment_status === '완납' &&
+      !reports.some(
+        (report) =>
+          String(report.member_id) === String(member.id) &&
+          report.payment_date === member.payment_date &&
+          Number(report.payment_amount) === Number(member.payment_amount)
+      )
+  );
 }
 
 function buildPendingPaymentRows(members, requests, reports) {
-  const memberMap = new Map(members.map((member) => [String(member.id), member]));
-  const reportedIds = new Set(reports.map((report) => report.payment_request_id).filter(Boolean));
-  const confirmed = requests.filter((request) => request.status === 'confirmed');
-  const pending = confirmed.filter((request) => !reportedIds.has(request.id)).map((request) => ({
-    ...memberMap.get(String(request.member_id)),
-    id: request.member_id,
-    reportKey: `request:${request.id}`,
-    payment_request_id: request.id,
-    payment_date: request.payment_date,
-    payment_amount: request.payment_amount,
-    name: memberMap.get(String(request.member_id))?.name || '회원',
-  }));
+  const memberMap = new Map(
+    members.map((member) => [String(member.id), member])
+  );
+  const reportedIds = new Set(
+    reports.map((report) => report.payment_request_id).filter(Boolean)
+  );
+  const confirmed = requests.filter(
+    (request) => request.status === 'confirmed'
+  );
+  const pending = confirmed
+    .filter((request) => !reportedIds.has(request.id))
+    .map((request) => ({
+      ...memberMap.get(String(request.member_id)),
+      id: request.member_id,
+      reportKey: `request:${request.id}`,
+      payment_request_id: request.id,
+      payment_date: request.payment_date,
+      payment_amount: request.payment_amount,
+      name: memberMap.get(String(request.member_id))?.name || '회원',
+    }));
   // Support old manually entered payments which predate the request ledger.
-  const legacy = getUnreportedPayments(members, reports).filter((member) =>
-    !confirmed.some((request) => String(request.member_id) === String(member.id) &&
-      request.payment_date === member.payment_date && Number(request.payment_amount) === Number(member.payment_amount))
-  ).map((member) => ({ ...member, reportKey: `member:${member.id}` }));
+  const legacy = getUnreportedPayments(members, reports)
+    .filter(
+      (member) =>
+        !confirmed.some(
+          (request) =>
+            String(request.member_id) === String(member.id) &&
+            request.payment_date === member.payment_date &&
+            Number(request.payment_amount) === Number(member.payment_amount)
+        )
+    )
+    .map((member) => ({ ...member, reportKey: `member:${member.id}` }));
   return [...pending, ...legacy];
 }
 
@@ -1747,17 +1793,33 @@ async function loadPendingPersonalReports() {
     if (!client) throw new Error('Supabase 연결이 필요합니다.');
     const [membersResult, requestsResult, reportsResult] = await Promise.all([
       client.from('members').select('*').order('name'),
-      client.from('payment_requests').select('id, member_id, payment_date, payment_amount, status').eq('status', 'confirmed').order('reviewed_at'),
-      client.from('personal_lesson_reports').select('member_id, payment_date, payment_amount, payment_request_id'),
+      client
+        .from('payment_requests')
+        .select('id, member_id, payment_date, payment_amount, status')
+        .eq('status', 'confirmed')
+        .order('reviewed_at'),
+      client
+        .from('personal_lesson_reports')
+        .select('member_id, payment_date, payment_amount, payment_request_id'),
     ]);
     if (version !== pendingReportLoadVersion) return;
-    const error = membersResult.error || requestsResult.error || reportsResult.error;
+    const error =
+      membersResult.error || requestsResult.error || reportsResult.error;
     if (error) throw error;
-    pendingReportMembers = buildPendingPaymentRows(membersResult.data || [], requestsResult.data || [], reportsResult.data || []);
+    pendingReportMembers = buildPendingPaymentRows(
+      membersResult.data || [],
+      requestsResult.data || [],
+      reportsResult.data || []
+    );
 
-    document.getElementById('pendingReportCount').textContent = String(pendingReportMembers.length);
+    document.getElementById('pendingReportCount').textContent = String(
+      pendingReportMembers.length
+    );
     document.getElementById('pendingReportAmount').textContent = formatCurrency(
-      pendingReportMembers.reduce((sum, member) => sum + Number(member.payment_amount || 0), 0)
+      pendingReportMembers.reduce(
+        (sum, member) => sum + Number(member.payment_amount || 0),
+        0
+      )
     );
     list.innerHTML = pendingReportMembers.length
       ? pendingReportMembers
@@ -1804,11 +1866,14 @@ document
       const reportedAt = toDateKey(new Date());
       const { error } = member.payment_request_id
         ? await getSupabaseClient().rpc('complete_confirmed_payment_report', {
-            p_request_id: member.payment_request_id, p_reported_at: reportedAt,
+            p_request_id: member.payment_request_id,
+            p_reported_at: reportedAt,
           })
         : await getSupabaseClient().rpc('complete_personal_payment_report', {
-            p_member_id: member.id, p_payment_date: member.payment_date,
-            p_payment_amount: member.payment_amount, p_reported_at: reportedAt,
+            p_member_id: member.id,
+            p_payment_date: member.payment_date,
+            p_payment_amount: member.payment_amount,
+            p_reported_at: reportedAt,
           });
       if (error) throw error;
       // Show the report just created, even if the user was browsing an older month.
@@ -1896,7 +1961,9 @@ function renderMonthlySalaryGuide(year, month) {
 
 function salaryDifferenceText(actual, expected) {
   const difference = Math.round(actual) - Math.round(expected);
-  return difference === 0 ? '0원' : `${difference > 0 ? '+' : '−'}${formatCurrency(Math.abs(difference))}`;
+  return difference === 0
+    ? '0원'
+    : `${difference > 0 ? '+' : '−'}${formatCurrency(Math.abs(difference))}`;
 }
 
 function salaryEntryId(year, month) {
@@ -1987,7 +2054,7 @@ async function loadIncomeHistory() {
   if (!body) return;
   const version = ++incomeHistoryVersion;
   const months = Array.from(
-    { length: 5 },
+    { length: 3 },
     (_, index) => new Date(currentYear, currentMonth - index, 1)
   );
   try {
@@ -2000,8 +2067,8 @@ async function loadIncomeHistory() {
         months[0].getMonth()
       );
       const salaryStart = getMonthRange(
-        months[4].getFullYear(),
-        months[4].getMonth()
+        months[months.length - 1].getFullYear(),
+        months[months.length - 1].getMonth()
       ).start;
       const salaryResult = await client
         .from('transactions')
@@ -2012,8 +2079,8 @@ async function loadIncomeHistory() {
       if (salaryResult.error) throw salaryResult.error;
       salaries = salaryResult.data || [];
       const start = getSalarySettlementRange(
-        months[4].getFullYear(),
-        months[4].getMonth()
+        months[months.length - 1].getFullYear(),
+        months[months.length - 1].getMonth()
       ).start;
       const end = getSalarySettlementRange(
         months[0].getFullYear(),
@@ -2084,7 +2151,7 @@ async function loadIncomeHistory() {
     if (version === incomeHistoryVersion)
       body.innerHTML =
         '<tr><td colspan="7">수입 내역을 불러오지 못했습니다. 새로고침 후 다시 확인해주세요.</td></tr>';
-    console.error('최근 5개월 수입 조회 실패:', error);
+    console.error('최근 수입 조회 실패:', error);
   }
 }
 

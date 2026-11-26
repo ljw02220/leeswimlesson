@@ -87,6 +87,7 @@ declare request_id uuid;
 begin
   perform 1 from public.members where id = p_member_id and auth_user_id = auth.uid() for update;
   if not found then raise exception '본인의 입금만 알릴 수 있습니다.'; end if;
+  if not public.has_personal_lessons(p_member_id) then raise exception '결제 알리기는 개인레슨 회원만 이용할 수 있습니다.'; end if;
   if p_payment_date is null or p_payment_amount is null or p_payment_amount <= 0 then
     raise exception '입금일과 금액을 확인해주세요.';
   end if;

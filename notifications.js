@@ -417,7 +417,7 @@
       items.push({
         title: `가입 신청 ${signupResult.count}건`,
         message: '승인을 기다리는 회원이 있습니다.',
-        href: `home.html?date=${encodeURIComponent(comment.lesson_date)}`,
+        href: 'members.html',
         persistent: true,
         count: signupResult.count,
       });
@@ -588,13 +588,22 @@
     return (data||[]).map(row=>({title:'수업 운동량이 올라왔어요.',message:`${row.workout_date} 운동량을 확인해주세요.`,href:`member-home.html?date=${encodeURIComponent(row.workout_date)}`,createdAt:row.updated_at}));
   }
 
+  async function loadAdminInbox(){
+    if(isMember)return [];
+    const {data,error}=await client.rpc('get_admin_push_inbox');
+    if(error){console.warn('관리자 통합 알림 조회 실패',error);return [];}
+    // Comments already have their own detailed list below.
+    return (data||[]).filter(row=>!String(row.tag||'').startsWith('comment-')).map(row=>({title:row.title,message:row.body,href:String(row.url||'home.html').replace(/^\.\//,''),createdAt:row.created_at}));
+  }
+
   async function refresh(trigger, panel) {
-    const [baseNotifications, commentNotifications, noteNotifications, moveNotifications, workoutNotifications] = await Promise.all([
+    const [baseNotifications, commentNotifications, noteNotifications, moveNotifications, workoutNotifications, adminInbox] = await Promise.all([
       isMember ? loadMemberNotifications() : loadAdminNotifications(),
       loadCommentNotifications(),
       loadLessonNoteNotifications(),
       loadPersonalMoveNotifications(),
       loadWorkoutNotifications(),
+      loadAdminInbox(),
     ]);
     notifications = [
       ...baseNotifications,
@@ -602,6 +611,7 @@
       ...noteNotifications,
       ...moveNotifications,
       ...workoutNotifications,
+      ...adminInbox,
     ].sort((a, b) => {
       if (a.persistent && !b.persistent) return -1;
       if (!a.persistent && b.persistent) return 1;

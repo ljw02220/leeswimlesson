@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (submitButton) submitButton.disabled = true;
       try {
         if (!currentMember) currentMember = (await portal.loadCurrentMember()).member;
+        if(!portal.hasPersonalLessons(currentMember))throw Error('결제 알리기는 개인레슨 회원만 이용할 수 있어요.');
         currentMember = await portal.updateMemberPayment(currentMember, {
           paymentDate: paymentDateValue,
           paymentAmount,
@@ -102,7 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   const dialog = document.getElementById('paymentReportDialog');
-  document.getElementById('paymentReportOpen')?.addEventListener('click', () => {
+  document.getElementById('paymentReportOpen')?.addEventListener('click', async () => {
+    if(!currentMember)currentMember=(await portal.loadCurrentMember()).member;
+    if(!portal.hasPersonalLessons(currentMember))return;
     setMessage('');
     if (paymentDate && !paymentDate.value) paymentDate.value = localDate();
     if (dialog && !dialog.open) dialog.showModal();

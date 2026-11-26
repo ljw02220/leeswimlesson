@@ -651,3 +651,8 @@ body:has(.salary-guide-dialog[open]) { overflow: hidden; }
   .report-completed-toolbar > button { width: 100%; }
   .report-pending-overview { padding: 12px; }
 }
+
+.embedded-management { padding:0; background:transparent; }
+.embedded-management > .top-nav { display:none; }
+.embedded-management > .management-page { width:100%; padding:0; margin:0; }
+.embedded-management .page-kicker { display:none; }

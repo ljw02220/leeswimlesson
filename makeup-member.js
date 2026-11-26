@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('makeupModalOpen')?.addEventListener('click', async () => {
+    if(!member||!window.memberPortal.hasPersonalLessons(member))return;
     selectedWeekday = null; selectedTime = ''; selectedSlotId = '';
     calendarDate = new Date();
     await loadMakeupData();

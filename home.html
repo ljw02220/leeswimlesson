@@ -1,87 +1,655 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=20261125" />
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=20261125" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="icons/apple-touch-icon.png?v=20261125"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="icons/favicon-32.png?v=20261125"
+    />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2563eb" />
     <link rel="manifest" href="site.webmanifest?v=20261125-icons" />
 
-    <title>홈</title>
+    <title>수영관리 · 관리자</title>
 
-    <link rel="stylesheet" href="common.css?v=20261104-mobile-layout" />
-    <link rel="stylesheet" href="home.css?v=20261125-saved-view" />
-    <link rel="stylesheet" href="workout-plan.css?v=20261125-stroke-below" />
-</head>
+    <link rel="stylesheet" href="common.css?v=9a9c9f120a" />
+    <link rel="stylesheet" href="finance.css?v=e820661190" />
+    <link rel="stylesheet" href="home.css?v=f4d44f02ea" />
+    <link rel="stylesheet" href="workout-plan.css?v=6b6f991d96" />
+  </head>
 
-  <body>
+  <body class="unified-admin-home">
     <!-- 상단 네비게이션 -->
-    <nav class="top-nav">
-      <a href="home.html" class="nav-link active">홈</a>
-      <a href="lessons.html" class="nav-link">수업관리</a>
-      <a href="members.html" class="nav-link">회원관리</a>
-      <a href="finance.html" class="nav-link">재무관리</a>
-
-      <details class="admin-account">
-        <summary class="admin-account-trigger">
-          관리자 <span aria-hidden="true">⌄</span>
-        </summary>
-        <div class="admin-account-menu">
-          <button id="logoutButton" class="admin-logout-button" type="button">
-            로그아웃
-          </button>
+    <header class="member-header">
+      <div class="member-brand">
+        <div class="member-brand-mark">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M2 6c2-2 4 2 6 0s4 2 6 0 4 2 8 0M2 12c2-2 4 2 6 0s4 2 6 0 4 2 8 0M2 18c2-2 4 2 6 0s4 2 6 0 4 2 8 0"
+            />
+          </svg>
         </div>
-      </details>
-    </nav>
+
+        <div class="member-brand-text">
+          <strong>수영관리</strong>
+          <span>LEE Swimming Management</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="member-notification-button"
+        aria-label="알림"
+      >
+        <svg
+          width="19"
+          height="19"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+        </svg>
+      </button>
+      <nav class="top-nav">
+        <details class="admin-account">
+          <summary class="admin-account-trigger">
+            관리자 <span aria-hidden="true">⌄</span>
+          </summary>
+          <div class="admin-account-menu">
+            <button id="logoutButton" class="admin-logout-button" type="button">
+              로그아웃
+            </button>
+          </div>
+        </details>
+      </nav>
+    </header>
 
     <main class="management-page">
       <section class="home-heading">
-        <div><p class="page-kicker">TODAY</p><h1>오늘의 관리</h1><p id="homeTodayDate" class="home-date"></p></div>
-        <button type="button" id="homeRefresh" class="home-refresh">새로고침 <span aria-hidden="true">↻</span></button>
+        <div>
+          <p id="homeTodayDate" class="home-date"></p>
+        </div>
       </section>
-      <p class="home-intro">오늘 수업과 확인할 일을 한눈에 살펴보세요.</p>
-      <p id="homeDashboardMessage" class="home-dashboard-message" role="status" hidden></p>
-
-      <section class="home-attention" aria-label="확인할 일">
-        <a href="finance.html#paymentRequests" class="home-task"><span class="home-task-icon" aria-hidden="true">₩</span><span class="home-task-title">입금 확인</span><strong id="homePaymentCount">—</strong><small>확인 대기 <span aria-hidden="true">→</span></small></a>
-        <a href="lessons.html?makeup=open" class="home-task"><span class="home-task-icon" aria-hidden="true">＋</span><span class="home-task-title">보강 신청</span><strong id="homeMakeupCount">—</strong><small>신청 · 횟수 확인 <span aria-hidden="true">→</span></small></a>
-        <a href="members.html" class="home-task"><span class="home-task-icon" aria-hidden="true">♙</span><span class="home-task-title">가입 승인</span><strong id="homeSignupCount">—</strong><small>승인 대기 <span aria-hidden="true">→</span></small></a>
-        <a href="#homeRecentComments" class="home-task"><span class="home-task-icon" aria-hidden="true">☷</span><span class="home-task-title">새 댓글</span><strong id="homeCommentCount">—</strong><small>수업 이야기 <span aria-hidden="true">↓</span></small></a>
+      <p
+        id="homeDashboardMessage"
+        class="home-dashboard-message"
+        role="status"
+        hidden
+      ></p>
+      <a class="home-back-member" href="member-home.html">← 회원 홈</a>
+      <nav class="home-management-areas" aria-label="관리 영역">
+        <a
+          href="#homeTeaching"
+          data-management-view="teaching"
+          aria-current="location"
+          ><strong>수업</strong></a
+        >
+        <a href="#homeMembers" data-management-view="members"
+          ><strong>회원</strong></a
+        >
+        <a href="#homeFinance" data-management-view="finance"
+          ><strong>재무</strong></a
+        >
+      </nav>
+      <button
+        type="button"
+        id="homeChecksOpen"
+        class="home-checks-toggle"
+        aria-expanded="false"
+        aria-controls="homeChecks"
+      >
+        확인 대기 <span id="homeChecksCount">—</span>
+      </button>
+      <section id="homeChecks" class="home-checks-panel" hidden>
+        <h2>확인할 일</h2>
+        <section class="home-attention" aria-label="확인할 일">
+          <a href="finance.html#paymentRequests" class="home-task"
+            ><span class="home-task-icon" aria-hidden="true">₩</span
+            ><span class="home-task-title">입금 확인</span
+            ><strong id="homePaymentCount">—</strong
+            ><small>확인 대기 <span aria-hidden="true">→</span></small></a
+          >
+          <a href="lessons.html?makeup=open" class="home-task"
+            ><span class="home-task-icon" aria-hidden="true">＋</span
+            ><span class="home-task-title">보강 신청</span
+            ><strong id="homeMakeupCount">—</strong
+            ><small
+              >신청 · 횟수 확인 <span aria-hidden="true">→</span></small
+            ></a
+          >
+          <a href="members.html" class="home-task"
+            ><span class="home-task-icon" aria-hidden="true">♙</span
+            ><span class="home-task-title">가입 승인</span
+            ><strong id="homeSignupCount">—</strong
+            ><small>승인 대기 <span aria-hidden="true">→</span></small></a
+          >
+          <a href="#homeRecentComments" class="home-task"
+            ><span class="home-task-icon" aria-hidden="true">☷</span
+            ><span class="home-task-title">새 댓글</span
+            ><strong id="homeCommentCount">—</strong
+            ><small>수업 이야기 <span aria-hidden="true">↓</span></small></a
+          >
+        </section>
       </section>
 
-      <section class="home-workspace">
+      <section id="homeFinance" class="finance-page" hidden aria-label="재무관리">
+      <!-- 페이지 제목 -->
+      <section class="page-heading">
+        <div>
+          <span class="page-kicker"> Finance </span>
+
+          <h1>재무관리</h1>
+        </div>
+
+        <div class="finance-month-control">
+          <button
+            id="prevMonthButton"
+            class="month-button"
+            type="button"
+            aria-label="이전 달"
+          >
+            ‹
+          </button>
+
+          <strong id="financeMonth"> 2026년 9월 </strong>
+
+          <button
+            id="nextMonthButton"
+            class="month-button"
+            type="button"
+            aria-label="다음 달"
+          >
+            ›
+          </button>
+        </div>
+      </section>
+
+      <section class="salary-guide-section">
+        <dialog
+          class="salary-guide-dialog"
+          id="salaryGuideContent"
+          aria-labelledby="salaryGuideTitle"
+        >
+          <div class="card-header">
+            <div>
+              <h2 id="salaryGuideTitle">월급 안내</h2>
+            </div>
+            <button
+              type="button"
+              id="closeSalaryGuide"
+              class="salary-guide-close"
+              aria-label="월급 안내 닫기"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>항목</th>
+                  <th>기준</th>
+                  <th>금액</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td>
+                    <strong> 단체강습 </strong>
+                  </td>
+
+                  <td id="groupCalculation">0회 × 27,000원</td>
+
+                  <td id="groupCalculationAmount">0원</td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <strong> 개인레슨 </strong>
+                  </td>
+
+                  <td>개인레슨 수강료 × 70%</td>
+
+                  <td id="personalCalculationAmount">0원</td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <strong> 세전 합계 </strong>
+                  </td>
+
+                  <td>단체강습 + 개인레슨</td>
+
+                  <td id="grossIncome">0원</td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <strong> 3.3% 공제 </strong>
+                  </td>
+
+                  <td>세전 합계 × 3.3%</td>
+
+                  <td id="taxAmount">-0원</td>
+                </tr>
+
+                <tr class="salary-total-row">
+                  <td>
+                    <strong> 예상 실수령액 </strong>
+                  </td>
+
+                  <td>세전 합계 × 96.7%</td>
+
+                  <td>
+                    <strong id="netIncome"> 0원 </strong>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <form id="actualSalaryForm" class="actual-salary-form">
+            <label for="actualSalaryAmount">실제로 받은 급여</label>
+            <div class="actual-salary-input-row">
+              <input
+                id="actualSalaryAmount"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="예: 1,250,000"
+                required
+              />
+              <button type="submit" class="secondary-action">저장</button>
+            </div>
+            <p id="actualSalaryComparison" aria-live="polite"></p>
+            <p id="actualSalaryMessage" role="status"></p>
+          </form>
+        </dialog>
+      </section>
+
+      <section class="manager-card income-history-card">
+        <div class="card-header"><div><h2>예상 · 실수령</h2><p>월별 예상 급여와 실제 받은 금액을 비교하세요.</p></div></div>
+        <div class="table-wrap">
+          <table class="data-table income-history-table">
+            <thead>
+              <tr>
+                <th>급여월</th>
+                <th>단체강습</th>
+                <th>개인레슨</th>
+                <th>세금</th>
+                <th>합계</th>
+                <th>실제 급여</th>
+                <th>차이</th>
+              </tr>
+            </thead>
+            <tbody id="incomeHistoryBody">
+              <tr>
+                <td colspan="7">불러오는 중입니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="income-table-hint">
+          표를 좌우로 밀면 모든 금액을 볼 수 있어요.
+        </p>
+      </section>
+
+      <!-- 월급 상세 -->
+      <section class="finance-payment-section">
+        <aside class="manager-card side-card" id="paymentRequests">
+          <div class="card-header compact">
+            <div>
+              <h2>입금 확인</h2>
+              <p>회원이 알린 입금을 확인하면 결제정보에 반영됩니다.</p>
+            </div>
+          </div>
+          <form id="memberPaymentDateForm" class="payment-date-form">
+            <label for="paymentDateMember">회원</label>
+            <select id="paymentDateMember" required>
+              <option value="">회원을 선택해주세요</option>
+            </select>
+            <label for="financePaymentDate">입금일</label>
+            <input type="date" id="financePaymentDate" required />
+            <button type="submit" class="secondary-action">입금 확인</button>
+            <p id="paymentDateMessage" role="status"></p>
+          </form>
+          <div class="payment-status-tabs" aria-label="입금 확인 상태">
+            <button
+              type="button"
+              class="secondary-action active"
+              data-payment-status="pending"
+              aria-pressed="true"
+            >
+              확인 대기
+            </button>
+            <button
+              type="button"
+              class="secondary-action"
+              data-payment-status="confirmed"
+              aria-pressed="false"
+            >
+              확인 완료
+            </button>
+          </div>
+          <div id="paymentRequestList" aria-live="polite">
+            <p class="report-empty">입금 알림을 불러오는 중입니다.</p>
+          </div>
+        </aside>
+      </section>
+
+      <!-- 개인레슨 보고 -->
+      <section class="manager-card report-card">
+        <div class="card-header">
+          <div><h2>개인레슨 보고</h2><p>입금 확인한 내역을 보고하고, 월별 보고서를 확인하세요.</p></div>
+          <button id="addPersonalReportButton" class="secondary-action" type="button">보고 추가</button>
+        </div>
+        <div class="payment-status-tabs personal-report-tabs" aria-label="개인레슨 보고 상태">
+          <button type="button" class="secondary-action active" data-report-view="pending" aria-pressed="true" aria-controls="pendingReportPanel">보고 예정 <span id="pendingReportCount" class="report-tab-count">0</span></button>
+          <button type="button" class="secondary-action" data-report-view="completed" aria-pressed="false" aria-controls="completedPersonalReports">보고서 <span id="completedReportCount" class="report-tab-count">0</span></button>
+        </div>
+        <div id="pendingReportPanel">
+          <div class="report-pending-overview">
+            <div><span>보고 대기 금액</span><strong id="pendingReportAmount">—</strong></div>
+            <p>결제월과 관계없이 남아 있어요. 보고 완료한 달의 다음 달 급여에 반영됩니다.</p>
+          </div>
+          <div id="pendingPersonalReports" aria-live="polite"></div>
+        </div>
+        <div id="completedPersonalReports" hidden>
+          <div class="report-completed-toolbar">
+            <div class="finance-month-control report-month-control">
+              <button type="button" class="month-button" id="prevReportMonth" aria-label="이전 달 보고">‹</button>
+              <strong id="reportMonthLabel" aria-live="polite"></strong>
+              <button type="button" class="month-button" id="nextReportMonth" aria-label="다음 달 보고">›</button>
+            </div>
+            <button id="copyReportButton" class="secondary-action" type="button">보고서 복사</button>
+          </div>
+          <p id="reportSettlementRange" class="report-period-description"></p>
+          <div id="personalReportSummary" class="report-summary-panel"></div>
+          <div id="monthlyReport" class="monthly-report"><p class="report-empty">보고서를 불러오는 중입니다.</p></div>
+        </div>
+      </section>
+
+
+    <div
+      id="personalReportModal"
+      class="finance-modal-overlay"
+      aria-hidden="true"
+    >
+      <div class="finance-modal" role="dialog" aria-modal="true">
+        <div class="finance-modal-header">
+          <div>
+            <span class="modal-kicker">Personal Report</span>
+            <h2 id="personalReportModalTitle">개인레슨 보고 추가</h2>
+          </div>
+
+          <button
+            id="closePersonalReportModal"
+            class="modal-close-button"
+            type="button"
+            aria-label="닫기"
+          >
+            ×
+          </button>
+        </div>
+
+        <form id="personalReportForm" class="finance-form">
+          <div class="finance-form-grid">
+            <div class="form-group">
+              <label for="reportMemberName">이름</label>
+              <input
+                id="reportMemberName"
+                type="text"
+                placeholder="예: 김혜민"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="reportPaymentAmount">가격</label>
+              <input
+                id="reportPaymentAmount"
+                type="text"
+                inputmode="numeric"
+                placeholder="예: 300,000"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="reportPaymentDate">결제일</label>
+              <input id="reportPaymentDate" type="date" required />
+            </div>
+
+            <div class="form-group">
+              <label for="reportReportedAt">보고일</label>
+              <input id="reportReportedAt" type="date" required />
+            </div>
+
+            <div class="form-group">
+              <label for="reportResidenceType">단지 구분</label>
+              <select id="reportResidenceType" required>
+                <option value="7단지">7단지</option>
+                <option value="타단지">타단지</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="reportPaymentMethod">결제 방식</label>
+              <select id="reportPaymentMethod" required>
+                <option value="계좌이체">계좌이체</option>
+                <option value="카드">카드</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="finance-modal-actions">
+            <button
+              id="cancelPersonalReportButton"
+              class="secondary-button"
+              type="button"
+            >
+              취소
+            </button>
+
+            <button class="primary-action" type="submit">저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    </section>
+      <section id="homeMembers" hidden aria-label="회원관리">
+        <iframe
+          id="homeMembersFrame"
+          title="회원관리"
+          data-src="members.html?embedded=1"
+        ></iframe>
+      </section>
+      <section id="homeTeaching">
+        <section class="page-heading"><div><span class="page-kicker">Lessons</span><h1>수업관리</h1></div></section>
+        <div class="home-workspace">
         <article class="manager-card home-schedule-card">
-          <div class="card-header"><div><h2>수업 달력</h2><p id="homeScheduleSummary">일정을 불러오고 있습니다.</p></div><a href="lessons.html" class="home-more-link">수업관리 →</a></div>
-          <div class="admin-calendar-navigation"><button type="button" id="homeCalendarPrev" aria-label="이전 달">‹</button><strong id="homeCalendarMonth"></strong><button type="button" id="homeCalendarNext" aria-label="다음 달">›</button><button type="button" id="homeCalendarToday">오늘</button></div>
-          <div class="admin-calendar-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
-          <div id="homeCalendarDays" class="admin-calendar-days" aria-label="월간 수업 날짜"></div>
-          <p class="admin-calendar-legend"><span>● 예정</span><span>● 완료</span><span>● 새 댓글</span><span class="workout-written-legend">✓ 운동량 작성</span></p>
-          <div id="homeWorkoutSavedView" class="home-workout-saved-view" aria-live="polite"></div>
-          <details class="home-daily-workout" id="homeDailyWorkout"><summary>운동량 작성 · 수정 <span id="homeWorkoutDate"></span><strong id="homeWorkoutStatus" class="home-workout-status" role="status">확인 중</strong></summary><form id="homeWorkoutForm" novalidate><div class="workout-editor" id="homeWorkoutEditor"></div><div class="home-note-actions"><p id="homeWorkoutMessage" role="status"></p><button type="submit" disabled>운동량 저장</button></div></form></details>
-          <h3 class="admin-selected-heading"><span id="homeSelectedDate"></span><span id="todayLessonCount" class="home-count">—</span></h3>
-          <div id="homeTodayLessons" class="home-list"><p class="home-empty">수업을 불러오는 중입니다.</p></div>
+          <div class="card-header">
+            <div>
+
+              <p id="homeScheduleSummary">일정을 불러오고 있습니다.</p>
+            </div>
+
+          </div>
+          <div
+            class="home-class-filters"
+            role="group"
+            aria-label="표시할 수업 종류"
+          >
+            <button type="button" data-home-filter="all" aria-pressed="true">
+              전체</button
+            ><button
+              type="button"
+              data-home-filter="group"
+              aria-pressed="false"
+            >
+              단체수업</button
+            ><button
+              type="button"
+              data-home-filter="personal"
+              aria-pressed="false"
+            >
+              개인레슨</button
+            ><button
+              type="button"
+              data-home-filter="makeup"
+              aria-pressed="false"
+            >
+              보강
+            </button>
+          </div>
+          <div class="admin-calendar-navigation">
+            <button type="button" id="homeCalendarPrev" aria-label="이전 달">
+              ‹</button
+            ><strong id="homeCalendarMonth"></strong
+            ><button type="button" id="homeCalendarNext" aria-label="다음 달">
+              ›</button
+            ><button type="button" id="homeCalendarToday">오늘</button>
+          </div>
+          <div class="admin-calendar-weekdays" aria-hidden="true">
+            <span>일</span><span>월</span><span>화</span><span>수</span
+            ><span>목</span><span>금</span><span>토</span>
+          </div>
+          <div
+            id="homeCalendarDays"
+            class="admin-calendar-days"
+            aria-label="월간 수업 날짜"
+          ></div>
+          <p class="admin-calendar-legend">
+            <span>● 단체수업</span><span>● 개인레슨 · 보강</span
+            ><span>● 새 댓글</span
+            ><span class="workout-written-legend">✓ 운동량 작성</span>
+          </p>
+          <p id="homeSelectedDate" class="home-selected-date"></p>
+          <div id="homeTodayLessons" class="home-list"></div>
+          <div
+            id="homeWorkoutSavedView"
+            class="home-workout-saved-view"
+            aria-live="polite"
+          ></div>
+          <details class="home-daily-workout" id="homeDailyWorkout">
+            <summary>
+              운동량 작성 · 수정 <span id="homeWorkoutDate"></span
+              ><strong
+                id="homeWorkoutStatus"
+                class="home-workout-status"
+                role="status"
+                >확인 중</strong
+              >
+            </summary>
+            <form id="homeWorkoutForm" novalidate>
+              <div class="workout-editor" id="homeWorkoutEditor"></div>
+              <div class="home-note-actions">
+                <p id="homeWorkoutMessage" role="status"></p>
+                <button type="submit" disabled>운동량 저장</button>
+              </div>
+            </form>
+          </details>
         </article>
-        <article class="manager-card home-comments-card" id="homeRecentComments">
-          <div class="card-header"><div><h2>수업 댓글</h2><p>수업을 선택하고 댓글과 답글을 함께 확인하세요.</p></div><span id="homeCommentTotal" class="home-count"></span></div>
-          <label class="home-thread-label" for="homeCommentThreadSelect">수업 선택</label>
-          <select id="homeCommentThreadSelect" class="home-thread-select" disabled><option>불러오는 중입니다.</option></select>
-          <div id="homeCommentList" class="home-list"><p class="home-empty">댓글을 불러오는 중입니다.</p></div>
-        </article>
+        </div>
       </section>
     </main>
 
+    <dialog id="homeDiscussionDialog" class="home-discussion-dialog">
+      <article class="manager-card home-comments-card" id="homeRecentComments">
+        <div class="card-header">
+          <div>
+            <h2>수업 내용 · 댓글</h2>
+            <p>
+              날짜를 누르면 그날 수업 내용을 바로 확인하고 작성할 수 있어요.
+            </p>
+          </div>
+          <span id="homeCommentTotal" class="home-count"></span
+          ><button
+            type="button"
+            id="homeDiscussionClose"
+            aria-label="수업 내용 닫기"
+          >
+            ×
+          </button>
+        </div>
+        <span id="todayLessonCount" class="home-count" hidden>—</span>
+        <select
+          id="homeCommentThreadSelect"
+          class="home-thread-select"
+          disabled
+          hidden
+        >
+          <option>불러오는 중입니다.</option>
+        </select>
+        <div id="homeCommentList" class="home-list">
+          <p class="home-empty">댓글을 불러오는 중입니다.</p>
+        </div>
+      </article>
+    </dialog>
+    <dialog id="homeLessonDialog" class="home-lesson-dialog">
+      <form id="homeLessonForm">
+        <h2 id="homeLessonDialogTitle">수업 확인</h2>
+        <div id="homeStatusFields">
+          <label
+            >진행상태
+            <select id="homeLessonStatus">
+              <option value="scheduled">예정</option>
+              <option value="completed">완료</option>
+              <option value="cancelled">취소</option>
+            </select></label
+          >
+        </div>
+        <div id="homeMoveFields" hidden>
+          <label
+            >변경 날짜 <input type="date" id="homeMoveDate" required /></label
+          ><label
+            >변경 시간 <input type="time" id="homeMoveTime" required
+          /></label>
+          <p>이번 개인레슨 한 번만 변경합니다.</p>
+        </div>
+        <p id="homeLessonMessage" role="status"></p>
+        <div class="home-day-actions">
+          <button type="submit" id="homeLessonSave">확인</button
+          ><button type="button" id="homeLessonClose">닫기</button>
+        </div>
+      </form>
+    </dialog>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="common.js?v=20261104-admin-nav"></script>
+    <script src="common.js?v=bdc143d3a0"></script>
     <script src="config.js"></script>
     <script src="lesson-moves.js?v=20261125"></script>
-    <script src="lessons.js?v=20261125-moves"></script>
+    <script src="lessons.js?v=82461f5e83"></script>
     <script src="lesson-threads.js?v=20261124-replies"></script>
-<script src="workout-plan.js?v=20261125-group-phase"></script>
-    <script src="home.js?v=20261125-separated-workout"></script>
-    <script src="notifications.js?v=20261125-guide"></script>
-  <script src="admin-daily-workout.js?v=20261125-saved-view"></script>
-<script src="app-refresh.js?v=20261125-wrap-fix"></script>
-</body>
+    <script src="workout-plan.js?v=61d586b44b"></script>
+    <script src="finance.js?v=361d35a0b0"></script>
+    <script src="admin-management.js?v=930e7718f9"></script>
+    <script src="home.js?v=bb26ec8974"></script>
+    <script src="notifications.js?v=154ecce229"></script>
+    <script src="admin-daily-workout.js?v=20261125-saved-view"></script>
+    <script src="app-refresh.js?v=a74d688c0d"></script>
+  </body>
 </html>

@@ -57,3 +57,14 @@
 .workout-read .workout-group-end td { border-bottom:2px solid #e89991; }
 
 .workout-read .workout-stroke { display:block; width:fit-content; margin-top:6px; padding:3px 7px; border-radius:5px; background:#dfedfc; color:#24588a; font-size:12px; font-weight:800; line-height:1.4; }
+
+/* Keep the total duration and its unit together on narrow screens. */
+.workout-read tfoot .workout-total-time {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  text-align: right;
+}
+@media (max-width: 480px) {
+  .workout-read tfoot .workout-total-time { font-size: 11px; padding-left: 2px; padding-right: 4px; }
+}

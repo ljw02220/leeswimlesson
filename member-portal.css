@@ -1138,3 +1138,9 @@
   color: #71879b;
   font-size: 11px;
 }
+
+.member-membership { display:inline-block; padding:3px 8px; border-radius:6px; background:#e9eef4; color:#62788f; font-size:11px; line-height:1.6; font-weight:700; vertical-align:middle; }
+.member-membership[data-tier="full"] { background:#e5efff; color:#2563eb; }
+.member-membership[hidden],.profile-info-row[hidden],.profile-card[hidden] { display:none !important; }
+
+.member-distance-summary[hidden],.member-selected-distance[hidden] { display:none !important; }

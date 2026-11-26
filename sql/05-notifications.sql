@@ -288,6 +288,7 @@ declare recipient record;
 begin
  if new.workout_plan is null or jsonb_array_length(coalesce(new.workout_plan->'rows','[]'::jsonb))=0 then return new; end if;
  if tg_op='UPDATE' then if new.workout_plan is not distinct from old.workout_plan then return new; end if; end if;
+ perform public.queue_admin_push('수업 운동량이 올라왔어요',new.workout_date::text || ' 운동량을 확인해주세요.','./home.html?date='||new.workout_date::text,'workout-'||new.workout_date::text);
  for recipient in select member_id from public.workout_recipient_ids(new.workout_date) loop
  perform public.queue_member_push(recipient.member_id,'수업 운동량이 올라왔어요',new.workout_date::text || ' 운동량을 확인해주세요.','./member-home.html?date='||new.workout_date::text,'workout-'||new.workout_date::text);
  end loop;
@@ -320,6 +321,42 @@ end;
 $$;
 revoke all on function public.send_my_test_push() from public,anon;
 grant execute on function public.send_my_test_push() to authenticated;
+
+-- 관리자에게 회원 발송 소식도 모읍니다. 동일 묶음 소식은 한 번만 복사합니다.
+create or replace function public.mirror_member_push_to_admin()
+returns trigger language plpgsql security definer set search_path=public,auth as $$
+declare admin_user record;
+begin
+ if new.target_role is distinct from 'member' or new.tag in ('self-test') then return new; end if;
+ for admin_user in select id from auth.users where lower(email) in ('ljw022072@gmail.com','admin@admins.leeswimlesson.com') loop
+  if admin_user.id=new.target_user_id then continue; end if;
+  perform pg_advisory_xact_lock(hashtext(admin_user.id::text||coalesce(new.tag,new.id::text)));
+  if not exists(select 1 from public.push_notification_events e where e.target_user_id=admin_user.id and e.target_role='admin' and e.tag=coalesce(new.tag,new.id::text) and e.created_at>=new.created_at-interval '5 seconds') then
+   insert into public.push_notification_events(target_user_id,target_role,title,body,url,tag)
+   values(admin_user.id,'admin',new.title,new.body,
+    case when new.url like '%member-home.html?date=%' then replace(new.url,'member-home.html','home.html')
+     when new.url like '%makeup%' then './lessons.html'
+     when new.tag like 'payment-%' then './finance.html#paymentRequests'
+     else './test-members.html' end,coalesce(new.tag,new.id::text));
+  end if;
+ end loop;
+ return new;
+end;
+$$;
+revoke all on function public.mirror_member_push_to_admin() from public,anon,authenticated;
+drop trigger if exists mirror_member_push_to_admin on public.push_notification_events;
+create trigger mirror_member_push_to_admin after insert on public.push_notification_events for each row execute function public.mirror_member_push_to_admin();
+create or replace function public.get_admin_push_inbox()
+returns table(id uuid,title text,body text,url text,tag text,created_at timestamptz)
+language plpgsql stable security definer set search_path=public as $$
+begin
+ if not public.is_swim_admin() then raise exception '관리자만 전체 알림을 볼 수 있습니다.'; end if;
+ return query select e.id,e.title,e.body,e.url,e.tag,e.created_at from public.push_notification_events e
+ where e.target_user_id=auth.uid() and e.target_role='admin' order by e.created_at desc limit 60;
+end;
+$$;
+revoke all on function public.get_admin_push_inbox() from public,anon;
+grant execute on function public.get_admin_push_inbox() to authenticated;
 
 notify pgrst, 'reload schema';
 commit;

@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const client = window.swimDb?.client;
+
   const $ = (id) => document.getElementById(id);
   const escape = (v) =>
     String(v ?? '').replace(
@@ -26,6 +27,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const calendarMonth = new Date(`${selectedDay}T00:00:00`);
   calendarMonth.setDate(1);
   let monthLessons = [];
+  let classFilter = 'all';
+  function showGroupWorkout(type) {
+    const hidden = type === 'personal' || type === 'makeup';
+    document.body.classList.toggle('hide-group-workout', hidden);
+    for (const id of ['homeWorkoutSavedView', 'homeDailyWorkout']) {
+      const element = $(id);
+      if (element) element.hidden = hidden;
+    }
+  }
+  const matchesFilter = (type) => classFilter === 'all' || type === classFilter;
+  $('homeChecksOpen').addEventListener('click', () => {
+    const open = $('homeChecks').hidden;
+    $('homeChecks').hidden = !open;
+    $('homeChecksOpen').setAttribute('aria-expanded', String(open));
+  });
+  document.querySelectorAll('[data-home-filter]').forEach((button) =>
+    button.addEventListener('click', () => {
+      classFilter = button.dataset.homeFilter;
+      showGroupWorkout(classFilter);
+      document
+        .querySelectorAll('[data-home-filter]')
+        .forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      renderCalendar();
+    })
+  );
   const formatDay = (d) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
       d.getDate()
@@ -45,10 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let day = 1; day <= new Date(year, month + 1, 0).getDate(); day++) {
       const key = formatDay(new Date(year, month, day));
       const rows = monthLessons.filter(
-        (r) => r.date === key && r.status !== 'deleted'
+        (r) => r.date === key && r.status !== 'deleted' && matchesFilter(r.type)
       );
       const hasComments = comments.some(
-        (c) => c.lesson_date === key && c.created_at > seen
+        (c) =>
+          c.lesson_date === key &&
+          c.created_at > seen &&
+          matchesFilter(c.lesson_type)
       );
       cells.push(
         `<button type="button" data-admin-calendar-date="${key}" class="admin-calendar-day${
@@ -60,9 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }월 ${day}일, 수업 ${rows.length}건${
           hasComments ? ', 새 댓글 있음' : ''
         }"><span>${day}</span><span class="admin-calendar-marks" aria-hidden="true">${
-          rows.some((r) => r.status === 'scheduled') ? '<i></i>' : ''
+          rows.some((r) => r.type === 'group') ? '<i></i>' : ''
         }${
-          rows.some((r) => r.status === 'completed')
+          rows.some((r) => r.type === 'personal' || r.type === 'makeup')
             ? '<i class="completed"></i>'
             : ''
         }${hasComments ? '<i class="comments"></i>' : ''}</span></button>`
@@ -74,9 +103,15 @@ document.addEventListener('DOMContentLoaded', () => {
       day: 'numeric',
       weekday: 'short',
     }).format(new Date(`${selectedDay}T00:00:00`));
-    renderSchedule(monthLessons.filter((r) => r.date === selectedDay));
+    renderSchedule(
+      monthLessons.filter(
+        (r) => r.date === selectedDay && matchesFilter(r.type)
+      )
+    );
     renderComments();
-    window.dispatchEvent(new CustomEvent('swim-admin-date',{detail:selectedDay}));
+    window.dispatchEvent(
+      new CustomEvent('swim-admin-date', { detail: selectedDay })
+    );
   }
   $('homeCalendarDays').addEventListener('click', (event) => {
     const button = event.target.closest('[data-admin-calendar-date]');
@@ -116,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let threads = [];
   let threadVersion = 0;
   const noteDrafts = new Map();
+  const commentDrafts = new Map();
   const threadKey = (c) =>
     `${c.lesson_type}_${c.lesson_date}_${String(c.lesson_time).slice(0, 5)}`;
   function renderComments() {
@@ -128,7 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }건`;
     const grouped = new Map();
     for (const row of monthLessons.filter(
-      (r) => r.date === selectedDay && r.status !== 'deleted'
+      (r) =>
+        r.date === selectedDay &&
+        r.status !== 'deleted' &&
+        matchesFilter(r.type)
     )) {
       const c = {
         lesson_type: row.type,
@@ -138,7 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       if (!grouped.has(threadKey(c))) grouped.set(threadKey(c), c);
     }
-    for (const c of comments.filter((c) => c.lesson_date === selectedDay))
+    for (const c of comments.filter(
+      (c) => c.lesson_date === selectedDay && matchesFilter(c.lesson_type)
+    ))
       if (!grouped.has(threadKey(c))) grouped.set(threadKey(c), c);
     threads = Array.from(grouped.values());
     $('homeCommentTotal').textContent = `${threads.length}개 수업`;
@@ -166,81 +207,126 @@ document.addEventListener('DOMContentLoaded', () => {
         '<p class="home-empty">선택한 날짜에는 수업이 없습니다.</p>';
   }
   async function renderSelectedThread() {
-    const c =
-      threads.find(
-        (c) => threadKey(c) === $('homeCommentThreadSelect').value
-      ) || threads[0];
-    if (!c) return;
     const version = ++threadVersion;
-    const key = threadKey(c);
-    $(
-      'homeCommentList'
-    ).innerHTML = `<section class="home-thread" data-lesson-comments="${escape(
-      key
-    )}">
+    for (const form of $('homeCommentList').querySelectorAll(
+      '[data-lesson-comment-form]'
+    )) {
+      const body = form.elements.comment.value;
+      if (body.trim() || form.dataset.replyParent)
+        commentDrafts.set(form.dataset.lessonCommentForm, {
+          body,
+          parent: form.dataset.replyParent,
+          context: form.querySelector('.lesson-reply-context')?.outerHTML || '',
+        });
+      else commentDrafts.delete(form.dataset.lessonCommentForm);
+    }
+    $('homeCommentList').innerHTML = '';
+    await Promise.all(
+      threads.filter(c => !$('homeDiscussionDialog').open || threadKey(c) === $('homeCommentThreadSelect').value).map(async (c) => {
+        const key = threadKey(c);
+        $('homeCommentList').insertAdjacentHTML(
+          'beforeend',
+          `<section class="home-thread" data-lesson-comments="${escape(key)}">
+      <header class="home-class-heading"><div><span>${escape(
+        { group: '단체수업', personal: '개인레슨', makeup: '보강' }[
+          c.lesson_type
+        ] || '수업'
+      )} · ${escape(String(c.lesson_time).slice(0, 5))}</span><h3>${escape(
+            c.title || '수업'
+          )}</h3></div><a href="lessons.html?date=${encodeURIComponent(
+            c.lesson_date
+          )}">수업 편집</a></header>
+      <div class="home-day-actions"><button type="button" data-home-manage="${escape(key)}" data-action="status">상태 확인 · 취소</button>${c.lesson_type==='personal'?`<button type="button" data-home-manage="${escape(key)}" data-action="move">일정 변경</button>`:''}</div>
       <form class="home-thread-note home-note-form" data-home-note-form="${escape(
         key
       )}">
-        <label for="homeLessonMemo">수업 내용</label>
-        <textarea id="homeLessonMemo" name="memo" rows="4" maxlength="10000" placeholder="오늘 배운 내용과 연습할 점을 적어주세요. 회원에게도 보여요." disabled></textarea>
+        <label for="homeLessonMemo-${escape(key)}">수업 내용</label>
+        <textarea id="homeLessonMemo-${escape(
+          key
+        )}" name="memo" rows="4" maxlength="10000" placeholder="오늘 배운 내용과 연습할 점을 적어주세요. 회원에게도 보여요." disabled></textarea>
         <div class="home-note-actions"><p data-home-note-message role="status">수업 내용을 불러오는 중입니다.</p><button type="submit" disabled>내용 저장</button></div>
       </form>
       <div class="lesson-comments-list" aria-live="polite"><p class="home-empty">댓글을 불러오는 중입니다.</p></div>
       <form class="home-thread-form" data-lesson-comment-form="${escape(key)}">
-        <label for="homeThreadComment">댓글 작성</label><div class="home-thread-input-row"><textarea id="homeThreadComment" name="comment" maxlength="500" rows="2" placeholder="회원에게 댓글이나 답글을 남겨주세요." required></textarea><button type="submit">등록</button></div>
+        <label for="homeThreadComment-${escape(
+          key
+        )}">댓글 작성</label><div class="home-thread-input-row"><textarea id="homeThreadComment-${escape(
+            key
+          )}" name="comment" maxlength="500" rows="2" placeholder="회원에게 댓글이나 답글을 남겨주세요." required></textarea><button type="submit">등록</button></div>
         <p class="home-thread-message" role="status"></p>
       </form>
-    </section>`;
-    const section = $('homeCommentList').querySelector(
-      '[data-lesson-comments]'
+    </section>`
+        );
+        const section = $('homeCommentList').querySelector(
+          `[data-lesson-comments="${key}"]`
+        );
+        const list = section.querySelector('.lesson-comments-list');
+        const commentForm = section.querySelector('[data-lesson-comment-form]');
+        const draft = commentDrafts.get(key);
+        if (draft) {
+          commentForm.elements.comment.value = draft.body;
+          if (draft.parent) {
+            commentForm.dataset.replyParent = draft.parent;
+            commentForm.insertAdjacentHTML('afterbegin', draft.context);
+          }
+        }
+
+        try {
+          const [discussion, note] = await Promise.all([
+            client.rpc('get_member_lesson_thread', {
+              p_lesson_type: c.lesson_type,
+              p_lesson_date: c.lesson_date,
+              p_lesson_time: c.lesson_time,
+            }),
+            client
+              .from('lessons')
+              .select('memo')
+              .eq('lesson_type', c.lesson_type)
+              .eq('lesson_date', c.lesson_date)
+              .eq('lesson_time', c.lesson_time)
+              .order('updated_at', { ascending: false })
+              .limit(1),
+          ]);
+          if (version !== threadVersion) return;
+          const noteForm = section.querySelector('[data-home-note-form]');
+          const noteMessage = noteForm.querySelector(
+            '[data-home-note-message]'
+          );
+          if (note.error)
+            noteMessage.textContent =
+              '수업 내용을 불러오지 못했습니다. 수업을 다시 선택해주세요.';
+          else {
+            noteForm.elements.memo.defaultValue = note.data?.[0]?.memo || '';
+            noteForm.elements.memo.value = noteDrafts.has(key)
+              ? noteDrafts.get(key).memo
+              : noteForm.elements.memo.defaultValue;
+            noteForm.elements.memo.disabled = false;
+            noteForm.querySelector('[type=submit]').disabled = false;
+            noteMessage.textContent = '저장하면 이 수업의 회원에게 보여요.';
+          }
+          if (discussion.error) throw discussion.error;
+          list.innerHTML = window.lessonThreads.render(
+            discussion.data || [],
+            key
+          );
+          section.dataset.loaded = 'true';
+        } catch (error) {
+          if (version !== threadVersion) return;
+          list.textContent = `댓글을 불러오지 못했습니다. ${error.message}`;
+        }
+      })
     );
-    const list = section.querySelector('.lesson-comments-list');
-    try {
-      const [discussion, note] = await Promise.all([
-        client.rpc('get_member_lesson_thread', {
-          p_lesson_type: c.lesson_type,
-          p_lesson_date: c.lesson_date,
-          p_lesson_time: c.lesson_time,
-        }),
-        client
-          .from('lessons')
-          .select('memo')
-          .eq('lesson_type', c.lesson_type)
-          .eq('lesson_date', c.lesson_date)
-          .eq('lesson_time', c.lesson_time)
-          .order('updated_at', { ascending: false })
-          .limit(1),
-      ]);
-      if (version !== threadVersion) return;
-      const noteForm = section.querySelector('[data-home-note-form]');
-      const noteMessage = noteForm.querySelector('[data-home-note-message]');
-      if (note.error)
-        noteMessage.textContent =
-          '수업 내용을 불러오지 못했습니다. 수업을 다시 선택해주세요.';
-      else {
-        noteForm.elements.memo.defaultValue = note.data?.[0]?.memo || '';
-        noteForm.elements.memo.value = noteDrafts.has(key)
-          ? noteDrafts.get(key).memo
-          : noteForm.elements.memo.defaultValue;
-        noteForm.elements.memo.disabled = false;
-        noteForm.querySelector('[type=submit]').disabled = false;
-        noteMessage.textContent =
-          '저장하면 이 수업의 회원에게 보여요.';
-      }
-      if (discussion.error) throw discussion.error;
-      list.innerHTML = window.lessonThreads.render(discussion.data || [], key);
-      section.dataset.loaded = 'true';
-    } catch (error) {
-      if (version !== threadVersion) return;
-      list.textContent = `댓글을 불러오지 못했습니다. ${error.message}`;
-    }
   }
   $('homeCommentThreadSelect').addEventListener('change', renderSelectedThread);
   $('homeCommentList').addEventListener('input', (event) => {
     const form = event.target.closest('[data-home-note-form]');
     if (!form) return;
-    if(form.elements.memo.value===form.elements.memo.defaultValue)noteDrafts.delete(form.dataset.homeNoteForm);
-    else noteDrafts.set(form.dataset.homeNoteForm,{memo:form.elements.memo.value});
+    if (form.elements.memo.value === form.elements.memo.defaultValue)
+      noteDrafts.delete(form.dataset.homeNoteForm);
+    else
+      noteDrafts.set(form.dataset.homeNoteForm, {
+        memo: form.elements.memo.value,
+      });
   });
   $('homeCommentList').addEventListener('submit', async (event) => {
     const noteForm = event.target.closest('[data-home-note-form]');
@@ -361,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (form.isConnected) {
         await renderSelectedThread();
         const savedMessage = $('homeCommentList').querySelector(
-          '.home-thread-message'
+          `[data-lesson-comments="${threadKey(c)}"] .home-thread-message`
         );
         if (savedMessage) savedMessage.textContent = '댓글을 등록했습니다.';
       }
@@ -386,8 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         p_comment_id: button.dataset.commentDelete,
       });
       if (error) throw error;
-      if ($('homeCommentThreadSelect').value === key)
-        await renderSelectedThread();
+      await renderSelectedThread();
     } catch (error) {
       button.disabled = false;
       const message = button
@@ -411,27 +496,18 @@ document.addEventListener('DOMContentLoaded', () => {
         ? ` · 취소 ${rows.filter((i) => i.status === 'cancelled').length}`
         : ''
     }`;
+    $('homeTodayLessons').hidden = false;
     $('homeTodayLessons').innerHTML = rows.length
       ? rows
           .map(
             (i) =>
-              `<button type="button" data-open-home-thread="${escape(
+              `<div class="home-day-lesson"><button type="button" data-open-home-thread="${escape(
                 threadKey({
                   lesson_type: i.type,
                   lesson_date: i.date,
                   lesson_time: i.time,
                 })
-              )}" class="home-lesson-item"><time class="home-lesson-time">${escape(
-                i.time
-              )}</time><div class="home-lesson-info"><span>${
-                { group: '단체강습', personal: '개인레슨', makeup: '보강' }[
-                  i.type
-                ] || '수업'
-              }</span><strong>${escape(
-                i.title || '단체강습'
-              )}</strong></div><span class="home-lesson-status ${escape(
-                i.status
-              )}">${statusName[i.status] || '예정'}</span></button>`
+              )}" class="home-lesson-item"><span class="home-inline-name">${escape(i.type==='group'?'단체수업':i.title||({personal:'개인레슨',makeup:'보강'}[i.type])||'수업')}</span><time class="home-lesson-time">${escape(i.time)}</time><span class="home-lesson-status ${escape(i.status)}">${statusName[i.status]||'예정'}</span></button></div>`
           )
           .join('')
       : '<p class="home-empty">선택한 날짜에는 수업이 없습니다.<br>달력에서 다른 날짜를 확인할 수 있어요.</p>';
@@ -439,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function load() {
     if (loading) return;
     loading = true;
-    $('homeRefresh').disabled = true;
+    if ($('homeRefresh')) $('homeRefresh').disabled = true;
     $('homeDashboardMessage').hidden = true;
     $('homeTodayDate').textContent = new Intl.DateTimeFormat('ko-KR', {
       month: 'long',
@@ -512,6 +588,18 @@ document.addEventListener('DOMContentLoaded', () => {
           ? '—'
           : `${(makeup.count || 0) + (credits.count || 0)}건`;
       if (makeup.error || credits.error) failures.push('보강');
+      const checkTotal = [payment, makeup, credits, signup].reduce(
+        (sum, r) => sum + Number(r.count || 0),
+        0
+      );
+      $('homeChecksCount').textContent = [
+        payment,
+        makeup,
+        credits,
+        signup,
+      ].some((r) => r.error)
+        ? '확인 필요'
+        : `${checkTotal}건`;
       if (commentData.error) {
         $('homeCommentCount').textContent = '—';
         $('homeCommentTotal').textContent = '';
@@ -605,24 +693,115 @@ document.addEventListener('DOMContentLoaded', () => {
         '<p class="home-empty">연결 후 새로고침해주세요.</p>';
     } finally {
       loading = false;
-      $('homeRefresh').disabled = false;
+      if ($('homeRefresh')) $('homeRefresh').disabled = false;
     }
   }
-  $('homeTodayLessons').addEventListener('click', (event) => {
+  let managedLesson = null;
+  const manageDialog = document.getElementById('homeLessonDialog');
+  document
+    .getElementById('homeLessonClose')
+    .addEventListener('click', () => manageDialog.close());
+  document
+    .getElementById('homeLessonForm')
+    .addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!managedLesson) return;
+      const button = document.getElementById('homeLessonSave');
+      button.disabled = true;
+      const message = document.getElementById('homeLessonMessage');
+      message.textContent = '저장 중입니다.';
+      try {
+        if (document.getElementById('homeMoveFields').hidden) {
+          await window.swimAdminSchedule.setStatus(
+            managedLesson,
+            document.getElementById('homeLessonStatus').value
+          );
+        } else {
+          const date = document.getElementById('homeMoveDate').value,
+            time = document.getElementById('homeMoveTime').value;
+          const month = new Date(`${date}T00:00:00`);
+          const items = await window.swimAdminSchedule.getMonth(
+            month.getFullYear(),
+            month.getMonth()
+          );
+          if (
+            (date !== managedLesson.date || time !== managedLesson.time) &&
+            items.some(
+              (item) =>
+                item.date === date &&
+                String(item.time).slice(0, 5) === time &&
+                !['cancelled', 'deleted'].includes(item.status)
+            )
+          )
+            throw Error('해당 시간에 다른 수업이 있습니다.');
+          const ids = managedLesson.memberIds?.length
+            ? managedLesson.memberIds
+            : [managedLesson.memberId].filter(Boolean);
+          if (!ids.length)
+            throw Error(
+              '연결된 회원을 확인할 수 없습니다. 수업관리에서 확인해주세요.'
+            );
+          const { error } = await client.rpc('move_personal_lesson', {
+            p_member_ids: ids,
+            p_original_date: managedLesson.originalDate || managedLesson.date,
+            p_original_time: managedLesson.originalTime || managedLesson.time,
+            p_new_date: date,
+            p_new_time: time,
+          });
+          if (error) throw error;
+          selectedDay = date;
+          calendarMonth.setTime(
+            new Date(`${date.slice(0, 7)}-01T00:00:00`).getTime()
+          );
+        }
+        manageDialog.close();
+        await load();
+      } catch (error) {
+        message.textContent = `저장하지 못했습니다. ${error.message}`;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  document.addEventListener('click', (event) => {
+    const manage = event.target.closest('[data-home-manage]');
+    if (manage) {
+      managedLesson = monthLessons.find(
+        (i) =>
+          i.date === selectedDay &&
+          ((i.lessonKey || i.id || `${i.type}_${i.time}`) === manage.dataset.homeManage || threadKey({lesson_type:i.type,lesson_date:i.date,lesson_time:i.time}) === manage.dataset.homeManage)
+      );
+      if (!managedLesson) return;
+      const move = manage.dataset.action === 'move';
+      document.getElementById('homeLessonDialogTitle').textContent = `${
+        managedLesson.time
+      } ${managedLesson.title || '수업'}`;
+      document.getElementById('homeMoveFields').hidden = !move;
+      document.getElementById('homeStatusFields').hidden = move;
+      document.getElementById('homeLessonStatus').value =
+        managedLesson.status || 'scheduled';
+      document.getElementById('homeMoveDate').value = managedLesson.date;
+      document.getElementById('homeMoveTime').value = managedLesson.time;
+      document.getElementById('homeLessonMessage').textContent = '';
+      manageDialog.showModal();
+      return;
+    }
+
     const button = event.target.closest('[data-open-home-thread]');
     if (!button) return;
+    const selectedLesson = monthLessons.find(i => threadKey({lesson_type:i.type,lesson_date:i.date,lesson_time:i.time}) === button.dataset.openHomeThread);
+    showGroupWorkout(selectedLesson?.type || classFilter);
     $('homeCommentThreadSelect').value = button.dataset.openHomeThread;
+    if (!$('homeDiscussionDialog').open) $('homeDiscussionDialog').showModal();
     renderSelectedThread();
-    $('homeRecentComments').scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
   });
-  $('homeRefresh').addEventListener('click', load);
+  $('homeDiscussionClose').addEventListener('click', () => $('homeDiscussionDialog').close());
+  $('homeRefresh')?.addEventListener('click', load);
 
   window.addEventListener('focus', () => {
     if (
-      !$('homeCommentList').querySelector('[name=comment]')?.value.trim() &&
+      ![...$('homeCommentList').querySelectorAll('[name=comment]')].some(
+        (field) => field.value.trim()
+      ) &&
       !noteDrafts.size
     )
       load();

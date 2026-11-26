@@ -114,6 +114,8 @@ create table if not exists public.signup_requests (
   memo text
 );
 
+alter table public.signup_requests add column if not exists group_lessons jsonb not null default '[]'::jsonb;
+
 -- =========================================
 -- 5. 재무 테이블
 -- =========================================
@@ -297,6 +299,7 @@ begin
   if selected_member is null then
     select id into selected_member from public.members where auth_user_id = auth.uid() limit 1;
   end if;
+  if selected_member is null and public.is_swim_admin() then select id into selected_member from public.members order by name,id limit 1; end if;
   if not exists(select 1 from public.members where id = selected_member) then raise exception '회원을 찾지 못했습니다.'; end if;
   select jsonb_build_object(
     'members', (select coalesce(jsonb_agg(jsonb_build_object('id',id,'name',name) order by name,id),'[]'::jsonb) from public.members),
@@ -404,5 +407,18 @@ create policy "own participation insert" on public.member_workout_participations
 drop policy if exists "own participation delete" on public.member_workout_participations;
 create policy "own participation delete" on public.member_workout_participations for delete to authenticated using(exists(select 1 from public.members m where m.id=member_id and m.auth_user_id=auth.uid()));
 
+create or replace function public.has_personal_lessons(p_member_id uuid)
+returns boolean language sql stable security definer set search_path=public as $$
+ select exists(select 1 from public.members m where m.id=p_member_id
+ and coalesce(m.lesson_format,'') !~* '(단체|group)'
+ and (coalesce(m.lesson_format,'') ~ '^1[[:space:]]*:[[:space:]]*[0-9]+' or m.total_lessons>0));
+$$;
+revoke all on function public.has_personal_lessons(uuid) from public,anon;
+grant execute on function public.has_personal_lessons(uuid) to authenticated;
+
 notify pgrst, 'reload schema';
 commit;
+
+-- 가입 시 선택한 단체수업을 승인 시 회원정보로 반영합니다.
+alter table public.signup_requests add column if not exists group_lessons jsonb not null default '[]'::jsonb;
+notify pgrst, 'reload schema';

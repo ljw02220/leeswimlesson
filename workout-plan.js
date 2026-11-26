@@ -117,7 +117,7 @@ window.workoutPlan = (() => {
       const meters=Number(row.distance)*Number(row.repeats)*sets;
       return `<tr class="${grouped?'workout-group-row':''}${start?' workout-group-start':''}${end?' workout-group-end':''}"><td>${!grouped||start?`<small class="workout-phase">${escape(phases[row.phase]||'')}</small>`:''}<strong>${escape(row.description||phases[row.phase]||'훈련')}</strong>${strokeLabel(row)?`<span class="workout-stroke">${escape(strokeLabel(row))}</span>`:''}</td><td>${escape(row.distance)}m × ${escape(row.repeats)} × ${escape(sets)}</td><td>${escape(row.intensity||'—')}</td><td>${escape(formatInterval(row.interval)||'—')}</td><td>${escape(durationLabel(row)||'—')}</td><td>${meters.toLocaleString('ko-KR')}m</td></tr>`;
     }).join('');
-    return `<section class="workout-read"><header><strong>오늘의 운동량</strong><span>1레인 · ${escape(plan.duration_minutes)}분</span></header><table><thead><tr><th>훈련 내용</th><th>거리 × 개수 × 세트</th><th>강도</th><th>사이클</th><th>소요시간</th><th>거리</th></tr></thead><tbody>${body}</tbody><tfoot><tr><th colspan="4">total</th><td>${escape(totalTimeLabel(plan))}</td><td>${total(plan).toLocaleString('ko-KR')}m</td></tr></tfoot></table></section>`;
+    return `<section class="workout-read"><header><strong>오늘의 운동량</strong><span>1레인 · ${escape(plan.duration_minutes)}분</span></header><table><thead><tr><th>훈련 내용</th><th>거리 × 개수 × 세트</th><th>강도</th><th>사이클</th><th>소요시간</th><th>거리</th></tr></thead><tbody>${body}</tbody><tfoot><tr><th colspan="3">total</th><td colspan="2" class="workout-total-time">${escape(totalTimeLabel(plan))}</td><td>${total(plan).toLocaleString('ko-KR')}m</td></tr></tfoot></table></section>`;
   }
 
   function rowMarkup(row) {

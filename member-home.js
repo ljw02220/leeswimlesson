@@ -1,9 +1,12 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const portal = window.memberPortal;
+  window.swimDb?.client?.rpc('is_swim_admin').then(({data,error})=>{if(!error&&data===true)document.getElementById('memberAdminEntry').hidden=false;}).catch(()=>{});
   let allUpcomingLessons = [];
   let allCompletedLessons = [];
   let calendarLessons = [];
   let calendarMember = null;
+  let isAdminHome=false;
+  let adminMonthVersion=0;
   let freeSwimDates = new Set();
   let swimDistances = new Map();
   let classDistances = new Map();
@@ -15,7 +18,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   let freeSwimError = '';
   let freeSwimLoadVersion = 0;
 
+  async function loadAdminCalendar(){
+    const version=++adminMonthVersion;
+    try{
+      const client=window.swimDb.client;
+      const [rows,requests,saved]=await Promise.all([
+        window.swimAdminSchedule.getMonth(calendarMonth.getFullYear(),calendarMonth.getMonth()),
+        client.from('makeup_requests').select('id,member_id,members!makeup_requests_member_id_fkey(name),makeup_slots!makeup_requests_slot_id_fkey(slot_date,slot_time)').eq('status','approved'),
+        client.from('lessons').select('id,member_id,lesson_date,lesson_time,lesson_type,title,status').gte('lesson_date',dateKey(calendarMonth)).lt('lesson_date',dateKey(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1)))
+      ]);
+      if(version!==adminMonthVersion)return;
+      if(requests.error)throw requests.error;if(saved.error)throw saved.error;
+      const lessons=new Map(rows.map((row,index)=>{const time=String(row.time).slice(0,5);return [`${row.type}_${row.date}_${time}_${row.type==='group'?'':row.memberId||row.id||index}`,{...row,time,id:row.id||`admin-${row.type}-${row.date}-${time}-${index}`}];}));
+      for(const row of requests.data||[]){const slot=row.makeup_slots;if(!slot)continue;const time=String(slot.slot_time).slice(0,5);lessons.set(`makeup_${slot.slot_date}_${time}_${row.member_id}`,{id:`makeup-${row.id}`,type:'makeup',date:slot.slot_date,time,title:row.members?.name||'보강',status:'scheduled'});}
+      for(const row of saved.data||[]){const time=String(row.lesson_time).slice(0,5);const found=[...lessons.values()].find(l=>l.type===row.lesson_type&&l.date===row.lesson_date&&l.time===time&&(l.type==='group'||l.memberId===row.member_id||l.memberIds?.includes(row.member_id)));
+        if(found){found.status=row.status;if(row.title)found.title=row.title;}
+        else lessons.set(`saved-${row.id}`,{id:row.id,type:row.lesson_type,date:row.lesson_date,time,title:row.title||'수업',status:row.status});}
+      calendarLessons=[...lessons.values()].filter(l=>l.status!=='deleted');
+      renderHomeCalendar();
+    }catch(error){if(version===adminMonthVersion)document.getElementById('upcomingLessonList').textContent=`수업을 불러오지 못했습니다. ${error.message}`;}
+  }
+
   async function loadFreeSwims() {
+    if(isAdminHome)return loadAdminCalendar();
     const version = ++freeSwimLoadVersion;
     freeSwimDates = new Set();
     swimDistances = new Map();
@@ -302,7 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderFreeSwimControl();
     const selected = calendarLessons.filter((lesson) => lesson.date === selectedDate).sort((a, b) => String(a.time).localeCompare(String(b.time)));
     const container = document.getElementById('upcomingLessonList');
-    const eligible=selected.some(l=>l.type!=='personal'&&!['cancelled','deleted'].includes(l.status));
+    const eligible=!isAdminHome&&selected.some(l=>l.type!=='personal'&&!['cancelled','deleted'].includes(l.status));
     const participation=eligible&&selectedDate<participationStartsOn?'<p class="member-lesson-context">이전 수업 운동량은 자동으로 합산돼요.</p>':eligible?`<div class="member-participation"><button type="button" data-workout-participation aria-pressed="${participationDates.has(selectedDate)}" ${freeSwimBusy||participationBusy||freeSwimError||selectedDate>dateKey(new Date())?'disabled':''}>${participationDates.has(selectedDate)?'참여 완료 · 취소':'완료(참여)'}</button><small>참여를 누르면 오늘 운동량이 내 수영거리에 더해져요.</small><p data-participation-message role="status"></p></div>`:'';
     container.innerHTML = participation + (selected.length ? selected.map((lesson) => `
       <section class="home-lesson-discussion">
@@ -336,6 +361,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     pressStart = null;
   }
   function openFreeSwimMenu(day) {
+    if(isAdminHome)return;
     selectedDate = day;
     renderHomeCalendar();
     setText('freeSwimDialogDate', portal.formatDateWithDay(day));
@@ -757,22 +783,35 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
+  // Always paint dates, even before login/member data finishes loading.
+  renderHomeCalendar();
   try {
+    const {data:adminCheck,error:adminError}=await window.swimDb.client.rpc('is_swim_admin');
+    if(adminError)throw adminError;
+    if(adminCheck===true){
+      isAdminHome=true;
+      document.getElementById('memberAdminEntry').hidden=false;
+      setText('memberGreetingName','코치');
+      const badge=document.getElementById('memberMembership');badge.textContent='관리자';badge.hidden=false;
+      for(const selector of ['.member-distance-summary','#memberSelectedDistance','#personalLessonRemaining','#makeupModalOpen','#paymentReportOpen','#testAccountLink'])document.querySelector(selector)?.setAttribute('hidden','');
+      const profile=document.querySelector('.member-profile-shortcut');if(profile){profile.href='members.html';profile.setAttribute('aria-label','회원관리');profile.querySelector('span').textContent='회원관리';}
+      setText('homeCalendarHint','날짜를 눌러 전체 수업과 운동량·댓글을 확인하세요. 관리 업무는 관리자 버튼에서 열 수 있어요.');
+      await loadAdminCalendar();portal.renderIcons();return;
+    }
     const { member, user } = await portal.loadCurrentMember();
     calendarMember = member;
-    window.swimDb?.client?.rpc('can_view_test_members').then(({data}) => {
-      if (data === true) document.getElementById('testAccountLink').hidden = false;
-    }).catch(() => {});
-
+    const membership=document.getElementById('memberMembership');
+    if(membership){membership.textContent=portal.getMembershipLabel(member);membership.dataset.tier=portal.hasPersonalLessons(member)?'full':'associate';membership.hidden=false;}
     const remaining = portal.getRemainingLessons(member);
     const personalRemaining = document.getElementById('personalLessonRemaining');
     if (personalRemaining) {
-      const format = String(member.lesson_format || '').trim();
-      const hasPersonalLessons = Number(member.total_lessons || 0) > 0
-        && !/단체|group/i.test(format);
+      const hasPersonalLessons = portal.hasPersonalLessons(member);
       personalRemaining.hidden = !hasPersonalLessons;
     }
 
+    for(const id of ['paymentReportOpen']){
+      const button=document.getElementById(id);if(button)button.hidden=!portal.hasPersonalLessons(member);
+    }
     const approvedMakeupLessons = await portal.getApprovedMakeupLessons(member);
 
     const futureLessons = [

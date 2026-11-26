@@ -1,8 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=20261125" />
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=20261125" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="icons/apple-touch-icon.png?v=20261125"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="icons/favicon-32.png?v=20261125"
+    />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2563eb" />
@@ -10,8 +19,11 @@
 
     <title>수업관리</title>
 
-    <link rel="stylesheet" href="common.css?v=20261104-mobile-layout" />
-    <link rel="stylesheet" href="personal-lesson-periods.css?v=20261125-moves" />
+    <link rel="stylesheet" href="common.css?v=9a9c9f120a" />
+    <link
+      rel="stylesheet"
+      href="personal-lesson-periods.css?v=20261126-role-model"
+    />
   </head>
 
   <body>
@@ -23,9 +35,13 @@
       <a href="finance.html" class="nav-link">재무관리</a>
 
       <details class="admin-account">
-        <summary class="admin-account-trigger">관리자 <span aria-hidden="true">⌄</span></summary>
+        <summary class="admin-account-trigger">
+          관리자 <span aria-hidden="true">⌄</span>
+        </summary>
         <div class="admin-account-menu">
-          <button id="logoutButton" class="admin-logout-button" type="button">로그아웃</button>
+          <button id="logoutButton" class="admin-logout-button" type="button">
+            로그아웃
+          </button>
         </div>
       </details>
     </nav>
@@ -40,15 +56,36 @@
         </div>
 
         <div class="lesson-heading-actions">
-          <button type="button" id="togglePersonalPeriods" aria-expanded="false" aria-controls="personalPeriodPanel">개인레슨 일정</button>
-        <button type="button" class="primary-action" id="makeupManageButton">
-          보강 관리
-        </button>
+          <button
+            type="button"
+            id="togglePersonalPeriods"
+            aria-expanded="false"
+            aria-controls="personalPeriodPanel"
+          >
+            개인레슨 횟수 · 일정
+          </button>
         </div>
       </section>
 
-      <section id="personalPeriodPanel" class="manager-card personal-period-card" hidden aria-labelledby="personalPeriodTitle">
-        <div class="card-header"><div><h2 id="personalPeriodTitle">개인레슨 일정 <span id="personalLessonPeriodCount"></span></h2><p>마감일이 가까운 순서로 보여요. 회원을 누르면 자세히 볼 수 있어요.</p></div><button type="button" id="reloadPersonalLessonPeriods">다시 불러오기</button></div>
+      <section
+        id="personalPeriodPanel"
+        class="manager-card personal-period-card"
+        hidden
+        aria-labelledby="personalPeriodTitle"
+      >
+        <div class="card-header">
+          <div>
+            <h2 id="personalPeriodTitle">
+              개인레슨 횟수 · 예정 <span id="personalLessonPeriodCount"></span>
+            </h2>
+            <p>
+              마감일이 가까운 순서로 보여요. 회원을 누르면 자세히 볼 수 있어요.
+            </p>
+          </div>
+          <button type="button" id="reloadPersonalLessonPeriods">
+            다시 불러오기
+          </button>
+        </div>
         <div id="personalLessonPeriods" class="lesson-period-list"></div>
       </section>
 
@@ -65,7 +102,14 @@
             </div>
             <form id="calendarDateSearch" class="calendar-date-search">
               <label for="calendarSearchDate">날짜 찾기</label>
-              <input type="text" id="calendarSearchDate" placeholder="예: 20261104" aria-label="이동할 날짜, 예: 20261104 또는 2026-11-04" autocomplete="off" required />
+              <input
+                type="text"
+                id="calendarSearchDate"
+                placeholder="예: 20261104"
+                aria-label="이동할 날짜, 예: 20261104 또는 2026-11-04"
+                autocomplete="off"
+                required
+              />
               <button type="submit">이동</button>
               <button type="button" id="calendarTodayButton">오늘</button>
             </form>
@@ -131,13 +175,36 @@
           </section>
         </div>
       </section>
-
     </main>
 
-    <dialog id="personalLessonMoveDialog" class="personal-move-dialog" aria-labelledby="personalMoveTitle">
-      <div class="personal-move-heading"><h2 id="personalMoveTitle">개인레슨 일정 변경</h2><button type="button" id="personalMoveClose" aria-label="닫기">×</button></div>
+    <dialog
+      id="personalLessonMoveDialog"
+      class="personal-move-dialog"
+      aria-labelledby="personalMoveTitle"
+    >
+      <div class="personal-move-heading">
+        <h2 id="personalMoveTitle">개인레슨 일정 변경</h2>
+        <button type="button" id="personalMoveClose" aria-label="닫기">
+          ×
+        </button>
+      </div>
       <p id="personalMoveDescription"></p>
-      <form id="personalMoveForm"><label>변경할 날짜<input type="date" id="personalMoveDate" required></label><label>변경할 시간<input type="time" id="personalMoveTime" step="300" required></label><p id="personalMoveMessage" role="status"></p><button type="submit" id="personalMoveSave">일정 변경 확인</button></form>
+      <form id="personalMoveForm">
+        <label
+          >변경할 날짜<input
+            type="date"
+            id="personalMoveDate"
+            required /></label
+        ><label
+          >변경할 시간<input
+            type="time"
+            id="personalMoveTime"
+            step="300"
+            required
+        /></label>
+        <p id="personalMoveMessage" role="status"></p>
+        <button type="submit" id="personalMoveSave">일정 변경 확인</button>
+      </form>
     </dialog>
     <!-- 수업 추가 팝업 -->
     <div class="lesson-modal" id="lesson-modal" aria-hidden="true">
@@ -190,10 +257,16 @@
     </div>
 
     <div class="lesson-modal" id="makeup-manage-modal" aria-hidden="true">
-      <div class="lesson-modal-box makeup-manage-box" role="dialog" aria-modal="true">
+      <div
+        class="lesson-modal-box makeup-manage-box"
+        role="dialog"
+        aria-modal="true"
+      >
         <div class="lesson-modal-header">
           <h3>보강 관리</h3>
-          <button type="button" id="close-makeup-manage" aria-label="닫기">×</button>
+          <button type="button" id="close-makeup-manage" aria-label="닫기">
+            ×
+          </button>
         </div>
 
         <div class="makeup-weekly-summary">
@@ -213,9 +286,22 @@
             <select name="member_id" aria-label="회원 선택" required>
               <option value="">회원 선택</option>
             </select>
-            <input type="number" name="quantity" min="1" max="20" value="1" aria-label="추가 횟수" required />
+            <input
+              type="number"
+              name="quantity"
+              min="1"
+              max="20"
+              value="1"
+              aria-label="추가 횟수"
+              required
+            />
             <input type="date" name="missed_date" aria-label="빠진 수업 날짜" />
-            <input type="text" name="reason" maxlength="500" placeholder="사유 또는 메모" />
+            <input
+              type="text"
+              name="reason"
+              maxlength="500"
+              placeholder="사유 또는 메모"
+            />
             <button type="submit">직접 추가</button>
           </form>
           <div id="makeup-credit-admin-list"></div>
@@ -278,7 +364,14 @@
             </select>
           </div>
 
-          <button type="button" id="movePersonalLessonButton" class="move-personal-button" hidden>일정 변경</button>
+          <button
+            type="button"
+            id="movePersonalLessonButton"
+            class="move-personal-button"
+            hidden
+          >
+            일정 변경
+          </button>
           <div class="detail-memo-row">
             <label class="detail-label" for="detail-memo"> 수업 내용 </label>
 
@@ -320,13 +413,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="common.js?v=20261104-admin-nav"></script>
+    <script src="common.js?v=bdc143d3a0"></script>
     <script src="lesson-moves.js?v=20261125"></script>
-    <script src="lessons.js?v=20261125-moves"></script>
-    <script src="personal-lesson-periods.js?v=20261125-moves"></script>
+    <script src="lessons.js?v=82461f5e83"></script>
+    <script src="personal-lesson-periods.js?v=302b6a0a29"></script>
     <script src="makeup-admin.js?v=20261124-dashboard"></script>
     <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
-    <script src="notifications.js?v=20261125-guide"></script>
-  <script src="app-refresh.js?v=20261125-wrap-fix"></script>
-</body>
+    <script src="notifications.js?v=154ecce229"></script>
+    <script src="app-refresh.js?v=a74d688c0d"></script>
+  </body>
 </html>

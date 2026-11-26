@@ -36,6 +36,11 @@
     '2026-12-25': '성탄절',
   };
 
+  function hasPersonalLessons(member) {
+    const format=String(member?.lesson_format ?? member?.lessonFormat ?? '').trim();
+    return !/단체|group/i.test(format) && (/^1\s*:\s*\d+/.test(format)||Number(member?.total_lessons ?? member?.totalLessons ?? 0)>0);
+  }
+  function getMembershipLabel(member) {return hasPersonalLessons(member)?'정회원':'준회원';}
   function getClient() {
     return window.swimDb?.isConfigured() ? window.swimDb.client : null;
   }
@@ -1017,6 +1022,7 @@
       templates:[{id:member.id,memberId:member.id,memberIds:[member.id],title:member.lesson_format||'개인레슨',type:'personal',status:'scheduled'}],
       statusFor:(date,time)=>completed.has(`${date}_${time}`)?'completed':cancelledLessonKeys.has(`${date}_${time}`)?'cancelled':'scheduled',
     });
+    personalLessons=hasPersonalLessons(member)?personalLessons:[];
     personalLessons=personalLessons.filter(lesson=>lesson.date>=todayKey&&!completed.has(`${lesson.date}_${formatTime(lesson.time)}`));
     const groupLessons = createGroupLessonSchedule(member, {
       includeHolidays,
@@ -1061,6 +1067,7 @@
   }
 
   async function getApprovedMakeupLessons(member) {
+    if(!hasPersonalLessons(member))return [];
     const client = getClient();
 
     if (!client || !member?.id) {
@@ -1120,10 +1127,10 @@
   }
 
   async function getCompletedLessons(member, limit = 4, options = {}) {
-    const personalRecords = await loadCompletedPersonalLessonRecords(member);
+    const personalRecords = hasPersonalLessons(member)?await loadCompletedPersonalLessonRecords(member):[];
     const personalLessons = personalRecords.map(mapCompletedPersonalLesson);
     const groupLessons = await loadCompletedGroupLessons(member, limit);
-    const makeupLessons = (await loadMakeupLessonRecords(member, 'completed'))
+    const makeupLessons = (hasPersonalLessons(member)?await loadMakeupLessonRecords(member, 'completed'):[])
       .map(mapCompletedMakeupLesson);
     const completedLessons = sortLessonsByDateTimeDesc([
       ...personalLessons,
@@ -1216,6 +1223,8 @@
   }
 
   window.memberPortal = {
+    hasPersonalLessons,
+    getMembershipLabel,
     formatDateWithDay,
     formatDays,
     formatFullDate,

@@ -399,7 +399,7 @@
       personalLessonMoves = window.lessonMoves ? await window.lessonMoves.load(window.swimDb.client) : [];
       personalLessonMoves = personalLessonMoves.filter(move => (data || []).some(m=>m.id===move.member_id && (m.lesson_start_date || null)===(move.cycle_start_date || null)));
       personalSchedule = mergePersonalScheduleEntries(
-        (data || []).map(mapDatabaseMemberToPersonalSchedule).filter(Boolean)
+        (data || []).filter(m=>!/단체|group/i.test(m.lesson_format||'')).map(mapDatabaseMemberToPersonalSchedule).filter(Boolean)
       );
 
       console.info(
@@ -412,6 +412,7 @@
 
     personalSchedule = mergePersonalScheduleEntries(
       getStorageData('personalLessonMembers', [])
+        .filter(m=>!/단체|group/i.test(m.lessonFormat||m.lesson_format||''))
         .map(mapLocalMemberToPersonalSchedule)
         .filter(Boolean)
     );
@@ -2271,6 +2272,17 @@
 
   // Home uses the same schedule engine as the lesson calendar.
   window.swimAdminSchedule = {
+    async setStatus(lesson,status) {
+      if(!hasSupabaseConnection())throw Error('서버 연결을 확인해주세요.');
+      if(!['scheduled','completed','cancelled'].includes(status))throw Error('잘못된 수업 상태입니다.');
+      let query=window.swimDb.client.from('lessons').select('memo').eq('lesson_date',lesson.date).eq('lesson_time',lesson.time).eq('lesson_type',lesson.type);
+      if(lesson.memberId)query=query.eq('member_id',lesson.memberId);
+      const {data,error}=await query;
+      if(error)throw error;
+      await saveLessonRecord(lesson,status,data?.[0]?.memo||lessonFeedback[lesson.lessonKey]||'');
+      const delta=Number(status==='completed')-Number(lesson.status==='completed');
+      if(delta)await syncPersonalLessonCount(lesson,delta);
+    },
     async getMonth(year, month) {
       personalScheduleLoaded = false;
       lessonRecordStateLoaded = false;

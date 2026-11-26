@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderMember(member) {
+    const personal=portal.hasPersonalLessons(member);
+    const membership=document.getElementById('profileMembership');if(membership){membership.textContent=portal.getMembershipLabel(member);membership.dataset.tier=personal?'full':'associate';membership.hidden=false;}
+    for(const id of ['profileTotalLessons','profileUsedLessons','profileRemainingLessons'])document.getElementById(id)?.closest('.profile-info-row')?.toggleAttribute('hidden',!personal);
+    document.getElementById('profilePaymentStatus')?.closest('.profile-card')?.toggleAttribute('hidden',!personal);
+
     const total = Number(member.total_lessons || 0);
     const used = portal.getEffectiveUsedLessons(member);
     const remaining = portal.getRemainingLessons(member);
@@ -17,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setText('profileName', member.name || '-');
     setText('profilePhone', member.phone || '-');
     setText('profileStatus', member.status || '확인필요');
-    setText('profileLessonType', member.lesson_format || '개인레슨');
+    setText('profileLessonType', personal?(member.group_lessons?.length?'개인레슨 · 단체수업':member.lesson_format || '개인레슨'):'단체수업');
     setText('profileLessonDays', portal.formatDays(member.days));
     setText('profileLessonTime', portal.formatLessonTime(member.lesson_time));
     setText('profileTotalLessons', `${total}회`);

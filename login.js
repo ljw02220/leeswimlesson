@@ -352,7 +352,7 @@ function setupLogin() {
           sessionStorage.setItem('loginSession', JSON.stringify(loginData));
         }
 
-        window.location.href = 'home.html';
+        window.location.href = 'member-home.html';
 
         return;
       }
@@ -412,7 +412,7 @@ function setupLogin() {
       }
 
       window.location.href =
-        member || isMemberAuthUser(data.user) ? 'member-home.html' : 'home.html';
+        'member-home.html';
     } catch (approvalError) {
       console.error('승인 상태 확인 실패:', approvalError);
 
@@ -525,6 +525,10 @@ function setupSignup() {
           login_email: loginEmail,
           name,
           phone,
+          group_lessons: Array.from(signupForm.querySelectorAll('input[name="signupClass"]:checked')).flatMap(input => {
+            const [days,time]=input.value.split('|');
+            return days.split(',').map(day=>({day:Number(day),dayName:({2:'화',3:'수',4:'목',5:'금'})[day],time}));
+          }),
           status: 'pending',
           memo: error
             ? '이미 생성된 Auth 계정에서 다시 접수된 가입 신청입니다.'
@@ -606,7 +610,7 @@ async function restoreRememberedLogin() {
   try {
     const loginData = JSON.parse(savedSession);
     window.location.replace(
-      loginData.role === 'member' ? 'member-home.html' : 'home.html'
+      'member-home.html'
     );
   } catch (error) {
     console.error('저장된 로그인 정보를 확인하지 못했습니다.', error);

@@ -55,6 +55,8 @@ function setupLogout() {
 function setupAdminMenu() {
   const account = document.querySelector('.admin-account');
   if (!account) return;
+  const menu=account.querySelector('.admin-account-menu');
+  if(menu&&!menu.querySelector('[data-member-home]')){const link=document.createElement('a');link.href='member-home.html';link.dataset.memberHome='';link.className='admin-member-overview';link.textContent='회원 홈';menu.prepend(link);}
   document.addEventListener('click', (event) => {
     if (!account.contains(event.target)) account.open = false;
   });
