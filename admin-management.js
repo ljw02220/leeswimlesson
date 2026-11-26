@@ -15,6 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();showManagement(link.dataset.managementView);
   }));
 
-  const initial={ '#homeMembers':'members', '#homeFinance':'finance' }[location.hash] || 'teaching';
+  const initial={ '#homeMembers':'members', '#homeFinance':'finance', '#paymentRequests':'finance' }[location.hash] || 'teaching';
   showManagement(initial);
 });

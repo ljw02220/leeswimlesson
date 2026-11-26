@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
+    <script>
+      if (new URLSearchParams(location.search).get('embedded') !== '1') {
+        location.replace('home.html' + location.search + '#homeTeaching');
+      }
+    </script>
     <link
       rel="apple-touch-icon"
       sizes="180x180"
@@ -419,7 +424,7 @@
     <script src="personal-lesson-periods.js?v=302b6a0a29"></script>
     <script src="makeup-admin.js?v=20261124-dashboard"></script>
     <script src="makeup-credit.js?v=20261001-admin-adjust"></script>
-    <script src="notifications.js?v=154ecce229"></script>
+    <script src="notifications.js?v=d470164a66"></script>
     <script src="app-refresh.js?v=a74d688c0d"></script>
   </body>
 </html>

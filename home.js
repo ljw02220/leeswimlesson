@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
       '0'
     )}-${String(d.getDate()).padStart(2, '0')}`;
   };
-  let selectedDay = dateKey();
+  const linkedDay = new URLSearchParams(location.search).get('date');
+  let selectedDay = /^\d{4}-\d{2}-\d{2}$/.test(linkedDay || '') && !Number.isNaN(Date.parse(linkedDay)) ? linkedDay : dateKey();
   const calendarMonth = new Date(`${selectedDay}T00:00:00`);
   calendarMonth.setDate(1);
   let monthLessons = [];

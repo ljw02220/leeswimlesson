@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="ko">
   <head>
+    <script>
+      if (new URLSearchParams(location.search).get('embedded') !== '1') {
+        location.replace('home.html' + location.search + '#homeMembers');
+      }
+    </script>
     <link
       rel="apple-touch-icon"
       sizes="180x180"
@@ -493,7 +498,7 @@
     <script src="supabase.js?v=20260922-login-persistence"></script>
     <script src="common.js?v=bdc143d3a0"></script>
     <script src="members.js?v=9bc606e5dd"></script>
-    <script src="notifications.js?v=154ecce229"></script>
+    <script src="notifications.js?v=d470164a66"></script>
     <script src="app-refresh.js?v=a74d688c0d"></script>
   </body>
 </html>

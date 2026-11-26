@@ -14,6 +14,14 @@
     return;
   }
 
+  function notificationHref(href) {
+    if (isMember) return href;
+    const url = new URL(href || 'home.html', location.href);
+    const page = url.pathname.split('/').pop();
+    const section = {'members.html':'homeMembers','finance.html':'homeFinance','lessons.html':'homeTeaching'}[page];
+    if (section) return `home.html${url.search}#${section}`;
+    return href;
+  }
   const isMember = loginData.role === 'member';
   const seenKey = `swimNotificationSeenAt:${loginData.memberId || 'admin'}`;
   const pushFunctionUrl = `${window.SUPABASE_URL || 'https://icfcwcqzbjqxkrgqyfha.supabase.co'}/functions/v1/web-push`;
@@ -384,7 +392,7 @@
       ? notifications
           .map(
             (item) => `
-              <a class="swim-notification-item" href="${escapeHTML(item.href)}">
+              <a class="swim-notification-item" href="${escapeHTML(notificationHref(item.href))}">
                 <strong>${escapeHTML(item.title)}${isUnread(item) ? '<span class="swim-change-dot" role="img" aria-label="새 소식 있음"></span>' : ''}</strong>
                 <span>${escapeHTML(item.message)}</span>
               </a>
