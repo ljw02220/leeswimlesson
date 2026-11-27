@@ -1208,6 +1208,9 @@ button.home-lesson-item {
   border-radius: 16px;
   overflow: auto;
   box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  margin: auto;
 }
 .home-discussion-dialog::backdrop {
   background: #15243b88;
@@ -1230,44 +1233,237 @@ button.home-lesson-item {
 }
 
 /* 회원 홈과 같은 브랜드 헤더 */
-.unified-admin-home > .member-header { display:flex; align-items:center; gap:12px; width:min(900px,calc(100% - 32px)); box-sizing:border-box; margin:0 auto 22px; padding:18px; border-radius:16px; background:#163f57; }
-.unified-admin-home .member-brand { display:flex; align-items:center; gap:10px; min-width:0; }
-.unified-admin-home .member-brand-mark { display:flex; align-items:center; justify-content:center; width:42px; height:42px; flex-shrink:0; border-radius:14px; background:#ffffff18; color:#fff; }
-.unified-admin-home .member-brand-text { display:flex; flex-direction:column; gap:2px; }
-.unified-admin-home .member-brand-text strong { color:#fff; font-size:16px; font-weight:900; }
-.unified-admin-home .member-brand-text span { color:#bed5e2; font-size:10px; font-weight:600; }
-.unified-admin-home .member-notification-button { display:flex; align-items:center; justify-content:center; width:38px; height:38px; flex-shrink:0; padding:0; border:0; border-radius:12px; background:#fff; color:#163f57; cursor:pointer; }
-.unified-admin-home .member-header .top-nav { width:auto; flex:0 0 auto; margin:0; padding:0; border:0; background:transparent; box-shadow:none; }
-.unified-admin-home .member-header .admin-account-trigger { color:#fff; white-space:nowrap; }
-.unified-admin-home .member-header .swim-notification-wrap { flex-shrink:0; }
-@media(max-width:540px) {
- .unified-admin-home > .member-header { width:calc(100% - 24px); padding:12px; gap:6px; }
- .unified-admin-home .member-brand-mark { width:32px; height:32px; border-radius:10px; }
- .unified-admin-home .member-brand { gap:6px; }
- .unified-admin-home .member-brand-text strong { font-size:14px; }
- .unified-admin-home .member-brand-text span { display:none; }
- .unified-admin-home .member-header .admin-account-trigger { font-size:11px; padding:6px; }
- .unified-admin-home .member-header .app-refresh-button { margin-right:0; }
+.unified-admin-home > .member-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(900px, calc(100% - 32px));
+  box-sizing: border-box;
+  margin: 0 auto 22px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #163f57;
+}
+.unified-admin-home .member-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.unified-admin-home .member-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: #ffffff18;
+  color: #fff;
+}
+.unified-admin-home .member-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.unified-admin-home .member-brand-text strong {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+}
+.unified-admin-home .member-brand-text span {
+  color: #bed5e2;
+  font-size: 10px;
+  font-weight: 600;
+}
+.unified-admin-home .member-notification-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  color: #163f57;
+  cursor: pointer;
+}
+.unified-admin-home .member-header .top-nav {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.unified-admin-home .member-header .admin-account-trigger {
+  color: #fff;
+  white-space: nowrap;
+}
+.unified-admin-home .member-header .swim-notification-wrap {
+  flex-shrink: 0;
+}
+@media (max-width: 540px) {
+  .unified-admin-home > .member-header {
+    width: calc(100% - 24px);
+    padding: 12px;
+    gap: 6px;
+  }
+  .unified-admin-home .member-brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .unified-admin-home .member-brand {
+    gap: 6px;
+  }
+  .unified-admin-home .member-brand-text strong {
+    font-size: 14px;
+  }
+  .unified-admin-home .member-brand-text span {
+    display: none;
+  }
+  .unified-admin-home .member-header .admin-account-trigger {
+    font-size: 11px;
+    padding: 6px;
+  }
+  .unified-admin-home .member-header .app-refresh-button {
+    margin-right: 0;
+  }
 }
 
-#homeTeaching[hidden], #homeMembers[hidden] { display:none !important; }
-#homeMembersFrame { display:block; width:100%; height:80dvh; min-height:620px; border:0; background:transparent; }
-.home-management-areas a[aria-current="location"] { border-color:#3478d8; background:#edf4ff; }
+#homeTeaching[hidden],
+#homeMembers[hidden] {
+  display: none !important;
+}
+#homeMembersFrame {
+  display: block;
+  width: 100%;
+  height: 80dvh;
+  min-height: 620px;
+  border: 0;
+  background: transparent;
+}
+.home-management-areas a[aria-current='location'] {
+  border-color: #3478d8;
+  background: #edf4ff;
+}
 
-#homeFinance[hidden] { display:none !important; }
-#homeFinanceFrame { display:block; width:100%; height:80dvh; min-height:620px; border:0; background:transparent; }
+#homeFinance[hidden] {
+  display: none !important;
+}
+#homeFinanceFrame {
+  display: block;
+  width: 100%;
+  height: 80dvh;
+  min-height: 620px;
+  border: 0;
+  background: transparent;
+}
 
-#homeTodayLessons .home-day-lesson { display:flex; align-items:center; gap:4px; padding:4px; }
-#homeTodayLessons .home-lesson-item { flex:1; min-width:0; padding:7px 4px; }
-.home-quick-status { display:flex; gap:4px; flex-shrink:0; }
-.home-quick-status button { padding:7px 8px; border:1px solid #d5e3f2; border-radius:7px; background:white; font-size:11px; cursor:pointer; }
-.home-quick-status [data-quick-status="completed"] { color:#197c4b; background:#edf9f1; }
-.home-quick-status [data-quick-status="cancelled"] { color:#bd5050; }
-.home-quick-status button:disabled { opacity:.5; }
+#homeTodayLessons .home-day-lesson {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+}
+#homeTodayLessons .home-lesson-item {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 4px;
+}
+.home-quick-status {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.home-quick-status button {
+  padding: 7px 8px;
+  border: 1px solid #d5e3f2;
+  border-radius: 7px;
+  background: white;
+  font-size: 11px;
+  cursor: pointer;
+}
+.home-quick-status [data-quick-status='completed'] {
+  color: #197c4b;
+  background: #edf9f1;
+}
+.home-quick-status [data-quick-status='cancelled'] {
+  color: #bd5050;
+}
+.home-quick-status button:disabled {
+  opacity: 0.5;
+}
 
-#homeAddLesson { padding:8px 12px; border:1px solid #bfd8f3; border-radius:8px; color:#2765ad; background:#fff; cursor:pointer; margin:6px 0; }
+#homeAddLesson {
+  padding: 8px 12px;
+  border: 1px solid #bfd8f3;
+  border-radius: 8px;
+  color: #2765ad;
+  background: #fff;
+  cursor: pointer;
+  margin: 6px 0;
+}
 
-#homeTodayLessons .home-day-lesson { display:flex; align-items:center; padding:0 8px 0 0; gap:4px; }
-#homeTodayLessons .home-day-lesson > .home-lesson-item { flex:1; min-width:0; width:auto; }
-#homeTodayLessons .home-day-lesson > .home-lesson-status { margin:0; padding:6px 8px; border:0; cursor:pointer; white-space:nowrap; }
-#homeTodayLessons .home-day-lesson > .home-lesson-status:disabled { opacity:.5; }
+#homeTodayLessons .home-day-lesson {
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 0;
+  gap: 4px;
+}
+#homeTodayLessons .home-day-lesson > .home-lesson-item {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+#homeTodayLessons .home-day-lesson > .home-lesson-status {
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#homeTodayLessons .home-day-lesson > .home-lesson-status:disabled {
+  opacity: 0.5;
+}
+
+/* 회원 홈과 관리 화면의 바깥 여백·헤더 비율을 동일하게 유지 */
+body.unified-admin-home {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: 24px 18px 30px;
+  box-sizing: border-box;
+  background: #f3f6f8;
+}
+.unified-admin-home > .member-header,
+.unified-admin-home > .management-page {
+  width: 100%;
+  max-width: none;
+}
+.unified-admin-home > .member-header {
+  padding: 18px;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.unified-admin-home .member-brand-mark { width: 42px; height: 42px; border-radius: 14px; }
+.unified-admin-home .member-brand-text strong { font-size: 16px; }
+.unified-admin-home .member-brand-text span { display: block; font-size: 10px; }
+@media (min-width: 700px) {
+  body.unified-admin-home { margin-top: 24px; margin-bottom: 40px; padding: 28px 24px 38px; border: 1px solid #dde7f1; border-radius: 24px; }
+}
+@media (max-width: 430px) {
+  body.unified-admin-home { padding: 18px 12px 24px; }
+  .unified-admin-home > .member-header { margin-bottom: 22px; gap: 6px; }
+  .unified-admin-home .member-brand-mark { width: 36px; height: 36px; border-radius: 11px; }
+  .unified-admin-home .member-brand-mark svg { width: 19px; height: 19px; }
+  .unified-admin-home .member-brand-text strong { font-size: 14px; }
+  .unified-admin-home .member-brand-text span { font-size: 9px; }
+}
+@media (max-width: 380px) {
+  .unified-admin-home > .member-header { padding: 14px 12px; }
+  .unified-admin-home .member-brand-text span { display: none; }
+}

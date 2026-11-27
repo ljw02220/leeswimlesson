@@ -1283,3 +1283,9 @@
   padding: 0;
   margin: 0;
 }
+
+/* 개인레슨 횟수는 정회원 목록에서만 표시합니다. */
+.member-list-card table:not(.personal-members-only) th:nth-child(3),
+.member-list-card table:not(.personal-members-only) th:nth-child(4),
+.member-list-card table:not(.personal-members-only) tr.member-row td:nth-child(3),
+.member-list-card table:not(.personal-members-only) tr.member-row td:nth-child(4) { display:none; }

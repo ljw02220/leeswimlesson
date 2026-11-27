@@ -940,6 +940,9 @@ function renderMembers() {
     return;
   }
 
+  const personalOnly = document.getElementById('memberTierFilter')?.value === 'full';
+  const table = tbody.closest('table');
+  table?.classList.toggle('personal-members-only', personalOnly);
   const filteredMembers = getFilteredMembers();
   const sortedMembers = sortMembers(filteredMembers);
   const count = document.getElementById('memberListCount');
@@ -999,7 +1002,7 @@ function renderMembers() {
 
       <td class="center-cell">
         <span class="format-badge">
-          ${escapeHTML(member.lessonFormat || '1:1')}
+          ${escapeHTML(/단체|group/i.test(member.lessonFormat || '') || !(/^1\s*:\s*\d+/.test(member.lessonFormat || '') || Number(member.totalLessons)>0) ? '준회원' : '정회원')}
         </span>
       </td>
 
