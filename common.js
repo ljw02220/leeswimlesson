@@ -24,7 +24,8 @@ async function requireAuthSession() {
     try {
       const parsedSession = JSON.parse(savedSession);
 
-      if (parsedSession.role === 'member') {
+      const { data: admin, error: adminError } = await window.swimDb.client.rpc('is_swim_admin');
+      if (parsedSession.role === 'member' && (adminError || admin !== true)) {
         window.location.href = 'member-home.html';
       }
     } catch (error) {

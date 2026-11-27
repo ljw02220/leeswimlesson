@@ -508,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   lesson_date: i.date,
                   lesson_time: i.time,
                 })
-              )}" class="home-lesson-item"><span class="home-inline-name">${escape(i.type==='group'?'단체수업':i.title||({personal:'개인레슨',makeup:'보강'}[i.type])||'수업')}</span><time class="home-lesson-time">${escape(i.time)}</time><span class="home-lesson-status ${escape(i.status)}">${statusName[i.status]||'예정'}</span></button></div>`
+              )}" class="home-lesson-item"><span class="home-inline-name">${escape(i.type==='group'?'단체수업':i.title||({personal:'개인레슨',makeup:'보강'}[i.type])||'수업')}</span><time class="home-lesson-time">${escape(i.time)}</time></button><button type="button" class="home-lesson-status ${escape(i.status)}" data-quick-status="${({scheduled:'completed',completed:'cancelled',cancelled:'scheduled'})[i.status]||'scheduled'}" data-lesson-index="${monthLessons.indexOf(i)}" aria-label="${({scheduled:'예정, 누르면 확인',completed:'확인, 누르면 취소',cancelled:'취소, 누르면 예정'})[i.status]||'상태 변경'}">${({scheduled:'예정',completed:'확인',cancelled:'취소'})[i.status]||'예정'}</button></div>`
           )
           .join('')
       : '<p class="home-empty">선택한 날짜에는 수업이 없습니다.<br>달력에서 다른 날짜를 확인할 수 있어요.</p>';
@@ -525,14 +525,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }).format(new Date());
     try {
       if (!client) throw Error('서버 연결이 필요합니다.');
-      const { data: auth, error: authError } = await client.auth.getUser();
-      if (
-        authError ||
-        !['ljw022072@gmail.com', 'admin@admins.leeswimlesson.com'].includes(
-          String(auth?.user?.email || '').toLowerCase()
-        )
-      )
-        throw Error('관리자 로그인이 필요합니다.');
+      const { data: isAdmin, error: adminError } = await client.rpc('is_swim_admin');
+      if (adminError) throw adminError;
+      if (isAdmin !== true) throw Error('관리자 권한이 필요합니다. 통합 계정 SQL 적용 여부를 확인해주세요.');
       const responses = await Promise.allSettled([
         client
           .from('payment_requests')
@@ -697,6 +692,36 @@ document.addEventListener('DOMContentLoaded', () => {
       if ($('homeRefresh')) $('homeRefresh').disabled = false;
     }
   }
+  const addDialog=$('homeAddDialog');
+  $('homeAddClose').addEventListener('click',()=>addDialog.close());
+  $('homeAddType').addEventListener('change',()=>{
+    const group=$('homeAddType').value==='group';
+    $('homeAddMemberField').hidden=group;$('homeAddMember').required=!group;
+  });
+  $('homeAddLesson').addEventListener('click',async()=>{
+    $('homeAddForm').reset();$('homeAddDate').value=selectedDay;
+    $('homeAddMemberField').hidden=false;$('homeAddMember').required=true;
+    $('homeAddSave').disabled=true;$('homeAddMessage').textContent='회원을 불러오는 중입니다.';addDialog.showModal();
+    try{
+      const {data,error}=await client.from('members').select('id,name').order('name');if(error)throw error;
+      $('homeAddMember').innerHTML='<option value="">회원 선택</option>'+(data||[]).map(member=>`<option value="${escape(member.id)}">${escape(member.name)}</option>`).join('');
+      $('homeAddMessage').textContent='';$('homeAddSave').disabled=false;
+    }catch(error){$('homeAddMessage').textContent='회원을 불러오지 못했습니다. 창을 닫고 다시 시도해주세요.';}
+  });
+  $('homeAddForm').addEventListener('submit',async event=>{
+    event.preventDefault();if($('homeAddSave').disabled)return;$('homeAddSave').disabled=true;
+    try{
+      const type=$('homeAddType').value,date=$('homeAddDate').value,time=$('homeAddTime').value;
+      const memberId=type==='group'?null:$('homeAddMember').value;
+      const {data:existing,error:lookupError}=await client.from('lessons').select('id').eq('lesson_date',date).eq('lesson_time',time).eq('lesson_type',type).not('status','in','(cancelled,deleted)');
+      if(lookupError)throw lookupError;
+      if(existing?.length)throw Error('같은 날짜·시간에 해당 종류의 수업이 이미 있습니다.');
+      const title=type==='group'?'단체수업':$('homeAddMember').selectedOptions[0]?.textContent||'개인레슨';
+      const {error}=await client.from('lessons').insert({member_id:memberId,lesson_date:date,lesson_time:time,lesson_type:type,title,status:'scheduled',source:'added'});if(error)throw error;
+      selectedDay=date;calendarMonth.setTime(new Date(`${date.slice(0,7)}-01T00:00:00`).getTime());addDialog.close();await load();
+    }catch(error){$('homeAddMessage').textContent=error.message==='같은 날짜·시간에 해당 종류의 수업이 이미 있습니다.'?error.message:'수업을 추가하지 못했습니다. 연결과 관리자 권한을 확인해주세요.';}
+    finally{$('homeAddSave').disabled=false;}
+  });
   let managedLesson = null;
   const manageDialog = document.getElementById('homeLessonDialog');
   document
@@ -763,7 +788,18 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = false;
       }
     });
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
+    const quick=event.target.closest('[data-quick-status]');
+    if(quick){
+      const lesson=monthLessons[Number(quick.dataset.lessonIndex)];
+      if(!lesson||quick.disabled)return;
+      const row=quick.closest('.home-day-lesson');
+      row.querySelectorAll('button').forEach(button=>button.disabled=true);
+      try{await window.swimAdminSchedule.setStatus(lesson,quick.dataset.quickStatus);await load();}
+      catch(error){alert('수업 상태를 저장하지 못했습니다. 다시 시도해주세요.');row.querySelectorAll('button').forEach(button=>button.disabled=false);}
+      return;
+    }
+
     const manage = event.target.closest('[data-home-manage]');
     if (manage) {
       managedLesson = monthLessons.find(

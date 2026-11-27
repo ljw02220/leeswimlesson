@@ -548,6 +548,7 @@
             ><span class="workout-written-legend">✓ 운동량 작성</span>
           </p>
           <p id="homeSelectedDate" class="home-selected-date"></p>
+          <button type="button" id="homeAddLesson">＋ 수업 추가</button>
           <div id="homeTodayLessons" class="home-list"></div>
           <div
             id="homeWorkoutSavedView"
@@ -609,7 +610,8 @@
         </div>
       </article>
     </dialog>
-    <dialog id="homeLessonDialog" class="home-lesson-dialog">
+    <dialog id="homeAddDialog" class="home-lesson-dialog"><form id="homeAddForm"><h2>수업 추가</h2><label>날짜<input id="homeAddDate" type="date" required></label><label>수업 종류<select id="homeAddType"><option value="personal">개인레슨</option><option value="group">단체수업</option><option value="makeup">보강</option></select></label><label id="homeAddMemberField">회원<select id="homeAddMember" required><option value="">회원 선택</option></select></label><label>시간<input id="homeAddTime" type="time" required></label><p id="homeAddMessage" role="status"></p><div class="home-day-actions"><button id="homeAddSave" type="submit">추가</button><button id="homeAddClose" type="button">닫기</button></div></form></dialog>
+<dialog id="homeLessonDialog" class="home-lesson-dialog">
       <form id="homeLessonForm">
         <h2 id="homeLessonDialogTitle">수업 확인</h2>
         <div id="homeStatusFields">
@@ -639,7 +641,7 @@
     </dialog>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js?v=20260922-login-persistence"></script>
-    <script src="common.js?v=bdc143d3a0"></script>
+    <script src="common.js?v=20261127-unified-account"></script>
     <script src="config.js"></script>
     <script src="lesson-moves.js?v=20261125"></script>
     <script src="lessons.js?v=82461f5e83"></script>
@@ -647,8 +649,8 @@
     <script src="workout-plan.js?v=61d586b44b"></script>
     <script src="finance.js?v=361d35a0b0"></script>
     <script src="admin-management.js?v=26acc72e53"></script>
-    <script src="home.js?v=4cc1a0f3f5"></script>
-    <script src="notifications.js?v=d470164a66"></script>
+    <script src="home.js?v=20261127-server-admin-role"></script>
+    <script src="notifications.js?v=20261127-unified-account"></script>
     <script src="admin-daily-workout.js?v=20261125-saved-view"></script>
     <script src="app-refresh.js?v=a74d688c0d"></script>
   </body>

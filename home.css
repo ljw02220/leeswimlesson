@@ -1256,3 +1256,18 @@ button.home-lesson-item {
 
 #homeFinance[hidden] { display:none !important; }
 #homeFinanceFrame { display:block; width:100%; height:80dvh; min-height:620px; border:0; background:transparent; }
+
+#homeTodayLessons .home-day-lesson { display:flex; align-items:center; gap:4px; padding:4px; }
+#homeTodayLessons .home-lesson-item { flex:1; min-width:0; padding:7px 4px; }
+.home-quick-status { display:flex; gap:4px; flex-shrink:0; }
+.home-quick-status button { padding:7px 8px; border:1px solid #d5e3f2; border-radius:7px; background:white; font-size:11px; cursor:pointer; }
+.home-quick-status [data-quick-status="completed"] { color:#197c4b; background:#edf9f1; }
+.home-quick-status [data-quick-status="cancelled"] { color:#bd5050; }
+.home-quick-status button:disabled { opacity:.5; }
+
+#homeAddLesson { padding:8px 12px; border:1px solid #bfd8f3; border-radius:8px; color:#2765ad; background:#fff; cursor:pointer; margin:6px 0; }
+
+#homeTodayLessons .home-day-lesson { display:flex; align-items:center; padding:0 8px 0 0; gap:4px; }
+#homeTodayLessons .home-day-lesson > .home-lesson-item { flex:1; min-width:0; width:auto; }
+#homeTodayLessons .home-day-lesson > .home-lesson-status { margin:0; padding:6px 8px; border:0; cursor:pointer; white-space:nowrap; }
+#homeTodayLessons .home-day-lesson > .home-lesson-status:disabled { opacity:.5; }

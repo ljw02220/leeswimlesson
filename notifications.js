@@ -22,7 +22,7 @@
     if (section) return `home.html${url.search}#${section}`;
     return href;
   }
-  const isMember = loginData.role === 'member';
+  const isMember = loginData.role === 'member' && !document.body.classList.contains('unified-admin-home') && !new URLSearchParams(location.search).has('embedded');
   const seenKey = `swimNotificationSeenAt:${loginData.memberId || 'admin'}`;
   const pushFunctionUrl = `${window.SUPABASE_URL || 'https://icfcwcqzbjqxkrgqyfha.supabase.co'}/functions/v1/web-push`;
   let notifications = [];

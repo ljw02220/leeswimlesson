@@ -357,8 +357,8 @@ function setupLogin() {
         return;
       }
 
-      const signupRequest = await getSignupRequest(data.user.id, data.user.email || email);
-      let member = await getMemberByAuthUserId(data.user.id);
+      const signupRequest = await getSignupRequest(data.user.id, data.user.email || email).catch(error => { error.loginStage = '가입신청 조회'; throw error; });
+      let member = await getMemberByAuthUserId(data.user.id).catch(error => { error.loginStage = '회원 조회'; throw error; });
 
       if (!signupRequest && isMemberAuthUser(data.user) && !member) {
         await createPendingSignupRequestFromUser(
@@ -420,7 +420,7 @@ function setupLogin() {
 
       if (loginError) {
         loginError.textContent =
-          '승인 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.';
+          `승인 확인 실패: ${approvalError.loginStage || '회원 연결'}${approvalError.code ? ` (${String(approvalError.code).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24)})` : ''}. ${/fetch|network/i.test(approvalError.message || '') ? '네트워크 연결을 확인해주세요.' : '관리자에게 이 문구를 알려주세요.'}`;
       }
     }
   });

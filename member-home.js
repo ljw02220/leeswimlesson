@@ -796,12 +796,41 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
+  let refreshingOnReturn = false;
+  let lastReturnRefresh = 0;
+  async function refreshOnReturn() {
+    if (document.hidden || refreshingOnReturn || Date.now() - lastReturnRefresh < 3000) return;
+    if (!isAdminHome && !calendarMember) return;
+    // Preserve unfinished comments and open editing dialogs.
+    if ([...document.querySelectorAll('textarea')].some(field => field.value.trim()) || document.querySelector('dialog[open]')) return;
+    refreshingOnReturn = true;
+    lastReturnRefresh = Date.now();
+    try {
+      if (isAdminHome) { await loadAdminCalendar(); return; }
+      const {member} = await portal.loadCurrentMember();
+      calendarMember = member;
+      const upcoming = await portal.getUpcomingLessons(member, 100);
+      const makeup = await portal.getApprovedMakeupLessons(member);
+      const completed = await portal.getCompletedLessons(member, 100);
+      calendarLessons = [...new Map([...upcoming, ...makeup, ...completed].map(lesson => [`${lesson.id}_${lesson.date}_${lesson.time}`,lesson])).values()];
+      setText('remainingLessons', `${portal.getRemainingLessons(member)}회`);
+      await loadFreeSwims();
+      renderHomeCalendar();
+    } catch (error) { console.error('앱 복귀 시 새로고침 실패:', error); }
+    finally { refreshingOnReturn = false; }
+  }
+  window.addEventListener('focus', refreshOnReturn);
+  window.addEventListener('pageshow', event => { if (event.persisted) refreshOnReturn(); });
+  window.addEventListener('online', refreshOnReturn);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshOnReturn(); });
+
   // Always paint dates, even before login/member data finishes loading.
   renderHomeCalendar();
   try {
     const {data:adminCheck,error:adminError}=await window.swimDb.client.rpc('is_swim_admin');
     if(adminError)throw adminError;
-    if(adminCheck===true){
+    if(adminCheck===true)document.getElementById('memberAdminEntry').hidden=false;
+    if(adminCheck===true && !(await window.swimDb.client.auth.getUser()).data.user?.email?.endsWith('@members.leeswimlesson.com')){
       isAdminHome=true;
       document.getElementById('memberAdminEntry').hidden=false;
       setText('memberGreetingName','코치');
