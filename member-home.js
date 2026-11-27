@@ -67,6 +67,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       swimDistances=new Map((free.data||[]).map(row=>[row.swim_date,row.distance_meters]));
       participationDates=new Set((participationResult.data||[]).map(r=>r.workout_date));
       const dailyDistances=new Map((dailyResult.data||[]).map(r=>[r.workout_date,Number(r.distance_meters)||0]));
+      // A saved daily plan must remain visible after its date passes, even
+      // when the coach has not marked the generated class completed.
+      for (const day of dailyDistances.keys()) {
+        const weekday = new Date(`${day}T00:00:00`).getDay();
+        for (const slot of calendarMember.group_lessons || []) {
+          const time = String(slot.time || '').slice(0, 5);
+          if (Number(slot.day) !== weekday || !time) continue;
+          if (calendarLessons.some(lesson => lesson.date === day && lesson.type === 'group' && String(lesson.time).slice(0, 5) === time)) continue;
+          const stored = (classResult.data || []).find(row => row.lesson_type === 'group' && row.lesson_date === day && String(row.lesson_time).slice(0, 5) === time);
+          if (stored && ['cancelled', 'deleted'].includes(stored.status)) continue;
+          calendarLessons.push({ id: `${calendarMember.id}-group-${day}-${time}`, date: day, time, type: 'group', title: '단체수업', status: stored?.status || 'scheduled', memo: stored?.memo || '' });
+        }
+      }
       const slots=new Set();
       for(const row of classResult.data||[]){
         if(row.lesson_date>dateKey(new Date())||row.lesson_type==='personal'||!countsWorkout(row.lesson_date)||dailyDistances.has(row.lesson_date))continue;
